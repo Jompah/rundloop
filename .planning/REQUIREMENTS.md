@@ -133,13 +133,60 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated during roadmap creation) | | |
+| GPS-01 | Phase 1 | Pending |
+| GPS-02 | Phase 1 | Pending |
+| GPS-03 | Phase 1 | Pending |
+| GPS-04 | Phase 1 | Pending |
+| STOR-01 | Phase 1 | Pending |
+| STOR-02 | Phase 1 | Pending |
+| STOR-03 | Phase 1 | Pending |
+| STOR-04 | Phase 1 | Pending |
+| RUN-01 | Phase 2 | Pending |
+| RUN-02 | Phase 2 | Pending |
+| RUN-03 | Phase 2 | Pending |
+| RUN-04 | Phase 2 | Pending |
+| METR-01 | Phase 3 | Pending |
+| METR-02 | Phase 3 | Pending |
+| METR-03 | Phase 3 | Pending |
+| METR-04 | Phase 3 | Pending |
+| METR-05 | Phase 3 | Pending |
+| NAV-01 | Phase 4 | Pending |
+| NAV-02 | Phase 4 | Pending |
+| NAV-03 | Phase 4 | Pending |
+| NAV-04 | Phase 4 | Pending |
+| NAV-05 | Phase 4 | Pending |
+| SUMM-01 | Phase 5 | Pending |
+| SUMM-02 | Phase 5 | Pending |
+| SUMM-03 | Phase 5 | Pending |
+| SUMM-04 | Phase 5 | Pending |
+| HIST-01 | Phase 6 | Pending |
+| HIST-02 | Phase 6 | Pending |
+| HIST-03 | Phase 6 | Pending |
+| HIST-04 | Phase 6 | Pending |
+| ROUT-01 | Phase 6 | Pending |
+| ROUT-02 | Phase 6 | Pending |
+| ROUT-03 | Phase 6 | Pending |
+| ROUT-04 | Phase 6 | Pending |
+| VIZ-01 | Phase 7 | Pending |
+| VIZ-02 | Phase 7 | Pending |
+| VIZ-03 | Phase 7 | Pending |
+| VIZ-04 | Phase 7 | Pending |
+| VIZ-05 | Phase 7 | Pending |
+| UI-01 | Phase 8 | Pending |
+| UI-02 | Phase 8 | Pending |
+| UI-03 | Phase 8 | Pending |
+| UI-04 | Phase 8 | Pending |
+| UI-05 | Phase 8 | Pending |
+| PWA-01 | Phase 8 | Pending |
+| PWA-02 | Phase 8 | Pending |
+| PWA-03 | Phase 8 | Pending |
+| PWA-04 | Phase 8 | Pending |
 
 **Coverage:**
 - v1 requirements: 42 total
-- Mapped to phases: 0
-- Unmapped: 42 ⚠️
+- Mapped to phases: 42
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-19*
-*Last updated: 2026-03-19 after initial definition*
+*Last updated: 2026-03-19 after roadmap creation*
