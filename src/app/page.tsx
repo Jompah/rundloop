@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import RouteGenerator from '@/components/RouteGenerator';
+import NavigationView from '@/components/NavigationView';
 import SettingsView from '@/components/SettingsView';
 import HistoryView from '@/components/HistoryView';
 import { GeneratedRoute, AppView } from '@/types';
@@ -156,6 +157,43 @@ export default function Home() {
             setView('map');
           }}
         />
+      )}
+
+      {/* Navigation overlay */}
+      {view === 'navigate' && route && (
+        <NavigationView
+          route={route}
+          userLocation={userLocation}
+          onStop={() => setView('map')}
+        />
+      )}
+
+      {/* Route info bar */}
+      {route && view === 'map' && (
+        <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-4 z-20 safe-bottom">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <span className="text-2xl font-bold text-white">
+                {(route.distance / 1000).toFixed(1)} km
+              </span>
+              <span className="text-gray-400 ml-3">
+                ~{Math.round(route.duration / 60)} min
+              </span>
+            </div>
+            <button
+              onClick={() => { setView('navigate'); }}
+              className="bg-green-500 text-white px-6 py-3 rounded-xl font-semibold active:bg-green-600"
+            >
+              Start Run
+            </button>
+          </div>
+          <button
+            onClick={() => { setRoute(null); setView('generate'); }}
+            className="text-gray-400 text-sm underline"
+          >
+            Generate new route
+          </button>
+        </div>
       )}
     </main>
   );
