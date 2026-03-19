@@ -24,3 +24,20 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* PWA safe areas */
+.safe-bottom {
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+
+/* Custom range input */
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #22c55e;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
