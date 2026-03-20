@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-20T09:34:59.404Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-20T10:25:16.503Z"
 progress:
   total_phases: 8
   completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 12
+  completed_plans: 10
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Runners see the entire loop route upfront before taking a single step
-**Current focus:** Phase 03 — live-run-metrics
+**Current focus:** Phase 04 — navigation-polish
 
 ## Current Position
 
-Phase: 03 (live-run-metrics) — EXECUTING
-Plan: 2 of 2
+Phase: 04 (navigation-polish) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Plan: 2 of 2
 | Phase 02 P02 | 3min | 2 tasks | 4 files |
 | Phase 03 P01 | 2min | 2 tasks | 2 files |
 | Phase 03 P02 | 2min | 3 tasks | 3 files |
+| Phase 04 P01 | 3min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Rolling pace uses 30s default window for smooth readings at typical GPS update frequency
 - [Phase 03]: Compute metrics inline on render rather than via separate interval
 - [Phase 03]: Async settings loading with useState/useEffect for getSettings() in client components
+- [Phase 04]: Equirectangular projection with cos(lat) correction for point-to-segment distance (no turf.js)
+- [Phase 04]: EMA heading smoothing uses shortest-arc diff to avoid wrap-around through 180
+- [Phase 04]: getSynth in voice.ts updated with globalThis fallback for test environment compatibility
 
 ### Pending Todos
 
@@ -94,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T09:01:08.280Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-03-20T10:25:16.491Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None

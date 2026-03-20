@@ -53,11 +53,11 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 ### Navigation Polish
 
-- [ ] **NAV-01**: Map auto-rotates to follow the runner's heading during active navigation
-- [ ] **NAV-02**: Off-route detection alerts runner when deviating >50m from planned route with guidance to return
-- [ ] **NAV-03**: Distance milestone voice cues ("1 kilometer completed", "Halfway point")
+- [x] **NAV-01**: Map auto-rotates to follow the runner's heading during active navigation
+- [x] **NAV-02**: Off-route detection alerts runner when deviating >50m from planned route with guidance to return
+- [x] **NAV-03**: Distance milestone voice cues ("1 kilometer completed", "Halfway point")
 - [ ] **NAV-04**: Option to mute/unmute voice navigation without stopping the run
-- [ ] **NAV-05**: Voice navigation works reliably on iOS Safari (user-gesture audio unlock, post-background reset)
+- [x] **NAV-05**: Voice navigation works reliably on iOS Safari (user-gesture audio unlock, post-background reset)
 
 ### UI/UX Polish
 
@@ -150,11 +150,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | METR-03 | Phase 3 | Complete |
 | METR-04 | Phase 3 | Complete |
 | METR-05 | Phase 3 | Complete |
-| NAV-01 | Phase 4 | Pending |
-| NAV-02 | Phase 4 | Pending |
-| NAV-03 | Phase 4 | Pending |
+| NAV-01 | Phase 4 | Complete |
+| NAV-02 | Phase 4 | Complete |
+| NAV-03 | Phase 4 | Complete |
 | NAV-04 | Phase 4 | Pending |
-| NAV-05 | Phase 4 | Pending |
+| NAV-05 | Phase 4 | Complete |
 | SUMM-01 | Phase 5 | Pending |
 | SUMM-02 | Phase 5 | Pending |
 | SUMM-03 | Phase 5 | Pending |
