@@ -12,7 +12,7 @@ RundLoop has a working MVP with route generation and basic navigation. This mile
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Storage & GPS Foundation** - IndexedDB storage layer and GPS filtering pipeline replace unreliable localStorage and raw GPS
+- [x] **Phase 1: Storage & GPS Foundation** - IndexedDB storage layer and GPS filtering pipeline replace unreliable localStorage and raw GPS (completed 2026-03-20)
 - [ ] **Phase 2: Run Session Lifecycle** - State machine governs run states (idle/active/paused/completed) with crash recovery
 - [ ] **Phase 3: Live Run Metrics** - Real-time pace, distance, time, and remaining distance overlay during active runs
 - [ ] **Phase 4: Navigation Polish** - Map auto-rotation, off-route detection, voice reliability, and milestone cues
@@ -154,7 +154,7 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Storage & GPS Foundation | 4/5 | Gap closure planned | - |
+| 1. Storage & GPS Foundation | 4/5 | Complete    | 2026-03-20 |
 | 2. Run Session Lifecycle | 0/1 | Not started | - |
 | 3. Live Run Metrics | 0/1 | Not started | - |
 | 4. Navigation Polish | 0/1 | Not started | - |
