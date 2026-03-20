@@ -53,10 +53,13 @@ Runners see the entire loop route upfront before taking a single step — no sur
 - ✓ Saved routes management (save, list, reuse favorite routes) — Validated in Phase 6: Run History & Saved Routes
 - ✓ Bottom tab navigation (map/history/saved routes/settings) — Validated in Phase 6: Run History & Saved Routes
 - ✓ Gap closure for pre-existing TypeScript errors — Validated in Phase 6: Run History & Saved Routes
+- ✓ Elevation gradient route coloring (speed/altitude-based color ramp) — Validated in Phase 7: Route Visualization
+- ✓ Dark-mode OLED map tiles (custom dark tile style optimized for OLED screens) — Validated in Phase 7: Route Visualization
+- ✓ Start/finish markers (distinct icons at route endpoints) — Validated in Phase 7: Route Visualization
+- ✓ Turn indicators (directional arrows along route at waypoints) — Validated in Phase 7: Route Visualization
 
 ### Active
 
-- [ ] Beautiful route visualization (elevation gradients, turn indicators, dark-mode colors)
 - [ ] Premium UI/UX (Runkeeper-quality design, dark mode default, haptic feedback, fluid animations)
 - [ ] Service worker for offline app shell caching
 - [ ] Progress analytics (weekly/monthly summaries, pace trends, personal records)
@@ -107,7 +110,7 @@ Runners see the entire loop route upfront before taking a single step — no sur
 
 ## Current State
 
-Phase 6 (Run History & Saved Routes) is complete. The app now includes full run history browsing with route thumbnails, saved routes management for reusing favorite routes, bottom tab navigation across map/history/saved/settings views, and resolution of pre-existing TypeScript errors. Phases 1–6 are fully validated.
+Phase 7 (Route Visualization) is complete. The app now renders elevation gradient routes with a color ramp, uses dark-mode OLED-optimized map tiles, displays distinct start/finish markers at route endpoints, and shows turn indicators at waypoints along the route. Phases 1–7 are fully validated.
 
 ---
-*Last updated: 2026-03-20 after Phase 6 completion*
+*Last updated: 2026-03-20 after Phase 7 completion*
