@@ -67,10 +67,11 @@ Plans:
   3. Elapsed time counts up during active running and pauses when the run is paused
   4. Remaining distance to the finish is displayed based on route progress
   5. All metrics use large fonts and high contrast, readable at a glance while running at pace
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — TDD: pure metrics computation functions (rolling pace, average pace, formatting, remaining distance)
+- [ ] 03-02-PLAN.md — RunMetricsOverlay component, NavigationView integration, page.tsx wiring
 
 ### Phase 4: Navigation Polish
 **Goal**: Turn-by-turn navigation is reliable, informative, and works correctly on iOS Safari in standalone PWA mode
@@ -157,7 +158,7 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 |-------|----------------|--------|-----------|
 | 1. Storage & GPS Foundation | 4/5 | Complete    | 2026-03-20 |
 | 2. Run Session Lifecycle | 2/2 | Complete    | 2026-03-20 |
-| 3. Live Run Metrics | 0/1 | Not started | - |
+| 3. Live Run Metrics | 0/2 | Not started | - |
 | 4. Navigation Polish | 0/1 | Not started | - |
 | 5. Run Summary | 0/1 | Not started | - |
 | 6. Run History & Saved Routes | 0/1 | Not started | - |
