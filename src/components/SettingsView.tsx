@@ -9,7 +9,8 @@ interface SettingsViewProps {
 }
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
-  const [settings, setSettings] = useState<AppSettings>(getSettings());
+  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5 });
+  useEffect(() => { getSettings().then(setSettings); }, []);
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
@@ -34,41 +35,19 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* AI Provider */}
-        <div>
-          <label className="text-sm font-medium text-gray-400 block mb-2">AI Provider</label>
-          <div className="flex gap-2">
-            {(['claude', 'perplexity'] as const).map((provider) => (
-              <button
-                key={provider}
-                onClick={() => setSettings({ ...settings, apiProvider: provider })}
-                className={`flex-1 py-3 rounded-xl text-sm font-medium transition-colors ${
-                  settings.apiProvider === provider
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-800 text-gray-300 active:bg-gray-700'
-                }`}
-              >
-                {provider === 'claude' ? 'Claude' : 'Perplexity'}
-              </button>
-            ))}
+        {/* AI info */}
+        <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(34 197 94)" strokeWidth="2.5">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-white">Claude via ditt abonnemang</p>
+              <p className="text-xs text-gray-400">Ingen API-nyckel behövs</p>
+            </div>
           </div>
-        </div>
-
-        {/* API Key */}
-        <div>
-          <label className="text-sm font-medium text-gray-400 block mb-2">
-            {settings.apiProvider === 'claude' ? 'Anthropic API Key' : 'Perplexity API Key'}
-          </label>
-          <input
-            type="password"
-            value={settings.apiKey}
-            onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })}
-            placeholder={settings.apiProvider === 'claude' ? 'sk-ant-...' : 'pplx-...'}
-            className="w-full bg-gray-800 text-white px-4 py-3 rounded-xl border border-gray-700 focus:border-green-500 focus:outline-none text-sm"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Your key is stored locally on this device only.
-          </p>
         </div>
 
         {/* Voice */}
@@ -90,6 +69,35 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
             />
           </button>
         </div>
+
+        {/* Voice Style */}
+        {settings.voiceEnabled && (
+          <div>
+            <label className="text-sm font-medium text-gray-400 block mb-2">Voice Style</label>
+            <div className="flex flex-col gap-2">
+              {([
+                { value: 'concise' as const, label: 'Concise', example: '1 km completed' },
+                { value: 'with-pace' as const, label: 'With Pace', example: '1 km completed. Pace: 5:30/km' },
+                { value: 'motivational' as const, label: 'Motivational', example: 'Great work! 1 km done' },
+              ]).map((style) => (
+                <button
+                  key={style.value}
+                  onClick={() => setSettings({ ...settings, voiceStyle: style.value })}
+                  className={`w-full py-3 px-4 rounded-xl text-left transition-colors ${
+                    settings.voiceStyle === style.value
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-800 text-gray-300 active:bg-gray-700'
+                  }`}
+                >
+                  <span className="text-sm font-semibold block">{style.label}</span>
+                  <span className={`text-xs block mt-0.5 ${
+                    settings.voiceStyle === style.value ? 'text-green-100' : 'text-gray-400'
+                  }`}>{style.example}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Units */}
         <div>

@@ -3,6 +3,7 @@ import { dbGet, dbPut, dbDelete, dbGetAll } from './db';
 
 const defaultSettings: AppSettings = {
   voiceEnabled: false,
+  voiceStyle: 'concise',
   units: 'km',
   defaultDistance: 5,
 };

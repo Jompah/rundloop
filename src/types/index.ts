@@ -23,6 +23,7 @@ export interface AppSettings {
   apiProvider?: 'claude' | 'perplexity';
   apiKey?: string;
   voiceEnabled: boolean;
+  voiceStyle: 'concise' | 'with-pace' | 'motivational';
   units: 'km' | 'miles';
   defaultDistance: number; // km
 }

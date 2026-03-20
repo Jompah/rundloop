@@ -64,7 +64,7 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
   const [distanceToNext, setDistanceToNext] = useState<number | null>(null);
   const [totalCovered, setTotalCovered] = useState(0);
   const [lastSpokenStep, setLastSpokenStep] = useState(-1);
-  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, units: 'km', defaultDistance: 5 });
+  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5 });
   useEffect(() => { getSettings().then(setSettings); }, []);
 
   // Off-route detection state
