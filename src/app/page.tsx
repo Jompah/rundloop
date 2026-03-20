@@ -394,6 +394,7 @@ export default function Home() {
           runStatus={runSession.status}
           elapsedMs={runSession.elapsedMs}
           distanceMeters={runSession.distanceMeters}
+          trace={runSession.trace}
           onPause={() => runSession.pauseRun()}
           onResume={() => runSession.resumeRun()}
           onEndRun={() => setShowEndRunDialog(true)}
