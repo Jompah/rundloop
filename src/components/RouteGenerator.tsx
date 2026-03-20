@@ -1,16 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import type { GeneratedRoute } from '@/types';
+import { saveRoute } from '@/lib/storage';
 
-interface RouteGeneratorProps {
+export interface RouteGeneratorProps {
   onGenerate: (distance: number) => void;
   isLoading: boolean;
   userLocation: [number, number] | null;
   cityName: string;
+  route?: GeneratedRoute | null;
 }
 
-export default function RouteGenerator({ onGenerate, isLoading, userLocation, cityName }: RouteGeneratorProps) {
+export default function RouteGenerator({ onGenerate, isLoading, userLocation, cityName, route }: RouteGeneratorProps) {
   const [distance, setDistance] = useState(5);
+  const [saved, setSaved] = useState(false);
+
+  const handleSaveRoute = useCallback(async () => {
+    if (!route || saved) return;
+    await saveRoute(route, cityName);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }, [route, cityName, saved]);
+
+  // Reset saved state when a new route is generated
+  const handleGenerate = useCallback((d: number) => {
+    setSaved(false);
+    onGenerate(d);
+  }, [onGenerate]);
 
   const presets = [3, 5, 7, 10, 15, 21];
 
@@ -63,7 +80,7 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
 
       {/* Generate button */}
       <button
-        onClick={() => onGenerate(distance)}
+        onClick={() => handleGenerate(distance)}
         disabled={isLoading || !userLocation}
         className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
           isLoading || !userLocation
@@ -85,6 +102,21 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
           `Generate ${distance} km route`
         )}
       </button>
+
+      {/* Save Route button - shown after route generation */}
+      {route && !isLoading && (
+        <button
+          onClick={handleSaveRoute}
+          disabled={saved}
+          className={`w-full mt-3 py-2 rounded-xl px-4 font-semibold transition-all ${
+            saved
+              ? 'bg-gray-700 text-green-400 cursor-default'
+              : 'bg-green-500 text-white active:bg-green-600 active:scale-[0.98]'
+          }`}
+        >
+          {saved ? 'Saved!' : 'Save Route'}
+        </button>
+      )}
     </div>
   );
 }

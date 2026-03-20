@@ -14,7 +14,7 @@ import { getCurrentPosition, reverseGeocode, watchFilteredPosition, setFakePosit
 import { initDB, dbDelete } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
-import { saveRoute, findNearbySavedRoutes } from '@/lib/storage';
+import { findNearbySavedRoutes } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
 import { unlockIOSAudio, ensureSpeechReady } from '@/lib/voice';
 import { findIncompleteRun, clearIncompleteRun } from '@/lib/crash-recovery';
@@ -258,7 +258,6 @@ export default function Home() {
 
       if (generatedRoute) {
         setRoute(generatedRoute);
-        saveRoute(generatedRoute, cityName);
         setView('map');
       }
     } catch (err: any) {
@@ -320,6 +319,7 @@ export default function Home() {
           isLoading={isLoading}
           userLocation={userLocation}
           cityName={cityName}
+          route={route}
           nearbyRoutes={nearbyRoutes}
           onDistanceChange={setSelectedDistance}
           onLoadNearby={handleLoadNearby}
