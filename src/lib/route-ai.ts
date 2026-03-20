@@ -131,3 +131,5 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
 
   return waypoints;
 }
+
+export { generateAlgorithmicWaypoints as generateRouteAlgorithmic } from './route-algorithmic';
