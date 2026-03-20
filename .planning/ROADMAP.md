@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 5: Run Summary** - Post-run reward screen with stats, GPS trace overlay, and save/discard
 - [ ] **Phase 6: Run History & Saved Routes** - Browse past runs and save/reuse favorite routes from IndexedDB
 - [ ] **Phase 7: Route Visualization** - Beautiful route rendering with elevation gradients, turn indicators, and dark-mode colors
-- [ ] **Phase 8: UI/UX & PWA Polish** - Premium design system, animations, haptics, service worker, and offline shell
+- [x] **Phase 8: UI/UX & PWA Polish** - Premium design system, animations, haptics, service worker, and offline shell (completed 2026-03-20)
 
 ## Phase Details
 
@@ -174,4 +174,4 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 | 5. Run Summary | 0/2 | Not started | - |
 | 6. Run History & Saved Routes | 0/5 | Not started | - |
 | 7. Route Visualization | 0/3 | Not started | - |
-| 8. UI/UX & PWA Polish | 0/3 | Not started | - |
+| 8. UI/UX & PWA Polish | 3/3 | Complete   | 2026-03-20 |
