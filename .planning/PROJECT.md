@@ -45,11 +45,14 @@ Runners see the entire loop route upfront before taking a single step — no sur
 - ✓ Off-route detection with automatic rerouting prompt — Phase 4
 - ✓ Voice distance milestones (every km/mile announcement) — Phase 4
 - ✓ iOS audio unlock (silent AudioContext tap to bypass autoplay policy) — Phase 4
+- ✓ Post-run summary screen with stats (distance, duration, pace, calories) — Phase 5
+- ✓ GPS trace overlay on summary map — Phase 5
+- ✓ Save/discard run at end of session — Phase 5
+- ✓ Calorie estimation from distance and elapsed time — Phase 5
 
 ### Active
 
 - [ ] Beautiful route visualization (elevation gradients, turn indicators, dark-mode colors)
-- [ ] Run summary screen (stats, GPS trace overlay, save/discard)
 - [ ] Premium UI/UX (Runkeeper-quality design, dark mode default, haptic feedback, fluid animations)
 - [ ] Run history with IndexedDB persistence and route thumbnails
 - [ ] Save and reuse favorite routes
@@ -100,5 +103,9 @@ Runners see the entire loop route upfront before taking a single step — no sur
 | IndexedDB for local storage (Phase 1) | No backend needed for personal use, fast, offline-capable | — Pending |
 | Fine granularity for phases | Complex feature set benefits from focused phases | — Pending |
 
+## Current State
+
+Phase 5 (Run Summary) is complete. The app now shows a post-run summary screen after every run, displaying key stats (distance, duration, pace, calories), a GPS trace overlay on the map, and save/discard controls backed by IndexedDB persistence. Phases 1–5 are fully validated.
+
 ---
-*Last updated: 2026-03-20 after Phase 4 completion*
+*Last updated: 2026-03-20 after Phase 5 completion*
