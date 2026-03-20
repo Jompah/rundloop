@@ -11,6 +11,8 @@ import {
   formatElapsed,
 } from '@/lib/metrics';
 import { getSettings } from '@/lib/storage';
+import { fetchElevations, computeGrades } from '@/lib/elevation';
+import { addGradientRoute, addStartFinishMarkers } from '@/lib/route-visuals';
 import DiscardConfirmDialog from './DiscardConfirmDialog';
 
 interface RunSummaryViewProps {
@@ -57,33 +59,26 @@ export default function RunSummaryView({
     map.on('load', () => {
       const bounds = new maplibregl.LngLatBounds();
 
-      // Add planned route polyline (green, underneath)
+      // Add planned route with elevation gradient (underneath)
       if (route && route.polyline.length > 0) {
         const routeCoords = route.polyline;
         routeCoords.forEach((coord) => bounds.extend(coord as [number, number]));
 
-        map.addSource('planned-route', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-              type: 'LineString',
-              coordinates: routeCoords,
-            },
-          },
-        });
+        // Fetch elevation data and render gradient route
+        fetchElevations(routeCoords)
+          .then((elevations) => {
+            const grades = computeGrades(routeCoords, elevations);
+            addGradientRoute(map, routeCoords, grades, 'planned-route', 'planned-route-gradient');
+            map.setPaintProperty('planned-route-gradient', 'line-width', 3);
+          })
+          .catch(() => {
+            // Fallback: render gradient route with empty grades (solid green)
+            addGradientRoute(map, routeCoords, [], 'planned-route', 'planned-route-gradient');
+            map.setPaintProperty('planned-route-gradient', 'line-width', 3);
+          });
 
-        map.addLayer({
-          id: 'planned-route-layer',
-          type: 'line',
-          source: 'planned-route',
-          paint: {
-            'line-color': '#4ade80',
-            'line-width': 3,
-            'line-opacity': 0.6,
-          },
-        });
+        // Add start/finish markers on the planned route
+        addStartFinishMarkers(map, routeCoords);
       }
 
       // Add actual trace polyline (cyan, on top)
@@ -116,18 +111,6 @@ export default function RunSummaryView({
             'line-opacity': 1.0,
           },
         });
-
-        // Start marker (green circle)
-        const startCoord = traceCoords[0];
-        new maplibregl.Marker({ color: '#4ade80' })
-          .setLngLat(startCoord)
-          .addTo(map);
-
-        // End marker (green circle)
-        const endCoord = traceCoords[traceCoords.length - 1];
-        new maplibregl.Marker({ color: '#4ade80' })
-          .setLngLat(endCoord)
-          .addTo(map);
       }
 
       // Fit bounds
