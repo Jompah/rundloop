@@ -498,33 +498,37 @@ export default function Home() {
       )}
 
       {/* End Run confirmation dialog */}
-      {showEndRunDialog && (
-        <EndRunDialog
-          onConfirm={async () => {
-            const completed = await runSession.endRun();
-            setCompletedRunData(completed);
-            setShowEndRunDialog(false);
-            setView('summary');
-          }}
-          onCancel={() => setShowEndRunDialog(false)}
-        />
-      )}
+      <AnimatePresence>
+        {showEndRunDialog && (
+          <EndRunDialog
+            onConfirm={async () => {
+              const completed = await runSession.endRun();
+              setCompletedRunData(completed);
+              setShowEndRunDialog(false);
+              setView('summary');
+            }}
+            onCancel={() => setShowEndRunDialog(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Crash recovery dialog */}
-      {recoverySnapshot && (
-        <CrashRecoveryDialog
-          snapshot={recoverySnapshot}
-          onResume={() => {
-            runSession.recoverRun(recoverySnapshot);
-            setRecoverySnapshot(null);
-            setView('navigate');
-          }}
-          onDiscard={async () => {
-            await clearIncompleteRun(recoverySnapshot.id);
-            setRecoverySnapshot(null);
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {recoverySnapshot && (
+          <CrashRecoveryDialog
+            snapshot={recoverySnapshot}
+            onResume={() => {
+              runSession.recoverRun(recoverySnapshot);
+              setRecoverySnapshot(null);
+              setView('navigate');
+            }}
+            onDiscard={async () => {
+              await clearIncompleteRun(recoverySnapshot.id);
+              setRecoverySnapshot(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Run detail overlay */}
       {selectedRun && (
