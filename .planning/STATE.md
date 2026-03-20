@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-20T07:48:51.904Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-20T07:53:57.015Z"
 progress:
   total_phases: 8
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -52,6 +52,7 @@ Plan: 2 of 2
 | Phase 01 P03 | 2min | 2 tasks | 2 files |
 | Phase 01 P04 | 1min | 2 tasks | 1 files |
 | Phase 02 P01 | 2min | 1 tasks | 2 files |
+| Phase 02 P02 | 3min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Exported runReducer and computeDistance as named exports for direct unit testing without React rendering
 - [Phase 02]: Used useRef for trace and timing data to avoid re-renders on every GPS point
 - [Phase 02]: Timer uses wall-clock math (Date.now() - startTime - pausedDuration) not interval increments
+- [Phase 02]: Inline haversine in CrashRecoveryDialog for self-contained snapshot distance computation
+- [Phase 02]: Run controls conditionally rendered based on runStatus prop for clear state-driven UI
 
 ### Pending Todos
 
@@ -85,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T07:48:51.897Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-20T07:53:57.007Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
