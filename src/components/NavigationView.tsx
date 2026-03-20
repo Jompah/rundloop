@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { GeneratedRoute, TurnInstruction } from '@/types';
+import { GeneratedRoute, TurnInstruction, FilteredPosition, AppSettings } from '@/types';
 import { speak, stopSpeaking } from '@/lib/voice';
 import { getSettings } from '@/lib/storage';
+import { formatElapsed } from '@/lib/metrics';
+import RunMetricsOverlay from './RunMetricsOverlay';
 
 type RunStatus = 'idle' | 'active' | 'paused' | 'completed';
 
@@ -14,6 +16,7 @@ interface NavigationViewProps {
   runStatus: RunStatus;
   elapsedMs: number;
   distanceMeters: number;
+  trace: FilteredPosition[];
   onPause: () => void;
   onResume: () => void;
   onEndRun: () => void;
@@ -54,23 +57,13 @@ function getDirectionIcon(type: TurnInstruction['type']): string {
   }
 }
 
-function formatElapsed(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  }
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
-export default function NavigationView({ route, userLocation, onStop, runStatus, elapsedMs, distanceMeters, onPause, onResume, onEndRun }: NavigationViewProps) {
+export default function NavigationView({ route, userLocation, onStop, runStatus, elapsedMs, distanceMeters, trace, onPause, onResume, onEndRun }: NavigationViewProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [distanceToNext, setDistanceToNext] = useState<number | null>(null);
   const [totalCovered, setTotalCovered] = useState(0);
   const [lastSpokenStep, setLastSpokenStep] = useState(-1);
-  const settings = getSettings();
+  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, units: 'km', defaultDistance: 5 });
+  useEffect(() => { getSettings().then(setSettings); }, []);
 
   const currentStep = route.instructions[currentStepIndex];
   const nextStep = route.instructions[currentStepIndex + 1];
@@ -129,19 +122,6 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
 
   return (
     <div className="absolute inset-x-0 top-0 z-20">
-      {/* Paused overlay */}
-      {runStatus === 'paused' && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none">
-          <div className="animate-pulse flex flex-col items-center">
-            <div className="flex gap-3 mb-2">
-              <div className="w-4 h-12 bg-white rounded" />
-              <div className="w-4 h-12 bg-white rounded" />
-            </div>
-            <span className="text-white text-3xl font-bold">PAUSED</span>
-          </div>
-        </div>
-      )}
-
       {/* Current instruction */}
       <div className="bg-gray-900/95 backdrop-blur-sm p-4 safe-top">
         <div className="flex items-center gap-4">
@@ -169,92 +149,45 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
         )}
       </div>
 
-      {/* Bottom bar */}
-      <div className="absolute bottom-0 inset-x-0 bg-gray-900/95 backdrop-blur-sm p-4 safe-bottom">
-        {/* Progress bar */}
-        <div className="w-full h-1.5 bg-gray-800 rounded-full mb-3 overflow-hidden">
-          <div
-            className="h-full bg-green-500 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+      {/* Metrics overlay for active/paused runs */}
+      {(runStatus === 'active' || runStatus === 'paused') && (
+        <RunMetricsOverlay
+          trace={trace}
+          elapsedMs={elapsedMs}
+          distanceMeters={distanceMeters}
+          routeDistanceMeters={route.distance}
+          runStatus={runStatus as 'active' | 'paused'}
+          units={settings.units}
+          onPause={onPause}
+          onResume={onResume}
+          onEndRun={onEndRun}
+          onVoiceToggle={() => {
+            const newEnabled = !settings.voiceEnabled;
+            const newSettings = { ...settings, voiceEnabled: newEnabled };
+            setSettings(newSettings);
+            import('@/lib/storage').then(m => m.saveSettings(newSettings));
+            if (!newEnabled) stopSpeaking();
+          }}
+          voiceEnabled={settings.voiceEnabled}
+        />
+      )}
 
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-white font-bold">
-              {formatElapsed(elapsedMs)}
-            </span>
-            <span className="text-gray-500 mx-1">|</span>
-            <span className="text-white font-bold">
-              {(distanceMeters / 1000).toFixed(1)} km
-            </span>
-          </div>
-
-          <div className="flex gap-2">
-            {/* Voice toggle */}
+      {/* Stop button for idle/completed states */}
+      {runStatus !== 'active' && runStatus !== 'paused' && (
+        <div className="absolute bottom-0 inset-x-0 bg-gray-900/95 backdrop-blur-sm p-4 safe-bottom">
+          <div className="flex justify-end">
             <button
               onClick={() => {
-                const s = getSettings();
-                const newSettings = { ...s, voiceEnabled: !s.voiceEnabled };
-                import('@/lib/storage').then(m => m.saveSettings(newSettings));
-                if (!newSettings.voiceEnabled) stopSpeaking();
+                stopSpeaking();
+                onStop();
               }}
-              className={`px-3 py-2 rounded-lg text-sm ${
-                settings.voiceEnabled
-                  ? 'bg-green-500/20 text-green-400'
-                  : 'bg-gray-800 text-gray-500'
-              }`}
+              className="bg-red-500 text-white px-6 py-2 rounded-lg font-semibold active:bg-red-600"
             >
-              {settings.voiceEnabled ? '\uD83D\uDD0A' : '\uD83D\uDD07'}
+              Stop
             </button>
-
-            {/* Run controls */}
-            {runStatus === 'active' && (
-              <>
-                <button
-                  onClick={onPause}
-                  className="bg-amber-500 text-white px-6 py-2 rounded-lg font-semibold active:bg-amber-600"
-                >
-                  Pause
-                </button>
-                <button
-                  onClick={onEndRun}
-                  className="bg-red-500/80 text-white px-4 py-2 rounded-lg font-semibold text-sm active:bg-red-600"
-                >
-                  End
-                </button>
-              </>
-            )}
-            {runStatus === 'paused' && (
-              <>
-                <button
-                  onClick={onResume}
-                  className="bg-green-500 text-white px-6 py-2 rounded-lg font-semibold active:bg-green-600"
-                >
-                  Resume
-                </button>
-                <button
-                  onClick={onEndRun}
-                  className="bg-red-500/80 text-white px-4 py-2 rounded-lg font-semibold text-sm active:bg-red-600"
-                >
-                  End
-                </button>
-              </>
-            )}
-            {runStatus !== 'active' && runStatus !== 'paused' && (
-              <button
-                onClick={() => {
-                  stopSpeaking();
-                  onStop();
-                }}
-                className="bg-red-500 text-white px-6 py-2 rounded-lg font-semibold active:bg-red-600"
-              >
-                Stop
-              </button>
-            )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
