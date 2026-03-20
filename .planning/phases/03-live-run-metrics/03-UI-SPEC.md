@@ -49,8 +49,10 @@ Exceptions: 44px minimum touch target on run control buttons (Pause/Resume/End) 
 |------|------|--------|-------------|-------|
 | Hero metric | 48px (text-5xl) | 700 (bold) | 1.0 | Current rolling pace value |
 | Metric value | 32px (text-3xl) | 700 (bold) | 1.1 | Distance, time, remaining distance values |
-| Metric label | 12px (text-xs) | 500 (medium) | 1.3 | "PACE", "DISTANCE", "TIME", "REMAINING" labels |
+| Metric label | 12px (text-xs) | 400 (regular) | 1.3 | "PACE", "DISTANCE", "TIME", "REMAINING" labels |
 | Unit suffix | 16px (text-base) | 400 (regular) | 1.0 | "/km", "km", inline unit indicators |
+
+Two weights only: 700 (bold) for all numeric values, 400 (regular) for labels and unit suffixes. UPPERCASE styling on 12px labels provides sufficient visual differentiation without a third weight.
 
 Rationale: Hero metric at 48px is readable at arm's length while running (METR-05). 32px secondary metrics are large enough for peripheral glance. 12px labels are small but always UPPERCASE for scanability.
 
