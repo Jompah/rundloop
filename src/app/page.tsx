@@ -6,12 +6,16 @@ import RouteGenerator from '@/components/RouteGenerator';
 import NavigationView from '@/components/NavigationView';
 import SettingsView from '@/components/SettingsView';
 import HistoryView from '@/components/HistoryView';
-import { GeneratedRoute, AppView, RouteMode, RouteWaypoint } from '@/types';
-import { getCurrentPosition, reverseGeocode, watchPosition, setFakePosition, clearFakePosition, isFakeGPS } from '@/lib/geolocation';
+import EndRunDialog from '@/components/EndRunDialog';
+import CrashRecoveryDialog from '@/components/CrashRecoveryDialog';
+import { GeneratedRoute, AppView, RouteMode, RouteWaypoint, ActiveRunSnapshot } from '@/types';
+import { getCurrentPosition, reverseGeocode, watchFilteredPosition, setFakePosition, clearFakePosition, isFakeGPS } from '@/lib/geolocation';
 import { initDB } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
 import { saveRoute, findNearbySavedRoutes } from '@/lib/storage';
+import { useRunSession } from '@/hooks/useRunSession';
+import { findIncompleteRun, clearIncompleteRun } from '@/lib/crash-recovery';
 
 // Dynamic import MapView to avoid SSR issues with MapLibre
 const MapView = dynamic(() => import('@/components/MapView'), { ssr: false });
@@ -35,10 +39,24 @@ export default function Home() {
   const [showFakeMenu, setShowFakeMenu] = useState(false);
   const [selectedDistance, setSelectedDistance] = useState(5);
   const [routeMode, setRouteMode] = useState<RouteMode>('algorithmic');
+  const [recoverySnapshot, setRecoverySnapshot] = useState<ActiveRunSnapshot | null>(null);
+  const [showEndRunDialog, setShowEndRunDialog] = useState(false);
+  const runSession = useRunSession();
 
   // Initialize IndexedDB: migration + persistent storage
   useEffect(() => {
     initDB();
+  }, []);
+
+  // Check for crashed/incomplete runs on mount
+  useEffect(() => {
+    async function checkCrashRecovery() {
+      const incomplete = await findIncompleteRun();
+      if (incomplete) {
+        setRecoverySnapshot(incomplete);
+      }
+    }
+    checkCrashRecovery();
   }, []);
 
   // Compute nearby saved routes whenever position or distance changes
@@ -84,11 +102,9 @@ export default function Home() {
         const city = await reverseGeocode(pos.lat, pos.lng);
         setCityName(city);
 
-        // TODO(Phase-2): Replace watchPosition with watchFilteredPosition from '@/lib/geolocation'
-        // to activate GPS accuracy/teleport/jitter filtering (GPS-01). Filter is implemented and
-        // tested in gps-filter.ts but intentionally not wired until the run session lifecycle exists.
-        watchId = watchPosition(
+        watchId = watchFilteredPosition(
           (pos) => setUserLocation([pos.lng, pos.lat]),
+          (_pos, _reason) => { /* rejected, ignore for location display */ },
           (err) => console.warn('GPS error:', err.message)
         );
       } catch (err) {
@@ -374,7 +390,42 @@ export default function Home() {
         <NavigationView
           route={route}
           userLocation={userLocation}
-          onStop={() => setView('map')}
+          onStop={() => { runSession.reset(); setView('map'); }}
+          runStatus={runSession.status}
+          elapsedMs={runSession.elapsedMs}
+          distanceMeters={runSession.distanceMeters}
+          onPause={() => runSession.pauseRun()}
+          onResume={() => runSession.resumeRun()}
+          onEndRun={() => setShowEndRunDialog(true)}
+        />
+      )}
+
+      {/* End Run confirmation dialog */}
+      {showEndRunDialog && (
+        <EndRunDialog
+          onConfirm={async () => {
+            await runSession.endRun();
+            setShowEndRunDialog(false);
+            runSession.reset();
+            setView('map');
+          }}
+          onCancel={() => setShowEndRunDialog(false)}
+        />
+      )}
+
+      {/* Crash recovery dialog */}
+      {recoverySnapshot && (
+        <CrashRecoveryDialog
+          snapshot={recoverySnapshot}
+          onResume={() => {
+            runSession.recoverRun(recoverySnapshot);
+            setRecoverySnapshot(null);
+            setView('navigate');
+          }}
+          onDiscard={async () => {
+            await clearIncompleteRun(recoverySnapshot.id);
+            setRecoverySnapshot(null);
+          }}
         />
       )}
 
@@ -391,7 +442,7 @@ export default function Home() {
               </span>
             </div>
             <button
-              onClick={() => { setView('navigate'); }}
+              onClick={() => { runSession.startRun(null); setView('navigate'); }}
               className="bg-green-500 text-white px-6 py-3 rounded-xl font-semibold active:bg-green-600"
             >
               Start Run

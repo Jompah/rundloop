@@ -5,10 +5,18 @@ import { GeneratedRoute, TurnInstruction } from '@/types';
 import { speak, stopSpeaking } from '@/lib/voice';
 import { getSettings } from '@/lib/storage';
 
+type RunStatus = 'idle' | 'active' | 'paused' | 'completed';
+
 interface NavigationViewProps {
   route: GeneratedRoute;
   userLocation: [number, number] | null; // [lng, lat]
   onStop: () => void;
+  runStatus: RunStatus;
+  elapsedMs: number;
+  distanceMeters: number;
+  onPause: () => void;
+  onResume: () => void;
+  onEndRun: () => void;
 }
 
 function getDistanceBetween(
@@ -46,7 +54,18 @@ function getDirectionIcon(type: TurnInstruction['type']): string {
   }
 }
 
-export default function NavigationView({ route, userLocation, onStop }: NavigationViewProps) {
+function formatElapsed(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+export default function NavigationView({ route, userLocation, onStop, runStatus, elapsedMs, distanceMeters, onPause, onResume, onEndRun }: NavigationViewProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [distanceToNext, setDistanceToNext] = useState<number | null>(null);
   const [totalCovered, setTotalCovered] = useState(0);
@@ -99,10 +118,30 @@ export default function NavigationView({ route, userLocation, onStop }: Navigati
     return () => stopSpeaking();
   }, []);
 
+  // Stop voice on pause
+  useEffect(() => {
+    if (runStatus === 'paused') {
+      stopSpeaking();
+    }
+  }, [runStatus]);
+
   const progress = route.distance > 0 ? Math.min((totalCovered / route.distance) * 100, 100) : 0;
 
   return (
     <div className="absolute inset-x-0 top-0 z-20">
+      {/* Paused overlay */}
+      {runStatus === 'paused' && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none">
+          <div className="animate-pulse flex flex-col items-center">
+            <div className="flex gap-3 mb-2">
+              <div className="w-4 h-12 bg-white rounded" />
+              <div className="w-4 h-12 bg-white rounded" />
+            </div>
+            <span className="text-white text-3xl font-bold">PAUSED</span>
+          </div>
+        </div>
+      )}
+
       {/* Current instruction */}
       <div className="bg-gray-900/95 backdrop-blur-sm p-4 safe-top">
         <div className="flex items-center gap-4">
@@ -143,10 +182,11 @@ export default function NavigationView({ route, userLocation, onStop }: Navigati
         <div className="flex items-center justify-between">
           <div>
             <span className="text-white font-bold">
-              {(route.distance / 1000).toFixed(1)} km
+              {formatElapsed(elapsedMs)}
             </span>
-            <span className="text-gray-500 ml-2">
-              ~{Math.round(route.duration / 60)} min
+            <span className="text-gray-500 mx-1">|</span>
+            <span className="text-white font-bold">
+              {(distanceMeters / 1000).toFixed(1)} km
             </span>
           </div>
 
@@ -168,16 +208,50 @@ export default function NavigationView({ route, userLocation, onStop }: Navigati
               {settings.voiceEnabled ? '\uD83D\uDD0A' : '\uD83D\uDD07'}
             </button>
 
-            {/* Stop button */}
-            <button
-              onClick={() => {
-                stopSpeaking();
-                onStop();
-              }}
-              className="bg-red-500 text-white px-6 py-2 rounded-lg font-semibold active:bg-red-600"
-            >
-              Stop
-            </button>
+            {/* Run controls */}
+            {runStatus === 'active' && (
+              <>
+                <button
+                  onClick={onPause}
+                  className="bg-amber-500 text-white px-6 py-2 rounded-lg font-semibold active:bg-amber-600"
+                >
+                  Pause
+                </button>
+                <button
+                  onClick={onEndRun}
+                  className="bg-red-500/80 text-white px-4 py-2 rounded-lg font-semibold text-sm active:bg-red-600"
+                >
+                  End
+                </button>
+              </>
+            )}
+            {runStatus === 'paused' && (
+              <>
+                <button
+                  onClick={onResume}
+                  className="bg-green-500 text-white px-6 py-2 rounded-lg font-semibold active:bg-green-600"
+                >
+                  Resume
+                </button>
+                <button
+                  onClick={onEndRun}
+                  className="bg-red-500/80 text-white px-4 py-2 rounded-lg font-semibold text-sm active:bg-red-600"
+                >
+                  End
+                </button>
+              </>
+            )}
+            {runStatus !== 'active' && runStatus !== 'paused' && (
+              <button
+                onClick={() => {
+                  stopSpeaking();
+                  onStop();
+                }}
+                className="bg-red-500 text-white px-6 py-2 rounded-lg font-semibold active:bg-red-600"
+              >
+                Stop
+              </button>
+            )}
           </div>
         </div>
       </div>
