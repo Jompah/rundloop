@@ -30,10 +30,10 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 ### Live Run Metrics
 
-- [ ] **METR-01**: Current pace displayed as rolling lap pace (per-km average, not instantaneous GPS)
-- [ ] **METR-02**: Total distance covered displayed in real-time
-- [ ] **METR-03**: Elapsed time displayed (paused time excluded)
-- [ ] **METR-04**: Remaining distance to finish displayed
+- [x] **METR-01**: Current pace displayed as rolling lap pace (per-km average, not instantaneous GPS)
+- [x] **METR-02**: Total distance covered displayed in real-time
+- [x] **METR-03**: Elapsed time displayed (paused time excluded)
+- [x] **METR-04**: Remaining distance to finish displayed
 - [ ] **METR-05**: Stats panel uses large fonts and high contrast, readable at a glance while running
 
 ### Run Summary
@@ -145,10 +145,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RUN-02 | Phase 2 | Complete |
 | RUN-03 | Phase 2 | Complete |
 | RUN-04 | Phase 2 | Complete |
-| METR-01 | Phase 3 | Pending |
-| METR-02 | Phase 3 | Pending |
-| METR-03 | Phase 3 | Pending |
-| METR-04 | Phase 3 | Pending |
+| METR-01 | Phase 3 | Complete |
+| METR-02 | Phase 3 | Complete |
+| METR-03 | Phase 3 | Complete |
+| METR-04 | Phase 3 | Complete |
 | METR-05 | Phase 3 | Pending |
 | NAV-01 | Phase 4 | Pending |
 | NAV-02 | Phase 4 | Pending |

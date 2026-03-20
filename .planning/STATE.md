@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-20T07:57:51.396Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-20T08:56:45.850Z"
 progress:
   total_phases: 8
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 9
+  completed_plans: 8
 ---
 
 # Project State
@@ -19,11 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Runners see the entire loop route upfront before taking a single step
-**Current focus:** Phase 02 — Run Session Lifecycle
+**Current focus:** Phase 03 — live-run-metrics
 
 ## Current Position
 
-Phase: 02 (Run Session Lifecycle) — EXECUTING
+Phase: 03 (live-run-metrics) — EXECUTING
 Plan: 2 of 2
 
 ## Performance Metrics
@@ -53,6 +53,7 @@ Plan: 2 of 2
 | Phase 01 P04 | 1min | 2 tasks | 1 files |
 | Phase 02 P01 | 2min | 1 tasks | 2 files |
 | Phase 02 P02 | 3min | 2 tasks | 4 files |
+| Phase 03 P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Timer uses wall-clock math (Date.now() - startTime - pausedDuration) not interval increments
 - [Phase 02]: Inline haversine in CrashRecoveryDialog for self-contained snapshot distance computation
 - [Phase 02]: Run controls conditionally rendered based on runStatus prop for clear state-driven UI
+- [Phase 03]: Guard computeAveragePace at < 10m distance threshold to avoid GPS noise producing infinite pace
+- [Phase 03]: Rolling pace uses 30s default window for smooth readings at typical GPS update frequency
 
 ### Pending Todos
 
@@ -88,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T07:53:57.007Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-20T08:56:45.842Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
