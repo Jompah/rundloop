@@ -25,6 +25,12 @@ Runners see the entire loop route upfront before taking a single step — no sur
 - ✓ Settings view — existing
 - ✓ History view (basic) — existing
 - ✓ Vercel deployment — existing
+- ✓ IndexedDB persistence layer (runs, routes, settings stores) — Phase 1
+- ✓ GPS position filtering (30m accuracy, 3m jitter, 12.5m/s teleport rejection) — Phase 1
+- ✓ Wake Lock API integration with iOS visibility re-acquisition — Phase 1
+- ✓ Crash recovery via periodic IndexedDB snapshots — Phase 1
+- ✓ Storage persistence request to prevent iOS 7-day eviction — Phase 1
+- ✓ localStorage to IndexedDB migration — Phase 1
 
 ### Active
 
@@ -37,7 +43,6 @@ Runners see the entire loop route upfront before taking a single step — no sur
 - [ ] Run history with IndexedDB persistence and route thumbnails
 - [ ] Save and reuse favorite routes
 - [ ] Service worker for offline app shell caching
-- [ ] Keep-screen-on via Wake Lock API during navigation
 - [ ] Progress analytics (weekly/monthly summaries, pace trends, personal records)
 - [ ] Route sharing (unique links, GPX export)
 
@@ -85,4 +90,4 @@ Runners see the entire loop route upfront before taking a single step — no sur
 | Fine granularity for phases | Complex feature set benefits from focused phases | — Pending |
 
 ---
-*Last updated: 2026-03-19 after initialization*
+*Last updated: 2026-03-20 after Phase 1 completion*
