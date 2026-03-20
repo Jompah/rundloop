@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { GeneratedRoute, TurnInstruction, FilteredPosition, AppSettings } from '@/types';
 import { speak, stopSpeaking } from '@/lib/voice';
 import { getSettings } from '@/lib/storage';
-import { formatElapsed } from '@/lib/metrics';
+import { formatElapsed, computeAveragePace, formatPace } from '@/lib/metrics';
+import { detectMilestone, formatMilestoneMessage } from '@/lib/milestones';
 import { distanceToRoute, findNearestSegmentIndex, getCompassDirection } from '@/lib/navigation';
 import RunMetricsOverlay from './RunMetricsOverlay';
 import OffRouteBanner from './OffRouteBanner';
@@ -67,6 +68,10 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
   const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5 });
   useEffect(() => { getSettings().then(setSettings); }, []);
 
+  // Milestone tracking refs
+  const announcedMilestonesRef = useRef(new Set<string>());
+  const prevDistanceRef = useRef(0);
+
   // Off-route detection state
   const [offRoute, setOffRoute] = useState(false);
   const [offRouteDirection, setOffRouteDirection] = useState('');
@@ -123,6 +128,39 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
   useEffect(() => {
     if (runStatus === 'paused') {
       stopSpeaking();
+    }
+  }, [runStatus]);
+
+  // Milestone voice announcements
+  useEffect(() => {
+    if (runStatus !== 'active' || distanceMeters <= 0) return;
+
+    const milestone = detectMilestone(
+      prevDistanceRef.current,
+      distanceMeters,
+      route.distance,
+      settings.units,
+      announcedMilestonesRef.current
+    );
+
+    prevDistanceRef.current = distanceMeters;
+
+    if (milestone) {
+      const avgPace = computeAveragePace(distanceMeters, elapsedMs);
+      const avgPaceFormatted = formatPace(avgPace, settings.units);
+      const voiceStyle = settings.voiceStyle || 'concise';
+      const message = formatMilestoneMessage(milestone, voiceStyle, settings.units, avgPaceFormatted);
+      speak(message, settings.voiceEnabled);
+
+      if (navigator.vibrate) navigator.vibrate(200);
+    }
+  }, [distanceMeters, runStatus, settings.voiceEnabled, settings.voiceStyle, settings.units, elapsedMs, route.distance]);
+
+  // Reset milestones when run resets to idle
+  useEffect(() => {
+    if (runStatus === 'idle') {
+      announcedMilestonesRef.current = new Set();
+      prevDistanceRef.current = 0;
     }
   }, [runStatus]);
 

@@ -15,6 +15,7 @@ import { generateRouteWaypoints, generateRouteAlgorithmic } from '@/lib/route-ai
 import { routeViaOSRM } from '@/lib/route-osrm';
 import { saveRoute, findNearbySavedRoutes } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
+import { unlockIOSAudio, ensureSpeechReady } from '@/lib/voice';
 import { findIncompleteRun, clearIncompleteRun } from '@/lib/crash-recovery';
 
 // Dynamic import MapView to avoid SSR issues with MapLibre
@@ -59,6 +60,17 @@ export default function Home() {
       }
     }
     checkCrashRecovery();
+  }, []);
+
+  // Reset speechSynthesis on iOS Safari when app returns from background
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        ensureSpeechReady();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   // Compute nearby saved routes whenever position or distance changes
@@ -451,7 +463,7 @@ export default function Home() {
               </span>
             </div>
             <button
-              onClick={() => { runSession.startRun(null); setView('navigate'); }}
+              onClick={() => { unlockIOSAudio(); runSession.startRun(null); setView('navigate'); }}
               className="bg-green-500 text-white px-6 py-3 rounded-xl font-semibold active:bg-green-600"
             >
               Start Run
