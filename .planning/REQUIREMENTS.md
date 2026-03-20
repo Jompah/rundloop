@@ -61,11 +61,11 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 ### UI/UX Polish
 
-- [ ] **UI-01**: Dark mode as default theme with consistent design system (typography, spacing, colors, buttons)
+- [x] **UI-01**: Dark mode as default theme with consistent design system (typography, spacing, colors, buttons)
 - [ ] **UI-02**: Fluid animations and transitions between screens (Motion library)
-- [ ] **UI-03**: Haptic feedback on key interactions (start run, pause, milestone) via Vibration API with iOS fallback
+- [x] **UI-03**: Haptic feedback on key interactions (start run, pause, milestone) via Vibration API with iOS fallback
 - [ ] **UI-04**: Mobile-first responsive design optimized for iPhone (375px-430px width)
-- [ ] **UI-05**: Clean, minimal interface with no clutter — premium feel through restraint
+- [x] **UI-05**: Clean, minimal interface with no clutter — premium feel through restraint
 
 ### Run History
 
@@ -83,9 +83,9 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 ### PWA & Offline
 
-- [ ] **PWA-01**: Service worker caches app shell for offline loading
-- [ ] **PWA-02**: App icon and splash screen configured for iOS Safari Add to Home Screen
-- [ ] **PWA-03**: Standalone display mode (no Safari chrome visible)
+- [x] **PWA-01**: Service worker caches app shell for offline loading
+- [x] **PWA-02**: App icon and splash screen configured for iOS Safari Add to Home Screen
+- [x] **PWA-03**: Standalone display mode (no Safari chrome visible)
 - [ ] **PWA-04**: Smooth 60fps interactions during map rendering and navigation
 
 ## v2 Requirements
@@ -172,14 +172,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIZ-03 | Phase 7 | Complete |
 | VIZ-04 | Phase 7 | Complete |
 | VIZ-05 | Phase 7 | Complete |
-| UI-01 | Phase 8 | Pending |
+| UI-01 | Phase 8 | Complete |
 | UI-02 | Phase 8 | Pending |
-| UI-03 | Phase 8 | Pending |
+| UI-03 | Phase 8 | Complete |
 | UI-04 | Phase 8 | Pending |
-| UI-05 | Phase 8 | Pending |
-| PWA-01 | Phase 8 | Pending |
-| PWA-02 | Phase 8 | Pending |
-| PWA-03 | Phase 8 | Pending |
+| UI-05 | Phase 8 | Complete |
+| PWA-01 | Phase 8 | Complete |
+| PWA-02 | Phase 8 | Complete |
+| PWA-03 | Phase 8 | Complete |
 | PWA-04 | Phase 8 | Pending |
 
 **Coverage:**

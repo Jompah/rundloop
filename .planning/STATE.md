@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-03-20T16:38:40.751Z"
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-03-20T21:59:07.358Z"
 progress:
   total_phases: 8
   completed_phases: 7
-  total_plans: 22
-  completed_plans: 22
+  total_plans: 25
+  completed_plans: 23
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Runners see the entire loop route upfront before taking a single step
-**Current focus:** Phase 07 — route-visualization
+**Current focus:** Phase 08 — ui-ux-pwa-polish
 
 ## Current Position
 
-Phase: 07 (route-visualization) — EXECUTING
-Plan: 3 of 3
+Phase: 08 (ui-ux-pwa-polish) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Plan: 3 of 3
 | Phase 07 P01 | 7min | 2 tasks | 3 files |
 | Phase 07 P02 | 2min | 1 tasks | 1 files |
 | Phase 07 P03 | 2min | 2 tasks | 2 files |
+| Phase 08 P01 | 8min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -117,6 +118,9 @@ Recent decisions affecting current work:
 - [Phase 07]: Elevation fetch .finally() for markers ensures render regardless of gradient success
 - [Phase 07]: Kept actual GPS trace layer unchanged (cyan on top)
 - [Phase 07]: Fire-and-forget elevation fetch: markers render immediately, gradient appears when API responds
+- [Phase 08]: PWAProvider client wrapper pattern to embed client components (SW reg + OfflineBanner) inside server layout
+- [Phase 08]: Installed motion package for AnimatePresence animations
+- [Phase 08]: Tile CDN caching with 50-entry eviction in separate sw cache bucket
 
 ### Pending Todos
 
@@ -130,6 +134,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T16:35:36.576Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-03-20T21:59:07.347Z
+Stopped at: Completed 08-01-PLAN.md
 Resume file: None
