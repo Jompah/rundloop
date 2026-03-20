@@ -26,9 +26,10 @@ export interface AppSettings {
   voiceStyle: 'concise' | 'with-pace' | 'motivational';
   units: 'km' | 'miles';
   defaultDistance: number; // km
+  bodyWeightKg?: number;
 }
 
-export type AppView = 'map' | 'generate' | 'navigate' | 'settings' | 'history';
+export type AppView = 'map' | 'generate' | 'navigate' | 'settings' | 'history' | 'summary';
 
 export type RouteMode = 'ai' | 'algorithmic';
 
