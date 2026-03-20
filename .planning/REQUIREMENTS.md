@@ -32,7 +32,7 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 - [x] **METR-01**: Current pace displayed as rolling lap pace (per-km average, not instantaneous GPS)
 - [x] **METR-02**: Total distance covered displayed in real-time
-- [x] **METR-03**: Elapsed time displayed (paused time excluded)
+- [x] **METR-03**: Elapsed time displayed (paused time excluded) *(partial — Phase 9 addresses calorie estimation wiring with bodyWeightKg from settings)*
 - [x] **METR-04**: Remaining distance to finish displayed
 - [x] **METR-05**: Stats panel uses large fonts and high contrast, readable at a glance while running
 
@@ -45,7 +45,7 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 ### Route Visualization
 
-- [x] **VIZ-01**: Smooth, anti-aliased route lines on the map
+- [x] **VIZ-01**: Smooth, anti-aliased route lines on the map *(partial — Phase 9 addresses gradient route display in RunDetailOverlay for completed runs)*
 - [x] **VIZ-02**: Colored gradient along the route indicating elevation changes (green flat, yellow/orange uphill, red steep)
 - [x] **VIZ-03**: Clear start/finish marker on the route
 - [x] **VIZ-04**: Turn indicators at key decision points along the route
@@ -65,13 +65,13 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 - [x] **UI-02**: Fluid animations and transitions between screens (Motion library)
 - [x] **UI-03**: Haptic feedback on key interactions (start run, pause, milestone) via Vibration API with iOS fallback
 - [x] **UI-04**: Mobile-first responsive design optimized for iPhone (375px-430px width)
-- [x] **UI-05**: Clean, minimal interface with no clutter — premium feel through restraint
+- [x] **UI-05**: Clean, minimal interface with no clutter — premium feel through restraint *(partial — Phase 9 addresses defaultDistance seeding from settings)*
 
 ### Run History
 
 - [x] **HIST-01**: History view lists all past runs sorted by date (newest first)
 - [x] **HIST-02**: Each history entry shows date, distance, time, pace, and small route thumbnail
-- [x] **HIST-03**: User can tap a past run to see full details and route on map
+- [x] **HIST-03**: User can tap a past run to see full details and route on map *(partial — Phase 9 addresses route polyline display and unit propagation in detail view)*
 - [x] **HIST-04**: User can delete individual runs from history
 
 ### Saved Routes
@@ -83,7 +83,7 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 ### PWA & Offline
 
-- [x] **PWA-01**: Service worker caches app shell for offline loading
+- [x] **PWA-01**: Service worker caches app shell for offline loading *(partial — Phase 10 addresses missing PWA icons and dead server route cleanup)*
 - [x] **PWA-02**: App icon and splash screen configured for iOS Safari Add to Home Screen
 - [x] **PWA-03**: Standalone display mode (no Safari chrome visible)
 - [x] **PWA-04**: Smooth 60fps interactions during map rendering and navigation
@@ -181,6 +181,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PWA-02 | Phase 8 | Complete |
 | PWA-03 | Phase 8 | Complete |
 | PWA-04 | Phase 8 | Complete |
+| HIST-03 | Phase 9 | Not started (gap closure) |
+| VIZ-01 | Phase 9 | Not started (gap closure) |
+| METR-03 | Phase 9 | Not started (gap closure) |
+| UI-05 | Phase 9 | Not started (gap closure) |
+| PWA-01 | Phase 10 | Not started (gap closure) |
 
 **Coverage:**
 - v1 requirements: 42 total

@@ -20,6 +20,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 6: Run History & Saved Routes** - Browse past runs and save/reuse favorite routes from IndexedDB
 - [ ] **Phase 7: Route Visualization** - Beautiful route rendering with elevation gradients, turn indicators, and dark-mode colors
 - [x] **Phase 8: UI/UX & PWA Polish** - Premium design system, animations, haptics, service worker, and offline shell (completed 2026-03-20)
+- [ ] **Phase 9: Cross-Phase Wiring Fixes** - Fix cross-phase data flow: route polyline in history, unit propagation, calories, default distance
+- [ ] **Phase 10: PWA Completion** - Complete PWA installability with required icons and clean up dead code
 
 ## Phase Details
 
@@ -158,10 +160,39 @@ Plans:
 - [ ] 08-02-PLAN.md — Motion animations: AnimatePresence view transitions, dialog enter/exit animations
 - [ ] 08-03-PLAN.md — Design system rollout: Button across all components, haptic wiring, viewport audit, typography consistency
 
+### Phase 9: Cross-Phase Wiring Fixes
+**Goal**: Fix cross-phase data flow: save route polyline with completed runs, propagate units/calories/defaultDistance settings to all consumers
+**Depends on**: Phase 8
+**Requirements**: HIST-03, VIZ-01, METR-03, UI-05
+**Gap Closure**: Closes integration gaps from v1.0 audit
+**Success Criteria** (what must be TRUE):
+  1. RunDetailOverlay shows planned route gradient when viewing a completed run from history
+  2. RunHistoryView and RunDetailOverlay respect the user's km/miles unit setting
+  3. RunDetailOverlay uses estimateCalories() with bodyWeightKg from settings
+  4. RouteGenerator seeds distance from settings.defaultDistance on mount
+**Plans**: TBD
+
+Plans:
+- [ ] 09-01: TBD
+
+### Phase 10: PWA Completion
+**Goal**: Complete PWA installability with required icons and clean up dead code
+**Depends on**: Phase 8
+**Requirements**: PWA-01
+**Gap Closure**: Closes PWA gap from v1.0 audit
+**Success Criteria** (what must be TRUE):
+  1. icon-192.png and icon-512.png exist in public/ and are valid PNG images
+  2. PWA manifest correctly references the icons
+  3. Dead /api/generate-route server route is removed
+**Plans**: TBD
+
+Plans:
+- [ ] 10-01: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with their respective chains since they have independent dependency paths. Phase 4 depends on Phase 2; Phase 7 depends on Phase 1.
 
@@ -175,3 +206,5 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 | 6. Run History & Saved Routes | 0/5 | Not started | - |
 | 7. Route Visualization | 0/3 | Not started | - |
 | 8. UI/UX & PWA Polish | 3/3 | Complete   | 2026-03-20 |
+| 9. Cross-Phase Wiring Fixes | 0/1 | Not started | - |
+| 10. PWA Completion | 0/1 | Not started | - |
