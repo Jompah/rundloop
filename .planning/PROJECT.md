@@ -57,13 +57,14 @@ Runners see the entire loop route upfront before taking a single step — no sur
 - ✓ Dark-mode OLED map tiles (custom dark tile style optimized for OLED screens) — Validated in Phase 7: Route Visualization
 - ✓ Start/finish markers (distinct icons at route endpoints) — Validated in Phase 7: Route Visualization
 - ✓ Turn indicators (directional arrows along route at waypoints) — Validated in Phase 7: Route Visualization
+- ✓ Premium UI/UX (Runkeeper-quality design, dark mode default, haptic feedback, fluid animations) — Validated in Phase 8: UI/UX & PWA Polish
+- ✓ Service worker for offline app shell caching — Validated in Phase 8: UI/UX & PWA Polish
+- ✓ Progress analytics (weekly/monthly summaries, pace trends, personal records) — Validated in Phase 8: UI/UX & PWA Polish
+- ✓ Route sharing (unique links, GPX export) — Validated in Phase 8: UI/UX & PWA Polish
 
 ### Active
 
-- [ ] Premium UI/UX (Runkeeper-quality design, dark mode default, haptic feedback, fluid animations)
-- [ ] Service worker for offline app shell caching
-- [ ] Progress analytics (weekly/monthly summaries, pace trends, personal records)
-- [ ] Route sharing (unique links, GPX export)
+(All requirements validated — v1.0 complete)
 
 ### Out of Scope
 
@@ -110,7 +111,7 @@ Runners see the entire loop route upfront before taking a single step — no sur
 
 ## Current State
 
-Phase 7 (Route Visualization) is complete. The app now renders elevation gradient routes with a color ramp, uses dark-mode OLED-optimized map tiles, displays distinct start/finish markers at route endpoints, and shows turn indicators at waypoints along the route. Phases 1–7 are fully validated.
+Phase 8 (UI/UX & PWA Polish) is complete. ALL 8 PHASES COMPLETE — milestone v1.0 is done. The app now features Runkeeper-quality design with dark mode default, haptic feedback, and fluid animations; a service worker for offline app shell caching; progress analytics with weekly/monthly summaries, pace trends, and personal records; and route sharing via unique links and GPX export. Phases 1–8 are fully validated.
 
 ---
-*Last updated: 2026-03-20 after Phase 7 completion*
+*Last updated: 2026-03-20 after Phase 8 completion — milestone v1.0 complete*
