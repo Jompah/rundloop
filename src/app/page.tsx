@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import RouteGenerator from '@/components/RouteGenerator';
 import NavigationView from '@/components/NavigationView';
@@ -17,7 +17,7 @@ import { getCurrentPosition, reverseGeocode, watchFilteredPosition, setFakePosit
 import { initDB, dbDelete } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
-import { findNearbySavedRoutes } from '@/lib/storage';
+import { findNearbySavedRoutes, getSettings } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
 import { unlockIOSAudio, ensureSpeechReady } from '@/lib/voice';
 import { findIncompleteRun, clearIncompleteRun } from '@/lib/crash-recovery';
@@ -81,10 +81,16 @@ export default function Home() {
   }, []);
 
   // Compute nearby saved routes whenever position or distance changes
-  const nearbyRoutes = useMemo(() => {
-    if (!userLocation) return [];
+  const [nearbyRoutes, setNearbyRoutes] = useState<GeneratedRoute[]>([]);
+  useEffect(() => {
+    if (!userLocation) {
+      setNearbyRoutes([]);
+      return;
+    }
     // userLocation is [lng, lat]
-    return findNearbySavedRoutes(userLocation[1], userLocation[0], selectedDistance);
+    findNearbySavedRoutes(userLocation[1], userLocation[0], selectedDistance)
+      .then(setNearbyRoutes)
+      .catch(() => setNearbyRoutes([]));
   }, [userLocation, selectedDistance]);
 
   const handleLoadNearby = useCallback((nearbyRoute: GeneratedRoute) => {
@@ -168,7 +174,8 @@ export default function Home() {
         if (routeMode === 'algorithmic') {
           initialWaypoints = await generateRouteAlgorithmic(startLat, startLng, distance);
         } else {
-          initialWaypoints = await generateRouteWaypoints(startLat, startLng, distance, cityName);
+          const settings = await getSettings();
+          initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings });
         }
 
         // --- Iterative distance calibration via binary search ---

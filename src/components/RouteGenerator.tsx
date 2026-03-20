@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { GeneratedRoute } from '@/types';
+import type { GeneratedRoute, RouteMode } from '@/types';
 import { saveRoute } from '@/lib/storage';
 
 export interface RouteGeneratorProps {
@@ -10,9 +10,14 @@ export interface RouteGeneratorProps {
   userLocation: [number, number] | null;
   cityName: string;
   route?: GeneratedRoute | null;
+  nearbyRoutes?: GeneratedRoute[];
+  onDistanceChange?: (distance: number) => void;
+  onLoadNearby?: (route: GeneratedRoute) => void;
+  routeMode?: RouteMode;
+  onModeChange?: (mode: RouteMode) => void;
 }
 
-export default function RouteGenerator({ onGenerate, isLoading, userLocation, cityName, route }: RouteGeneratorProps) {
+export default function RouteGenerator({ onGenerate, isLoading, userLocation, cityName, route, nearbyRoutes, onDistanceChange, onLoadNearby, routeMode, onModeChange }: RouteGeneratorProps) {
   const [distance, setDistance] = useState(5);
   const [saved, setSaved] = useState(false);
 
