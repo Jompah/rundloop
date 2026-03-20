@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-03-20T13:26:43.623Z"
+stopped_at: Completed 06-04-PLAN.md
+last_updated: "2026-03-20T13:31:38.498Z"
 progress:
   total_phases: 8
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 18
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-19)
 
 ## Current Position
 
-Phase: 06 (run-history-saved-routes) — EXECUTING
-Plan: 3 of 4
+Phase: 06 (run-history-saved-routes) — COMPLETE
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Plan: 3 of 4
 | Phase 06 P01 | 6min | 4 tasks | 8 files |
 | Phase 06 P03 | 2min | 2 tasks | 2 files |
 | Phase 06 P02 | 3min | 2 tasks | 3 files |
+| Phase 06 P04 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,8 @@ Recent decisions affecting current work:
 - [Phase 06]: Explicit save action replaces auto-save on generation for user control
 - [Phase 06]: Cloned DiscardConfirmDialog pattern for DeleteRouteDialog consistency
 - [Phase 06]: Used button elements for history cards for accessibility and keyboard support
+- [Phase 06]: Tab bar shows generate tab as active on map view
+- [Phase 06]: historyRefreshKey counter pattern for triggering RunHistoryView re-fetch after delete
 
 ### Pending Todos
 
@@ -115,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T13:26:43.615Z
-Stopped at: Completed 06-02-PLAN.md
+Last session: 2026-03-20T13:31:38.485Z
+Stopped at: Completed 06-04-PLAN.md
 Resume file: None
