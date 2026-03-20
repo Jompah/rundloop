@@ -38,9 +38,9 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 ### Run Summary
 
-- [ ] **SUMM-01**: After completing or ending a run, summary screen shows total distance, time, and average pace
-- [ ] **SUMM-02**: Summary shows map with actual GPS trace overlaid on planned route
-- [ ] **SUMM-03**: User can save or discard the completed run
+- [x] **SUMM-01**: After completing or ending a run, summary screen shows total distance, time, and average pace
+- [x] **SUMM-02**: Summary shows map with actual GPS trace overlaid on planned route
+- [x] **SUMM-03**: User can save or discard the completed run
 - [x] **SUMM-04**: Estimated calories burned displayed (based on distance and configurable body weight)
 
 ### Route Visualization
@@ -155,9 +155,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NAV-03 | Phase 4 | Complete |
 | NAV-04 | Phase 4 | Complete |
 | NAV-05 | Phase 4 | Complete |
-| SUMM-01 | Phase 5 | Pending |
-| SUMM-02 | Phase 5 | Pending |
-| SUMM-03 | Phase 5 | Pending |
+| SUMM-01 | Phase 5 | Complete |
+| SUMM-02 | Phase 5 | Complete |
+| SUMM-03 | Phase 5 | Complete |
 | SUMM-04 | Phase 5 | Complete |
 | HIST-01 | Phase 6 | Pending |
 | HIST-02 | Phase 6 | Pending |
