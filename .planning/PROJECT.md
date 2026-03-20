@@ -49,13 +49,15 @@ Runners see the entire loop route upfront before taking a single step — no sur
 - ✓ GPS trace overlay on summary map — Phase 5
 - ✓ Save/discard run at end of session — Phase 5
 - ✓ Calorie estimation from distance and elapsed time — Phase 5
+- ✓ Run history browsing with IndexedDB persistence and route thumbnails — Validated in Phase 6: Run History & Saved Routes
+- ✓ Saved routes management (save, list, reuse favorite routes) — Validated in Phase 6: Run History & Saved Routes
+- ✓ Bottom tab navigation (map/history/saved routes/settings) — Validated in Phase 6: Run History & Saved Routes
+- ✓ Gap closure for pre-existing TypeScript errors — Validated in Phase 6: Run History & Saved Routes
 
 ### Active
 
 - [ ] Beautiful route visualization (elevation gradients, turn indicators, dark-mode colors)
 - [ ] Premium UI/UX (Runkeeper-quality design, dark mode default, haptic feedback, fluid animations)
-- [ ] Run history with IndexedDB persistence and route thumbnails
-- [ ] Save and reuse favorite routes
 - [ ] Service worker for offline app shell caching
 - [ ] Progress analytics (weekly/monthly summaries, pace trends, personal records)
 - [ ] Route sharing (unique links, GPX export)
@@ -105,7 +107,7 @@ Runners see the entire loop route upfront before taking a single step — no sur
 
 ## Current State
 
-Phase 5 (Run Summary) is complete. The app now shows a post-run summary screen after every run, displaying key stats (distance, duration, pace, calories), a GPS trace overlay on the map, and save/discard controls backed by IndexedDB persistence. Phases 1–5 are fully validated.
+Phase 6 (Run History & Saved Routes) is complete. The app now includes full run history browsing with route thumbnails, saved routes management for reusing favorite routes, bottom tab navigation across map/history/saved/settings views, and resolution of pre-existing TypeScript errors. Phases 1–6 are fully validated.
 
 ---
-*Last updated: 2026-03-20 after Phase 5 completion*
+*Last updated: 2026-03-20 after Phase 6 completion*
