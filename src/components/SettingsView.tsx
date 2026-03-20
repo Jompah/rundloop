@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AppSettings } from '@/types';
 import { getSettings, saveSettings } from '@/lib/storage';
+import { Button } from '@/components/ui/Button';
 
 interface SettingsViewProps {
   onClose: () => void;
@@ -83,7 +84,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                 <button
                   key={style.value}
                   onClick={() => setSettings({ ...settings, voiceStyle: style.value })}
-                  className={`w-full py-3 px-4 rounded-xl text-left transition-colors ${
+                  className={`w-full min-h-[44px] py-3 px-4 rounded-xl text-left transition-colors ${
                     settings.voiceStyle === style.value
                       ? 'bg-green-500 text-white'
                       : 'bg-gray-800 text-gray-300 active:bg-gray-700'
@@ -173,16 +174,14 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         </div>
 
         {/* Save button */}
-        <button
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
           onClick={handleSave}
-          className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-            saved
-              ? 'bg-green-600 text-white'
-              : 'bg-green-500 text-white active:bg-green-600'
-          }`}
         >
           {saved ? 'Saved!' : 'Save Settings'}
-        </button>
+        </Button>
 
         {/* App info */}
         <div className="text-center text-xs text-gray-600 pt-4">

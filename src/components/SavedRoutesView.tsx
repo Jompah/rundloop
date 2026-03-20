@@ -6,6 +6,7 @@ import { getSavedRoutes, deleteRoute, type SavedRoute } from '@/lib/storage';
 import { dbPut } from '@/lib/db';
 import { RouteThumbnail } from './RouteThumbnail';
 import DeleteRouteDialog from './DeleteRouteDialog';
+import { Button } from '@/components/ui/Button';
 
 interface SavedRoutesViewProps {
   onRunRoute: (route: GeneratedRoute) => void;
@@ -124,19 +125,23 @@ export function SavedRoutesView({ onRunRoute }: SavedRoutesViewProps) {
                 <span className="text-sm text-gray-400">
                   {(route.route.distance / 1000).toFixed(1)} km
                 </span>
-                <button
-                  className="text-red-400 text-xs mt-1 cursor-pointer block"
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="mt-1 px-0 bg-transparent text-red-400 active:bg-transparent"
                   onClick={() => setDeleteTarget(route)}
                 >
                   Delete
-                </button>
+                </Button>
               </div>
-              <button
-                className="bg-green-500 text-white rounded-xl px-4 py-2 font-semibold shrink-0"
+              <Button
+                variant="primary"
+                size="sm"
+                className="shrink-0"
                 onClick={() => onRunRoute(route.route)}
               >
                 Run
-              </button>
+              </Button>
             </div>
           ))}
         </div>

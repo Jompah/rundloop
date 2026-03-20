@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import type { GeneratedRoute, RouteMode } from '@/types';
 import { saveRoute } from '@/lib/storage';
+import { Button } from '@/components/ui/Button';
 
 export interface RouteGeneratorProps {
   onGenerate: (distance: number) => void;
@@ -37,7 +38,7 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
   const presets = [3, 5, 7, 10, 15, 21];
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-6 z-20 safe-bottom">
+    <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-6 z-20 safe-bottom overflow-hidden">
       {/* City name */}
       <div className="text-gray-400 text-sm mb-1">
         {userLocation ? cityName || 'Getting location...' : 'Waiting for GPS...'}
@@ -55,7 +56,7 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
           <button
             key={d}
             onClick={() => setDistance(d)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors min-h-[44px] ${
               distance === d
                 ? 'bg-green-500 text-white'
                 : 'bg-gray-800 text-gray-300 active:bg-gray-700'
@@ -84,14 +85,13 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
       </div>
 
       {/* Generate button */}
-      <button
+      <Button
+        variant="primary"
+        size="lg"
+        fullWidth
         onClick={() => handleGenerate(distance)}
         disabled={isLoading || !userLocation}
-        className={`w-full py-4 rounded-xl font-semibold text-lg transition-all ${
-          isLoading || !userLocation
-            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-            : 'bg-green-500 text-white active:bg-green-600 active:scale-[0.98]'
-        }`}
+        className={isLoading || !userLocation ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : ''}
       >
         {isLoading ? (
           <span className="flex items-center justify-center gap-2">
@@ -106,21 +106,19 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
         ) : (
           `Generate ${distance} km route`
         )}
-      </button>
+      </Button>
 
       {/* Save Route button - shown after route generation */}
       {route && !isLoading && (
-        <button
+        <Button
+          variant={saved ? 'secondary' : 'primary'}
+          fullWidth
+          className={`mt-3 ${saved ? 'text-green-400 cursor-default' : ''}`}
           onClick={handleSaveRoute}
           disabled={saved}
-          className={`w-full mt-3 py-2 rounded-xl px-4 font-semibold transition-all ${
-            saved
-              ? 'bg-gray-700 text-green-400 cursor-default'
-              : 'bg-green-500 text-white active:bg-green-600 active:scale-[0.98]'
-          }`}
         >
           {saved ? 'Saved!' : 'Save Route'}
-        </button>
+        </Button>
       )}
     </div>
   );

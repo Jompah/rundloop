@@ -14,6 +14,7 @@ import { getSettings } from '@/lib/storage';
 import { fetchElevations, computeGrades } from '@/lib/elevation';
 import { addGradientRoute, addStartFinishMarkers } from '@/lib/route-visuals';
 import DiscardConfirmDialog from './DiscardConfirmDialog';
+import { Button } from '@/components/ui/Button';
 
 interface RunSummaryViewProps {
   completedRun: CompletedRun;
@@ -205,18 +206,8 @@ export default function RunSummaryView({
 
       {/* Action buttons */}
       <div className="flex gap-3 mx-4 mt-auto pb-safe">
-        <button
-          onClick={onSave}
-          className="flex-1 py-3 rounded-xl font-semibold bg-green-500 text-white active:bg-green-600"
-        >
-          Save Run
-        </button>
-        <button
-          onClick={() => setShowDiscardDialog(true)}
-          className="flex-1 py-3 rounded-xl font-semibold bg-gray-800 text-white active:bg-gray-700"
-        >
-          Discard
-        </button>
+        <Button variant="primary" fullWidth onClick={onSave}>Save Run</Button>
+        <Button variant="secondary" fullWidth onClick={() => setShowDiscardDialog(true)}>Discard</Button>
       </div>
 
       {/* Discard confirmation dialog */}

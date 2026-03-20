@@ -83,7 +83,7 @@ export function RunHistoryView({ onSelectRun, refreshKey }: RunHistoryViewProps)
                 key={run.id}
                 type="button"
                 onClick={() => onSelectRun(run)}
-                className="mx-4 mb-3 bg-gray-800 rounded-2xl p-4 flex items-center gap-4 active:bg-gray-700 cursor-pointer w-[calc(100%-2rem)] text-left"
+                className="mx-4 mb-3 bg-gray-800 rounded-2xl p-4 flex items-center gap-4 active:bg-gray-700 cursor-pointer w-[calc(100%-2rem)] text-left min-h-[44px]"
               >
                 <RouteThumbnail points={run.trace} size={80} />
                 <div className="flex-1 min-w-0">

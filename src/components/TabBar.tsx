@@ -44,12 +44,12 @@ export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-20 bg-gray-900 border-t border-gray-700 pb-[env(safe-area-inset-bottom)]">
-      <div className="flex h-12">
+      <div className="flex h-14 max-w-full">
         {tabs.map((tab) => (
           <button
             key={tab.value}
             type="button"
-            className={`flex-1 flex flex-col items-center justify-center py-1 ${
+            className={`flex-1 flex flex-col items-center justify-center py-1 min-h-[44px] ${
               activeTab === tab.value ? 'text-green-400' : 'text-gray-500'
             }`}
             onClick={() => onTabChange(tab.value)}
