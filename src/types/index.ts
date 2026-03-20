@@ -29,7 +29,7 @@ export interface AppSettings {
   bodyWeightKg?: number;
 }
 
-export type AppView = 'map' | 'generate' | 'navigate' | 'settings' | 'history' | 'summary';
+export type AppView = 'map' | 'generate' | 'navigate' | 'settings' | 'history' | 'routes' | 'summary';
 
 export type RouteMode = 'ai' | 'algorithmic';
 
@@ -59,6 +59,7 @@ export interface CompletedRun {
   distanceMeters: number;
   trace: FilteredPosition[];
   routeId: string | null;
+  routePolyline?: [number, number][]; // [lng, lat] planned route at time of run
 }
 
 export type Run = ActiveRunSnapshot | CompletedRun;

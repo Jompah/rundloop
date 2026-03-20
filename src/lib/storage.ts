@@ -10,6 +10,7 @@ const defaultSettings: AppSettings = {
 
 export interface SavedRoute {
   id: string;
+  name?: string; // User-editable name, auto-generated if absent
   route: GeneratedRoute;
   city: string;
   createdAt: string;
@@ -41,9 +42,11 @@ export async function getSavedRoutes(): Promise<SavedRoute[]> {
   }
 }
 
-export async function saveRoute(route: GeneratedRoute, city: string): Promise<SavedRoute> {
+export async function saveRoute(route: GeneratedRoute, city: string, name?: string): Promise<SavedRoute> {
+  const autoName = name || `${(route.distance / 1000).toFixed(1)} km route - ${new Date().toLocaleDateString('en', { month: 'short', day: 'numeric' })}`;
   const saved: SavedRoute = {
     id: crypto.randomUUID(),
+    name: autoName,
     route,
     city,
     createdAt: new Date().toISOString(),
