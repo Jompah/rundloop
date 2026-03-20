@@ -135,6 +135,43 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           />
         </div>
 
+        {/* Body Weight */}
+        <div>
+          <label className="text-sm font-medium text-gray-400 block mb-2">
+            Body Weight
+          </label>
+          <div className="relative">
+            <input
+              type="number"
+              min={30}
+              max={300}
+              placeholder={settings.units === 'miles' ? '154' : '70'}
+              value={
+                settings.bodyWeightKg != null
+                  ? settings.units === 'miles'
+                    ? Math.round(settings.bodyWeightKg * 2.20462)
+                    : settings.bodyWeightKg
+                  : ''
+              }
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === '') {
+                  setSettings({ ...settings, bodyWeightKg: undefined });
+                  return;
+                }
+                const val = parseFloat(raw);
+                if (isNaN(val)) return;
+                const kg = settings.units === 'miles' ? val / 2.20462 : val;
+                setSettings({ ...settings, bodyWeightKg: Math.round(kg) });
+              }}
+              className="bg-gray-800 text-white rounded-lg px-4 py-3 w-full pr-14"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+              {settings.units === 'miles' ? 'lbs' : 'kg'}
+            </span>
+          </div>
+        </div>
+
         {/* Save button */}
         <button
           onClick={handleSave}
