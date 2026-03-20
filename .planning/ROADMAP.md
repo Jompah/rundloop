@@ -33,9 +33,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Teleporting GPS readings (speed > 45 km/h) are rejected
   4. Screen stays on during active navigation via Wake Lock API
   5. Storage persistence is requested on app launch to prevent iOS 7-day eviction
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
+- [ ] 01-00-PLAN.md — Test infrastructure (vitest, fake-indexeddb, test stubs)
 - [ ] 01-01-PLAN.md — IndexedDB layer, types, migration, storage persistence
 - [ ] 01-02-PLAN.md — GPS filter pipeline and Wake Lock manager
 - [ ] 01-03-PLAN.md — Crash recovery snapshots and GPS error resilience
@@ -152,7 +153,7 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Storage & GPS Foundation | 0/3 | Planning complete | - |
+| 1. Storage & GPS Foundation | 0/4 | Planning complete | - |
 | 2. Run Session Lifecycle | 0/1 | Not started | - |
 | 3. Live Run Metrics | 0/1 | Not started | - |
 | 4. Navigation Polish | 0/1 | Not started | - |
