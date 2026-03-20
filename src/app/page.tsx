@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import dynamic from 'next/dynamic';
 import RouteGenerator from '@/components/RouteGenerator';
 import NavigationView from '@/components/NavigationView';
@@ -324,21 +325,108 @@ export default function Home() {
         </div>
       )}
 
-      {/* Bottom panel - Route Generator */}
-      {view === 'generate' && (
-        <RouteGenerator
-          onGenerate={handleGenerate}
-          isLoading={isLoading}
-          userLocation={userLocation}
-          cityName={cityName}
-          route={route}
-          nearbyRoutes={nearbyRoutes}
-          onDistanceChange={setSelectedDistance}
-          onLoadNearby={handleLoadNearby}
-          routeMode={routeMode}
-          onModeChange={setRouteMode}
-        />
-      )}
+      {/* Animated view panels */}
+      <AnimatePresence mode="wait">
+        {/* Bottom panel - Route Generator */}
+        {view === 'generate' && (
+          <motion.div
+            key="generate"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+          >
+            <RouteGenerator
+              onGenerate={handleGenerate}
+              isLoading={isLoading}
+              userLocation={userLocation}
+              cityName={cityName}
+              route={route}
+              nearbyRoutes={nearbyRoutes}
+              onDistanceChange={setSelectedDistance}
+              onLoadNearby={handleLoadNearby}
+              routeMode={routeMode}
+              onModeChange={setRouteMode}
+            />
+          </motion.div>
+        )}
+
+        {/* Settings overlay */}
+        {view === 'settings' && (
+          <motion.div
+            key="settings"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+          >
+            <SettingsView onClose={() => setView('generate')} />
+          </motion.div>
+        )}
+
+        {/* History view */}
+        {view === 'history' && (
+          <motion.div
+            key="history"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+          >
+            <RunHistoryView
+              onSelectRun={(run) => setSelectedRun(run)}
+              refreshKey={historyRefreshKey}
+            />
+          </motion.div>
+        )}
+
+        {/* Saved routes view */}
+        {view === 'routes' && (
+          <motion.div
+            key="routes"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+          >
+            <SavedRoutesView
+              onRunRoute={(savedRoute) => {
+                setRoute(savedRoute);
+                setView('map');
+              }}
+            />
+          </motion.div>
+        )}
+
+        {/* Summary view */}
+        {view === 'summary' && completedRunData && (
+          <motion.div
+            key="summary"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+          >
+            <RunSummaryView
+              completedRun={completedRunData}
+              route={route}
+              onSave={() => {
+                setCompletedRunData(null);
+                runSession.reset();
+                setRoute(null);
+                setView('generate');
+              }}
+              onDiscard={async () => {
+                await dbDelete('runs', completedRunData.id);
+                setCompletedRunData(null);
+                runSession.reset();
+                setRoute(null);
+                setView('generate');
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Navigation bar */}
       <nav className="absolute top-4 right-4 z-20 flex gap-2">
@@ -393,29 +481,6 @@ export default function Home() {
         </button>
       </nav>
 
-      {/* Settings overlay */}
-      {view === 'settings' && (
-        <SettingsView onClose={() => setView('generate')} />
-      )}
-
-      {/* History view */}
-      {view === 'history' && (
-        <RunHistoryView
-          onSelectRun={(run) => setSelectedRun(run)}
-          refreshKey={historyRefreshKey}
-        />
-      )}
-
-      {/* Saved routes view */}
-      {view === 'routes' && (
-        <SavedRoutesView
-          onRunRoute={(savedRoute) => {
-            setRoute(savedRoute);
-            setView('map');
-          }}
-        />
-      )}
-
       {/* Navigation overlay */}
       {view === 'navigate' && route && (
         <NavigationView
@@ -429,28 +494,6 @@ export default function Home() {
           onPause={() => runSession.pauseRun()}
           onResume={() => runSession.resumeRun()}
           onEndRun={() => setShowEndRunDialog(true)}
-        />
-      )}
-
-      {/* End Run confirmation dialog */}
-      {/* Summary view */}
-      {view === 'summary' && completedRunData && (
-        <RunSummaryView
-          completedRun={completedRunData}
-          route={route}
-          onSave={() => {
-            setCompletedRunData(null);
-            runSession.reset();
-            setRoute(null);
-            setView('generate');
-          }}
-          onDiscard={async () => {
-            await dbDelete('runs', completedRunData.id);
-            setCompletedRunData(null);
-            runSession.reset();
-            setRoute(null);
-            setView('generate');
-          }}
         />
       )}
 
@@ -497,7 +540,12 @@ export default function Home() {
 
       {/* Route info bar */}
       {route && view === 'map' && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-4 z-20 safe-bottom">
+        <motion.div
+          className="absolute bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-4 z-20 safe-bottom"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
+        >
           <div className="flex items-center justify-between">
             <div>
               <span className="text-2xl font-bold text-white">
@@ -524,7 +572,7 @@ export default function Home() {
             </svg>
             Ny rutt
           </button>
-        </div>
+        </motion.div>
       )}
 
       {/* Tab bar - visible on generate, history, routes, map */}
