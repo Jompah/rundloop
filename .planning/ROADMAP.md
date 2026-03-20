@@ -115,10 +115,13 @@ Plans:
   3. User can delete individual runs from history
   4. User can save a generated route as a favorite and see it in a saved routes list with name, distance, and thumbnail
   5. User can load a saved route onto the map and start navigation from it
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01-PLAN.md — Types extension, RouteThumbnail, TabBar, Save Route button
+- [ ] 06-02-PLAN.md — RunHistoryView, RunDetailOverlay, DeleteRunDialog
+- [ ] 06-03-PLAN.md — SavedRoutesView with inline rename, DeleteRouteDialog
+- [ ] 06-04-PLAN.md — page.tsx integration: wire TabBar, all new views, remove old HistoryView
 
 ### Phase 7: Route Visualization
 **Goal**: Routes on the map look beautiful — elevation gradients, clear markers, and turn indicators make the route a visual product
@@ -164,6 +167,6 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 | 3. Live Run Metrics | 0/2 | Not started | - |
 | 4. Navigation Polish | 0/3 | Not started | - |
 | 5. Run Summary | 0/2 | Not started | - |
-| 6. Run History & Saved Routes | 0/1 | Not started | - |
+| 6. Run History & Saved Routes | 0/4 | Not started | - |
 | 7. Route Visualization | 0/1 | Not started | - |
 | 8. UI/UX & PWA Polish | 0/1 | Not started | - |
