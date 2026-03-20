@@ -51,10 +51,11 @@ Plans:
   2. User can pause a run and resume it with timer and GPS tracking pausing/resuming correctly
   3. User can end a run and sees a confirmation dialog before the run is finalized
   4. If the app crashes or is killed during a run, relaunch detects the interrupted run and offers recovery or discard
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — useRunSession hook with reducer state machine, side effects, and unit tests
+- [ ] 02-02-PLAN.md — UI dialogs, NavigationView controls, page.tsx wiring with crash recovery
 
 ### Phase 3: Live Run Metrics
 **Goal**: Runners see accurate, glanceable live stats during their run — the single most important screen in a running app
@@ -155,7 +156,7 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Storage & GPS Foundation | 4/5 | Complete    | 2026-03-20 |
-| 2. Run Session Lifecycle | 0/1 | Not started | - |
+| 2. Run Session Lifecycle | 0/2 | Not started | - |
 | 3. Live Run Metrics | 0/1 | Not started | - |
 | 4. Navigation Polish | 0/1 | Not started | - |
 | 5. Run Summary | 0/1 | Not started | - |
