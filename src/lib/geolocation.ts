@@ -7,10 +7,42 @@ export interface GeoPosition {
   timestamp: number;
 }
 
+// --- Fake GPS ---
+let fakePosition: { lat: number; lng: number } | null = null;
+let nextFakeWatchId = -1;
+
+export function setFakePosition(lat: number, lng: number) {
+  fakePosition = { lat, lng };
+}
+
+export function clearFakePosition() {
+  fakePosition = null;
+}
+
+export function isFakeGPS(): boolean {
+  return fakePosition !== null;
+}
+
+function buildFakeGeoPosition(): GeoPosition {
+  return {
+    lat: fakePosition!.lat,
+    lng: fakePosition!.lng,
+    accuracy: 10,
+    heading: null,
+    speed: null,
+    timestamp: Date.now(),
+  };
+}
+
 export function watchPosition(
   onUpdate: (pos: GeoPosition) => void,
   onError: (err: GeolocationPositionError) => void
 ): number {
+  if (fakePosition) {
+    onUpdate(buildFakeGeoPosition());
+    const id = nextFakeWatchId--;
+    return id;
+  }
   return navigator.geolocation.watchPosition(
     (position) => {
       onUpdate({
@@ -32,6 +64,9 @@ export function watchPosition(
 }
 
 export function getCurrentPosition(): Promise<GeoPosition> {
+  if (fakePosition) {
+    return Promise.resolve(buildFakeGeoPosition());
+  }
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -65,3 +100,5 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
     return 'Unknown';
   }
 }
+
+export { watchFilteredPosition } from './gps-filter';
