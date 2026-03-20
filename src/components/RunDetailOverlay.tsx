@@ -12,6 +12,8 @@ import {
   formatPace,
   computeAveragePace,
 } from '@/lib/metrics';
+import { fetchElevations, computeGrades } from '@/lib/elevation';
+import { addGradientRoute, addStartFinishMarkers } from '@/lib/route-visuals';
 import DeleteRunDialog from './DeleteRunDialog';
 
 interface RunDetailOverlayProps {
@@ -56,32 +58,25 @@ export function RunDetailOverlay({ run, onClose, onDelete }: RunDetailOverlayPro
     map.on('load', () => {
       const bounds = new maplibregl.LngLatBounds();
 
-      // Add planned route polyline (green, underneath)
+      // Add planned route with elevation gradient (underneath)
       if (routePolyline && routePolyline.length > 0) {
         routePolyline.forEach((coord) => bounds.extend(coord as [number, number]));
 
-        map.addSource('planned-route', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-              type: 'LineString',
-              coordinates: routePolyline,
-            },
-          },
-        });
+        // Fetch elevation data and render gradient route
+        fetchElevations(routePolyline)
+          .then((elevations) => {
+            const grades = computeGrades(routePolyline, elevations);
+            addGradientRoute(map, routePolyline, grades, 'planned-route', 'planned-route-gradient');
+            map.setPaintProperty('planned-route-gradient', 'line-width', 3);
+          })
+          .catch(() => {
+            // Fallback: render gradient route with empty grades (solid green)
+            addGradientRoute(map, routePolyline, [], 'planned-route', 'planned-route-gradient');
+            map.setPaintProperty('planned-route-gradient', 'line-width', 3);
+          });
 
-        map.addLayer({
-          id: 'planned-route-layer',
-          type: 'line',
-          source: 'planned-route',
-          paint: {
-            'line-color': '#4ade80',
-            'line-width': 3,
-            'line-opacity': 0.6,
-          },
-        });
+        // Add start/finish markers on the planned route
+        addStartFinishMarkers(map, routePolyline);
       }
 
       // Add actual trace polyline (cyan, on top)
