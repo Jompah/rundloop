@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-03-20T10:41:57.772Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-20T11:48:00.856Z"
 progress:
   total_phases: 8
   completed_phases: 4
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 14
+  completed_plans: 13
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Runners see the entire loop route upfront before taking a single step
-**Current focus:** Phase 04 — navigation-polish
+**Current focus:** Phase 05 — run-summary
 
 ## Current Position
 
-Phase: 04 (navigation-polish) — EXECUTING
-Plan: 3 of 3
+Phase: 05 (run-summary) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Plan: 3 of 3
 | Phase 04 P01 | 3min | 2 tasks | 6 files |
 | Phase 04 P02 | 4min | 2 tasks | 9 files |
 | Phase 04 P03 | 3min | 2 tasks | 5 files |
+| Phase 05 P01 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,8 @@ Recent decisions affecting current work:
 - [Phase 04]: All speak() calls pass settings.voiceEnabled for NAV-04 mute compliance
 - [Phase 04]: voiceStyle default is concise for minimal distraction during runs
 - [Phase 04]: Milestone reset on runStatus=idle to support multiple runs per session
+- [Phase 05]: Body weight stored internally as kg; converted to lbs for display when units=miles
+- [Phase 05]: bodyWeightKg optional on AppSettings; fallback 70kg in display code
 
 ### Pending Todos
 
@@ -104,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T10:35:56.605Z
-Stopped at: Completed 04-03-PLAN.md
+Last session: 2026-03-20T11:48:00.846Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
