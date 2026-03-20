@@ -54,13 +54,24 @@ export function watchPosition(
         timestamp: position.timestamp,
       });
     },
-    onError,
+    (err) => {
+      console.warn('GPS error:', err.code, err.message);
+      onError(err);
+    },
     {
       enableHighAccuracy: true,
-      maximumAge: 5000,
-      timeout: 15000,
+      maximumAge: 3000,
+      timeout: 10000,
     }
   );
+}
+
+export function clearWatch(watchId: number): void {
+  if (watchId < 0) {
+    // Fake watch ID — no-op
+    return;
+  }
+  navigator.geolocation.clearWatch(watchId);
 }
 
 export function getCurrentPosition(): Promise<GeoPosition> {
