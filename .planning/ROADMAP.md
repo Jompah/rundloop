@@ -134,10 +134,12 @@ Plans:
   3. Start and finish point is clearly marked on every route
   4. Turn indicators appear at key decision points along the route
   5. All route colors and markers use a dark-mode-optimized palette that looks premium on OLED screens
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: TBD
+- [ ] 07-01-PLAN.md — TDD: elevation pipeline, grade computation, gradient expression, turn filtering, route-visuals utilities
+- [ ] 07-02-PLAN.md — MapView upgrade: dark tiles, gradient route, start/finish markers, turn indicators
+- [ ] 07-03-PLAN.md — RunSummaryView and RunDetailOverlay gradient route upgrade
 
 ### Phase 8: UI/UX & PWA Polish
 **Goal**: The app feels as polished as Runkeeper — consistent design system, fluid animations, haptic feedback, and offline-capable PWA
@@ -169,5 +171,5 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 | 4. Navigation Polish | 0/3 | Not started | - |
 | 5. Run Summary | 0/2 | Not started | - |
 | 6. Run History & Saved Routes | 0/5 | Not started | - |
-| 7. Route Visualization | 0/1 | Not started | - |
+| 7. Route Visualization | 0/3 | Not started | - |
 | 8. UI/UX & PWA Polish | 0/1 | Not started | - |
