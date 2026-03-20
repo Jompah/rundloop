@@ -185,10 +185,10 @@ Plans:
   1. icon-192.png and icon-512.png exist in public/ and are valid PNG images
   2. PWA manifest correctly references the icons
   3. Dead /api/generate-route server route is removed
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 10-01: TBD
+- [ ] 10-01-PLAN.md — Generate PWA icons, remove dead /api/generate-route server route
 
 ## Progress
 
