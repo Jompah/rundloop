@@ -20,11 +20,42 @@ export interface TurnInstruction {
 }
 
 export interface AppSettings {
-  apiProvider: 'claude' | 'perplexity';
-  apiKey: string;
+  apiProvider?: 'claude' | 'perplexity';
+  apiKey?: string;
   voiceEnabled: boolean;
   units: 'km' | 'miles';
   defaultDistance: number; // km
 }
 
 export type AppView = 'map' | 'generate' | 'navigate' | 'settings' | 'history';
+
+export type RouteMode = 'ai' | 'algorithmic';
+
+export interface FilteredPosition {
+  lat: number;
+  lng: number;
+  accuracy: number;
+  timestamp: number;
+  speed: number | null;
+}
+
+export interface ActiveRunSnapshot {
+  id: string;
+  startTime: number;
+  elapsedMs: number;
+  paused: boolean;
+  routeId: string | null;
+  trace: FilteredPosition[];
+}
+
+export interface CompletedRun {
+  id: string;
+  startTime: number;
+  endTime: number;
+  elapsedMs: number;
+  distanceMeters: number;
+  trace: FilteredPosition[];
+  routeId: string | null;
+}
+
+export type Run = ActiveRunSnapshot | CompletedRun;
