@@ -83,10 +83,12 @@ Plans:
   3. Voice cues announce distance milestones ("1 kilometer completed", "Halfway point")
   4. Runner can mute/unmute voice navigation without stopping the run
   5. Voice navigation works on iOS Safari in standalone PWA mode (audio context unlocked on user gesture)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — TDD: pure navigation/milestone/voice utility functions with comprehensive tests
+- [ ] 04-02-PLAN.md — Heading threading, MapView auto-rotation, off-route detection banner
+- [ ] 04-03-PLAN.md — Milestone voice wiring, voice style settings UI, iOS audio unlock
 
 ### Phase 5: Run Summary
 **Goal**: After finishing a run, the runner sees a reward screen with their achievement and can save or discard the result
@@ -159,7 +161,7 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 | 1. Storage & GPS Foundation | 4/5 | Complete    | 2026-03-20 |
 | 2. Run Session Lifecycle | 2/2 | Complete    | 2026-03-20 |
 | 3. Live Run Metrics | 0/2 | Not started | - |
-| 4. Navigation Polish | 0/1 | Not started | - |
+| 4. Navigation Polish | 0/3 | Not started | - |
 | 5. Run Summary | 0/1 | Not started | - |
 | 6. Run History & Saved Routes | 0/1 | Not started | - |
 | 7. Route Visualization | 0/1 | Not started | - |
