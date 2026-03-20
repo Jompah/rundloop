@@ -40,7 +40,7 @@ Plans:
 - [ ] 01-01-PLAN.md — IndexedDB layer, types, migration, storage persistence
 - [ ] 01-02-PLAN.md — GPS filter pipeline and Wake Lock manager
 - [ ] 01-03-PLAN.md — Crash recovery snapshots and GPS error resilience
-- [ ] 01-04-PLAN.md — Gap closure: wire initDB() on app mount, document GPS filter Phase 2 dependency
+- [x] 01-04-PLAN.md — Gap closure: wire initDB() on app mount, document GPS filter Phase 2 dependency (completed 2026-03-20)
 
 ### Phase 2: Run Session Lifecycle
 **Goal**: Users can start, pause, resume, and end runs with impossible states prevented and crash recovery built in
@@ -156,7 +156,7 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Storage & GPS Foundation | 4/5 | Complete    | 2026-03-20 |
-| 2. Run Session Lifecycle | 2/2 | Complete   | 2026-03-20 |
+| 2. Run Session Lifecycle | 2/2 | Complete    | 2026-03-20 |
 | 3. Live Run Metrics | 0/1 | Not started | - |
 | 4. Navigation Polish | 0/1 | Not started | - |
 | 5. Run Summary | 0/1 | Not started | - |
