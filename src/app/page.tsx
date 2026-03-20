@@ -15,7 +15,7 @@ import CrashRecoveryDialog from '@/components/CrashRecoveryDialog';
 import RunSummaryView from '@/components/RunSummaryView';
 import { GeneratedRoute, AppView, RouteMode, RouteWaypoint, ActiveRunSnapshot, CompletedRun } from '@/types';
 import { getCurrentPosition, reverseGeocode, watchFilteredPosition, setFakePosition, clearFakePosition, isFakeGPS } from '@/lib/geolocation';
-import { initDB, dbDelete } from '@/lib/db';
+import { initDB, dbDelete, dbPut } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
 import { findNearbySavedRoutes, getSettings } from '@/lib/storage';
@@ -505,6 +505,12 @@ export default function Home() {
           <EndRunDialog
             onConfirm={async () => {
               const completed = await runSession.endRun();
+              // Attach planned route polyline for history detail view
+              if (route?.polyline) {
+                completed.routePolyline = route.polyline;
+                // Re-save with polyline attached
+                await dbPut('runs', completed);
+              }
               setCompletedRunData(completed);
               setShowEndRunDialog(false);
               setView('summary');
