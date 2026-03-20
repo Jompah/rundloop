@@ -69,10 +69,10 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 ### Run History
 
-- [ ] **HIST-01**: History view lists all past runs sorted by date (newest first)
-- [ ] **HIST-02**: Each history entry shows date, distance, time, pace, and small route thumbnail
-- [ ] **HIST-03**: User can tap a past run to see full details and route on map
-- [ ] **HIST-04**: User can delete individual runs from history
+- [x] **HIST-01**: History view lists all past runs sorted by date (newest first)
+- [x] **HIST-02**: Each history entry shows date, distance, time, pace, and small route thumbnail
+- [x] **HIST-03**: User can tap a past run to see full details and route on map
+- [x] **HIST-04**: User can delete individual runs from history
 
 ### Saved Routes
 
@@ -159,10 +159,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SUMM-02 | Phase 5 | Complete |
 | SUMM-03 | Phase 5 | Complete |
 | SUMM-04 | Phase 5 | Complete |
-| HIST-01 | Phase 6 | Pending |
-| HIST-02 | Phase 6 | Pending |
-| HIST-03 | Phase 6 | Pending |
-| HIST-04 | Phase 6 | Pending |
+| HIST-01 | Phase 6 | Complete |
+| HIST-02 | Phase 6 | Complete |
+| HIST-03 | Phase 6 | Complete |
+| HIST-04 | Phase 6 | Complete |
 | ROUT-01 | Phase 6 | Complete |
 | ROUT-02 | Phase 6 | Complete |
 | ROUT-03 | Phase 6 | Complete |
