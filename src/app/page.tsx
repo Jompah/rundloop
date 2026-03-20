@@ -8,9 +8,10 @@ import SettingsView from '@/components/SettingsView';
 import HistoryView from '@/components/HistoryView';
 import EndRunDialog from '@/components/EndRunDialog';
 import CrashRecoveryDialog from '@/components/CrashRecoveryDialog';
-import { GeneratedRoute, AppView, RouteMode, RouteWaypoint, ActiveRunSnapshot } from '@/types';
+import RunSummaryView from '@/components/RunSummaryView';
+import { GeneratedRoute, AppView, RouteMode, RouteWaypoint, ActiveRunSnapshot, CompletedRun } from '@/types';
 import { getCurrentPosition, reverseGeocode, watchFilteredPosition, setFakePosition, clearFakePosition, isFakeGPS } from '@/lib/geolocation';
-import { initDB } from '@/lib/db';
+import { initDB, dbDelete } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
 import { saveRoute, findNearbySavedRoutes } from '@/lib/storage';
@@ -44,6 +45,7 @@ export default function Home() {
   const [routeMode, setRouteMode] = useState<RouteMode>('algorithmic');
   const [recoverySnapshot, setRecoverySnapshot] = useState<ActiveRunSnapshot | null>(null);
   const [showEndRunDialog, setShowEndRunDialog] = useState(false);
+  const [completedRunData, setCompletedRunData] = useState<CompletedRun | null>(null);
   const runSession = useRunSession();
 
   // Initialize IndexedDB: migration + persistent storage
@@ -422,13 +424,35 @@ export default function Home() {
       )}
 
       {/* End Run confirmation dialog */}
+      {/* Summary view */}
+      {view === 'summary' && completedRunData && (
+        <RunSummaryView
+          completedRun={completedRunData}
+          route={route}
+          onSave={() => {
+            setCompletedRunData(null);
+            runSession.reset();
+            setRoute(null);
+            setView('generate');
+          }}
+          onDiscard={async () => {
+            await dbDelete('runs', completedRunData.id);
+            setCompletedRunData(null);
+            runSession.reset();
+            setRoute(null);
+            setView('generate');
+          }}
+        />
+      )}
+
+      {/* End Run confirmation dialog */}
       {showEndRunDialog && (
         <EndRunDialog
           onConfirm={async () => {
-            await runSession.endRun();
+            const completed = await runSession.endRun();
+            setCompletedRunData(completed);
             setShowEndRunDialog(false);
-            runSession.reset();
-            setView('map');
+            setView('summary');
           }}
           onCancel={() => setShowEndRunDialog(false)}
         />
