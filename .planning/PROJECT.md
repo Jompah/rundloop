@@ -36,12 +36,16 @@ Runners see the entire loop route upfront before taking a single step — no sur
 - ✓ End run with confirmation dialog — Phase 2
 - ✓ Crash recovery detection and resume/discard dialog — Phase 2
 - ✓ GPS filter wired into app (watchFilteredPosition replaces watchPosition) — Phase 2
+- ✓ Rolling pace calculation (30 s sliding window over GPS samples) — Phase 3
+- ✓ Live distance accumulation from filtered GPS positions — Phase 3
+- ✓ Elapsed time display (timer driven by run session state machine) — Phase 3
+- ✓ Remaining distance overlay (route geometry minus completed distance) — Phase 3
+- ✓ Live run metrics overlay wired into NavigationView — Phase 3
 
 ### Active
 
 - [ ] Beautiful route visualization (elevation gradients, turn indicators, dark-mode colors)
 - [ ] Polished GPS navigation (map auto-rotation, off-route detection, distance milestones)
-- [ ] Live run metrics overlay (pace, distance, elapsed time, remaining distance)
 - [ ] Run summary screen (stats, GPS trace overlay, save/discard)
 - [ ] Premium UI/UX (Runkeeper-quality design, dark mode default, haptic feedback, fluid animations)
 - [ ] Run history with IndexedDB persistence and route thumbnails
@@ -94,4 +98,4 @@ Runners see the entire loop route upfront before taking a single step — no sur
 | Fine granularity for phases | Complex feature set benefits from focused phases | — Pending |
 
 ---
-*Last updated: 2026-03-20 after Phase 2 completion*
+*Last updated: 2026-03-20 after Phase 3 completion*
