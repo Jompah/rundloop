@@ -151,10 +151,12 @@ Plans:
   3. Key interactions (start run, pause, milestone) trigger haptic feedback on supported devices
   4. All screens are optimized for iPhone viewport (375-430px) with no horizontal scroll or overflow
   5. Service worker caches app shell so the app loads offline after first visit
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 08-01: TBD
+- [ ] 08-01-PLAN.md — Core infrastructure: Button component, haptics utility, OfflineBanner, service worker, manifest, layout meta
+- [ ] 08-02-PLAN.md — Motion animations: AnimatePresence view transitions, dialog enter/exit animations
+- [ ] 08-03-PLAN.md — Design system rollout: Button across all components, haptic wiring, viewport audit, typography consistency
 
 ## Progress
 
@@ -172,4 +174,4 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 | 5. Run Summary | 0/2 | Not started | - |
 | 6. Run History & Saved Routes | 0/5 | Not started | - |
 | 7. Route Visualization | 0/3 | Not started | - |
-| 8. UI/UX & PWA Polish | 0/1 | Not started | - |
+| 8. UI/UX & PWA Polish | 0/3 | Not started | - |
