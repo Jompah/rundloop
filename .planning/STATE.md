@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-04-PLAN.md
-last_updated: "2026-03-20T07:05:16.787Z"
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-20T07:48:51.904Z"
 progress:
   total_phases: 8
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Runners see the entire loop route upfront before taking a single step
-**Current focus:** Phase 01 — Storage & GPS Foundation
+**Current focus:** Phase 02 — Run Session Lifecycle
 
 ## Current Position
 
-Phase: 01 (Storage & GPS Foundation) — COMPLETE
-Plan: 5 of 5
+Phase: 02 (Run Session Lifecycle) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Plan: 5 of 5
 | Phase 01 P02 | 5min | 2 tasks | 6 files |
 | Phase 01 P03 | 2min | 2 tasks | 2 files |
 | Phase 01 P04 | 1min | 2 tasks | 1 files |
+| Phase 02 P01 | 2min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,9 @@ Recent decisions affecting current work:
 - [Phase 01]: Snapshot overwrites same run ID to avoid row accumulation in IndexedDB
 - [Phase 01]: Incomplete run detection uses duck typing (absence of endTime) to distinguish snapshot from completed run
 - [Phase 01]: Fire-and-forget initDB() -- no await needed since getDB() singleton handles ordering
+- [Phase 02]: Exported runReducer and computeDistance as named exports for direct unit testing without React rendering
+- [Phase 02]: Used useRef for trace and timing data to avoid re-renders on every GPS point
+- [Phase 02]: Timer uses wall-clock math (Date.now() - startTime - pausedDuration) not interval increments
 
 ### Pending Todos
 
@@ -81,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T07:02:23.214Z
-Stopped at: Completed 01-04-PLAN.md
+Last session: 2026-03-20T07:48:51.897Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None

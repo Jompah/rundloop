@@ -23,8 +23,8 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 ### Run Session Lifecycle
 
-- [ ] **RUN-01**: Run session state machine (idle → active → paused → completed) prevents impossible states
-- [ ] **RUN-02**: User can pause and resume a run with timer and GPS tracking pausing/resuming correctly
+- [x] **RUN-01**: Run session state machine (idle → active → paused → completed) prevents impossible states
+- [x] **RUN-02**: User can pause and resume a run with timer and GPS tracking pausing/resuming correctly
 - [ ] **RUN-03**: User can end a run with confirmation dialog
 - [ ] **RUN-04**: Crashed/interrupted runs are detected on app relaunch with option to recover or discard
 
@@ -141,8 +141,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STOR-02 | Phase 1 | Complete |
 | STOR-03 | Phase 1 | Complete |
 | STOR-04 | Phase 1 | Complete |
-| RUN-01 | Phase 2 | Pending |
-| RUN-02 | Phase 2 | Pending |
+| RUN-01 | Phase 2 | Complete |
+| RUN-02 | Phase 2 | Complete |
 | RUN-03 | Phase 2 | Pending |
 | RUN-04 | Phase 2 | Pending |
 | METR-01 | Phase 3 | Pending |
