@@ -84,7 +84,9 @@ export default function Home() {
         const city = await reverseGeocode(pos.lat, pos.lng);
         setCityName(city);
 
-        // Start watching for updates
+        // TODO(Phase-2): Replace watchPosition with watchFilteredPosition from '@/lib/geolocation'
+        // to activate GPS accuracy/teleport/jitter filtering (GPS-01). Filter is implemented and
+        // tested in gps-filter.ts but intentionally not wired until the run session lifecycle exists.
         watchId = watchPosition(
           (pos) => setUserLocation([pos.lng, pos.lat]),
           (err) => console.warn('GPS error:', err.message)
