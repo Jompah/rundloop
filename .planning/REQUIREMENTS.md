@@ -34,7 +34,7 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 - [x] **METR-02**: Total distance covered displayed in real-time
 - [x] **METR-03**: Elapsed time displayed (paused time excluded)
 - [x] **METR-04**: Remaining distance to finish displayed
-- [ ] **METR-05**: Stats panel uses large fonts and high contrast, readable at a glance while running
+- [x] **METR-05**: Stats panel uses large fonts and high contrast, readable at a glance while running
 
 ### Run Summary
 
@@ -149,7 +149,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | METR-02 | Phase 3 | Complete |
 | METR-03 | Phase 3 | Complete |
 | METR-04 | Phase 3 | Complete |
-| METR-05 | Phase 3 | Pending |
+| METR-05 | Phase 3 | Complete |
 | NAV-01 | Phase 4 | Pending |
 | NAV-02 | Phase 4 | Pending |
 | NAV-03 | Phase 4 | Pending |
