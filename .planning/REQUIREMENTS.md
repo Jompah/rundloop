@@ -76,7 +76,7 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 ### Saved Routes
 
-- [ ] **ROUT-01**: User can save a generated route as a favorite (before or after running it)
+- [x] **ROUT-01**: User can save a generated route as a favorite (before or after running it)
 - [ ] **ROUT-02**: List of saved routes with name, distance, and thumbnail
 - [ ] **ROUT-03**: User can re-run a saved route (load onto map and start navigation)
 - [ ] **ROUT-04**: User can rename saved routes
@@ -163,7 +163,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HIST-02 | Phase 6 | Pending |
 | HIST-03 | Phase 6 | Pending |
 | HIST-04 | Phase 6 | Pending |
-| ROUT-01 | Phase 6 | Pending |
+| ROUT-01 | Phase 6 | Complete |
 | ROUT-02 | Phase 6 | Pending |
 | ROUT-03 | Phase 6 | Pending |
 | ROUT-04 | Phase 6 | Pending |

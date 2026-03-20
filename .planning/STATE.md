@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-03-20T11:57:14.150Z"
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-03-20T13:21:17.304Z"
 progress:
   total_phases: 8
   completed_phases: 5
-  total_plans: 14
-  completed_plans: 14
+  total_plans: 18
+  completed_plans: 15
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Runners see the entire loop route upfront before taking a single step
-**Current focus:** Phase 05 — run-summary
+**Current focus:** Phase 06 — run-history-saved-routes
 
 ## Current Position
 
-Phase: 05 (run-summary) — EXECUTING
-Plan: 2 of 2
+Phase: 06 (run-history-saved-routes) — EXECUTING
+Plan: 2 of 4
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Plan: 2 of 2
 | Phase 04 P03 | 3min | 2 tasks | 5 files |
 | Phase 05 P01 | 2min | 2 tasks | 4 files |
 | Phase 05 P02 | 3min | 2 tasks | 3 files |
+| Phase 06 P01 | 6min | 4 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,7 @@ Recent decisions affecting current work:
 - [Phase 05]: Body weight stored internally as kg; converted to lbs for display when units=miles
 - [Phase 05]: bodyWeightKg optional on AppSettings; fallback 70kg in display code
 - [Phase 05]: Direct maplibre-gl import in use client component (no dynamic import needed since useEffect is client-only)
+- [Phase 06]: Explicit save action replaces auto-save on generation for user control
 
 ### Pending Todos
 
@@ -109,6 +111,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T11:53:06.099Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-03-20T13:21:17.295Z
+Stopped at: Completed 06-01-PLAN.md
 Resume file: None
