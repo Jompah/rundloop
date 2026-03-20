@@ -99,10 +99,11 @@ Plans:
   2. Summary displays a map with the actual GPS trace overlaid on the planned route
   3. User can save the completed run to history or discard it
   4. Estimated calories burned is displayed based on distance and configurable body weight
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — Calorie utility with TDD, types extension (AppSettings + AppView), body weight settings input
+- [ ] 05-02-PLAN.md — RunSummaryView component with map overlay, DiscardConfirmDialog, page.tsx summary flow wiring
 
 ### Phase 6: Run History & Saved Routes
 **Goal**: Runners can browse their past runs and save favorite routes for reuse
@@ -162,7 +163,7 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 | 2. Run Session Lifecycle | 2/2 | Complete    | 2026-03-20 |
 | 3. Live Run Metrics | 0/2 | Not started | - |
 | 4. Navigation Polish | 0/3 | Not started | - |
-| 5. Run Summary | 0/1 | Not started | - |
+| 5. Run Summary | 0/2 | Not started | - |
 | 6. Run History & Saved Routes | 0/1 | Not started | - |
 | 7. Route Visualization | 0/1 | Not started | - |
 | 8. UI/UX & PWA Polish | 0/1 | Not started | - |
