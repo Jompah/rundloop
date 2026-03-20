@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { CompletedRun, Run } from '@/types';
+import type { CompletedRun, Run, AppSettings } from '@/types';
 import { dbGetAllByIndex } from '@/lib/db';
+import { getSettings } from '@/lib/storage';
 import { RouteThumbnail } from './RouteThumbnail';
 import {
   formatMetricDistance,
@@ -19,6 +20,11 @@ interface RunHistoryViewProps {
 export function RunHistoryView({ onSelectRun, refreshKey }: RunHistoryViewProps) {
   const [runs, setRuns] = useState<CompletedRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [units, setUnits] = useState<AppSettings['units']>('km');
+
+  useEffect(() => {
+    getSettings().then((s) => setUnits(s.units));
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -95,10 +101,10 @@ export function RunHistoryView({ onSelectRun, refreshKey }: RunHistoryViewProps)
                     })}
                   </p>
                   <p className="text-xl font-bold text-white">
-                    {formatMetricDistance(run.distanceMeters, 'km')} km
+                    {formatMetricDistance(run.distanceMeters, units)} {units === 'miles' ? 'mi' : 'km'}
                   </p>
                   <p className="text-sm text-gray-400">
-                    {formatElapsed(run.elapsedMs)} &middot; {formatPace(avgPace, 'km')} /km
+                    {formatElapsed(run.elapsedMs)} &middot; {formatPace(avgPace, units)} /{units === 'miles' ? 'mi' : 'km'}
                   </p>
                 </div>
               </button>

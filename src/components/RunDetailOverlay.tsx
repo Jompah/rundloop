@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type { CompletedRun } from '@/types';
+import type { CompletedRun, AppSettings } from '@/types';
 import type { SavedRoute } from '@/lib/storage';
+import { getSettings } from '@/lib/storage';
 import { dbDelete, dbGet } from '@/lib/db';
+import { estimateCalories } from '@/lib/calories';
 import {
   formatMetricDistance,
   formatElapsed,
@@ -27,6 +29,15 @@ export function RunDetailOverlay({ run, onClose, onDelete }: RunDetailOverlayPro
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [routePolyline, setRoutePolyline] = useState<[number, number][] | null>(null);
+  const [units, setUnits] = useState<AppSettings['units']>('km');
+  const [bodyWeightKg, setBodyWeightKg] = useState(70);
+
+  useEffect(() => {
+    getSettings().then((s) => {
+      setUnits(s.units);
+      if (s.bodyWeightKg) setBodyWeightKg(s.bodyWeightKg);
+    });
+  }, []);
 
   // Load planned route polyline
   useEffect(() => {
@@ -121,7 +132,7 @@ export function RunDetailOverlay({ run, onClose, onDelete }: RunDetailOverlayPro
   }, [run, routePolyline]);
 
   const avgPace = computeAveragePace(run.distanceMeters, run.elapsedMs);
-  const calories = Math.round((run.distanceMeters / 1000) * 60);
+  const calories = estimateCalories(run.distanceMeters, bodyWeightKg);
 
   const handleDelete = async () => {
     await dbDelete('runs', run.id);
@@ -160,8 +171,8 @@ export function RunDetailOverlay({ run, onClose, onDelete }: RunDetailOverlayPro
           <div>
             <p className="text-xs uppercase tracking-wider text-gray-400">Distance</p>
             <p className="text-3xl font-bold text-white">
-              {formatMetricDistance(run.distanceMeters, 'km')}
-              <span className="text-sm font-normal text-gray-400 ml-1">km</span>
+              {formatMetricDistance(run.distanceMeters, units)}
+              <span className="text-sm font-normal text-gray-400 ml-1">{units === 'miles' ? 'mi' : 'km'}</span>
             </p>
           </div>
           <div>
@@ -173,8 +184,8 @@ export function RunDetailOverlay({ run, onClose, onDelete }: RunDetailOverlayPro
           <div>
             <p className="text-xs uppercase tracking-wider text-gray-400">Avg Pace</p>
             <p className="text-3xl font-bold text-green-400">
-              {formatPace(avgPace, 'km')}
-              <span className="text-sm font-normal text-gray-400 ml-1">/km</span>
+              {formatPace(avgPace, units)}
+              <span className="text-sm font-normal text-gray-400 ml-1">/{units === 'miles' ? 'mi' : 'km'}</span>
             </p>
           </div>
           <div>
