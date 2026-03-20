@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { Button } from '@/components/ui/Button';
 import type { ActiveRunSnapshot } from '@/types';
 
 interface CrashRecoveryDialogProps {
@@ -78,18 +79,8 @@ export default function CrashRecoveryDialog({ snapshot, onResume, onDiscard }: C
         </div>
 
         <div className="flex gap-3 mt-6">
-          <button
-            onClick={onDiscard}
-            className="flex-1 py-3 rounded-xl font-semibold bg-gray-800 text-white active:bg-gray-700"
-          >
-            Discard
-          </button>
-          <button
-            onClick={onResume}
-            className="flex-1 py-3 rounded-xl font-semibold bg-green-500 text-white active:bg-green-600"
-          >
-            Resume Run
-          </button>
+          <Button variant="secondary" fullWidth onClick={onDiscard}>Discard</Button>
+          <Button variant="primary" fullWidth onClick={onResume}>Resume Run</Button>
         </div>
       </motion.div>
     </motion.div>

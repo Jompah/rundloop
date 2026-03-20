@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { Button } from '@/components/ui/Button';
 
 interface EndRunDialogProps {
   onConfirm: () => void;
@@ -26,18 +27,8 @@ export default function EndRunDialog({ onConfirm, onCancel }: EndRunDialogProps)
         <h2 className="text-white text-xl font-bold">End Run?</h2>
         <p className="text-gray-400 mt-2">Your run will be saved to history.</p>
         <div className="flex gap-3 mt-6">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-xl font-semibold bg-gray-800 text-white active:bg-gray-700"
-          >
-            Keep Going
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white active:bg-red-600"
-          >
-            End Run
-          </button>
+          <Button variant="secondary" fullWidth onClick={onCancel}>Keep Going</Button>
+          <Button variant="destructive" fullWidth onClick={onConfirm}>End Run</Button>
         </div>
       </motion.div>
     </motion.div>

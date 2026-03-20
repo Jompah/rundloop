@@ -21,6 +21,8 @@ import { routeViaOSRM } from '@/lib/route-osrm';
 import { findNearbySavedRoutes, getSettings } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
 import { unlockIOSAudio, ensureSpeechReady } from '@/lib/voice';
+import { haptic } from '@/lib/haptics';
+import { Button } from '@/components/ui/Button';
 import { findIncompleteRun, clearIncompleteRun } from '@/lib/crash-recovery';
 
 // Dynamic import MapView to avoid SSR issues with MapLibre
@@ -559,23 +561,26 @@ export default function Home() {
                 ~{Math.round(route.duration / 60)} min
               </span>
             </div>
-            <button
-              onClick={() => { unlockIOSAudio(); runSession.startRun(null); setView('navigate'); }}
-              className="bg-green-500 text-white px-6 py-3 rounded-xl font-semibold active:bg-green-600"
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => { haptic('success'); unlockIOSAudio(); runSession.startRun(null); setView('navigate'); }}
             >
               Start Run
-            </button>
+            </Button>
           </div>
-          <button
+          <Button
+            variant="secondary"
+            fullWidth
+            className="mt-3 flex items-center justify-center gap-2"
             onClick={() => { setRoute(null); setView('generate'); }}
-            className="w-full mt-3 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/15 active:bg-white/20 text-white/80 rounded-xl py-3 text-sm font-medium transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
             Ny rutt
-          </button>
+          </Button>
         </motion.div>
       )}
 

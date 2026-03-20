@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { Button } from '@/components/ui/Button';
 
 interface DeleteRunDialogProps {
   onConfirm: () => void;
@@ -28,18 +29,8 @@ export default function DeleteRunDialog({ onConfirm, onCancel }: DeleteRunDialog
           This run will be permanently removed from your history.
         </p>
         <div className="flex gap-3 mt-6">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-xl font-semibold bg-gray-800 text-white active:bg-gray-700"
-          >
-            Keep It
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white active:bg-red-600"
-          >
-            Delete
-          </button>
+          <Button variant="secondary" fullWidth onClick={onCancel}>Keep It</Button>
+          <Button variant="destructive" fullWidth onClick={onConfirm}>Delete</Button>
         </div>
       </motion.div>
     </motion.div>

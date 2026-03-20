@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { Button } from '@/components/ui/Button';
 
 interface DeleteRouteDialogProps {
   onConfirm: () => void;
@@ -26,18 +27,8 @@ export default function DeleteRouteDialog({ onConfirm, onCancel }: DeleteRouteDi
         <h2 className="text-white text-xl font-bold">Delete Route?</h2>
         <p className="text-gray-400 mt-2">This saved route will be permanently removed.</p>
         <div className="flex gap-3 mt-6">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-xl font-semibold bg-gray-800 text-white active:bg-gray-700"
-          >
-            Keep It
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white active:bg-red-600"
-          >
-            Delete
-          </button>
+          <Button variant="secondary" fullWidth onClick={onCancel}>Keep It</Button>
+          <Button variant="destructive" fullWidth onClick={onConfirm}>Delete</Button>
         </div>
       </motion.div>
     </motion.div>

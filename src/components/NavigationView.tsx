@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GeneratedRoute, TurnInstruction, FilteredPosition, AppSettings } from '@/types';
 import { speak, stopSpeaking } from '@/lib/voice';
+import { haptic } from '@/lib/haptics';
 import { getSettings } from '@/lib/storage';
 import { formatElapsed, computeAveragePace, formatPace } from '@/lib/metrics';
 import { detectMilestone, formatMilestoneMessage } from '@/lib/milestones';
@@ -151,8 +152,7 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
       const voiceStyle = settings.voiceStyle || 'concise';
       const message = formatMilestoneMessage(milestone, voiceStyle, settings.units, avgPaceFormatted);
       speak(message, settings.voiceEnabled);
-
-      if (navigator.vibrate) navigator.vibrate(200);
+      haptic('milestone');
     }
   }, [distanceMeters, runStatus, settings.voiceEnabled, settings.voiceStyle, settings.units, elapsedMs, route.distance]);
 
@@ -266,9 +266,9 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
           routeDistanceMeters={route.distance}
           runStatus={runStatus as 'active' | 'paused'}
           units={settings.units}
-          onPause={onPause}
-          onResume={onResume}
-          onEndRun={onEndRun}
+          onPause={() => { haptic('tap'); onPause(); }}
+          onResume={() => { haptic('tap'); onResume(); }}
+          onEndRun={() => { haptic('success'); onEndRun(); }}
           onVoiceToggle={() => {
             const newEnabled = !settings.voiceEnabled;
             const newSettings = { ...settings, voiceEnabled: newEnabled };
