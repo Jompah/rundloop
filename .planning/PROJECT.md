@@ -41,11 +41,14 @@ Runners see the entire loop route upfront before taking a single step — no sur
 - ✓ Elapsed time display (timer driven by run session state machine) — Phase 3
 - ✓ Remaining distance overlay (route geometry minus completed distance) — Phase 3
 - ✓ Live run metrics overlay wired into NavigationView — Phase 3
+- ✓ Map auto-rotation (heading-up bearing locked to GPS course) — Phase 4
+- ✓ Off-route detection with automatic rerouting prompt — Phase 4
+- ✓ Voice distance milestones (every km/mile announcement) — Phase 4
+- ✓ iOS audio unlock (silent AudioContext tap to bypass autoplay policy) — Phase 4
 
 ### Active
 
 - [ ] Beautiful route visualization (elevation gradients, turn indicators, dark-mode colors)
-- [ ] Polished GPS navigation (map auto-rotation, off-route detection, distance milestones)
 - [ ] Run summary screen (stats, GPS trace overlay, save/discard)
 - [ ] Premium UI/UX (Runkeeper-quality design, dark mode default, haptic feedback, fluid animations)
 - [ ] Run history with IndexedDB persistence and route thumbnails
@@ -98,4 +101,4 @@ Runners see the entire loop route upfront before taking a single step — no sur
 | Fine granularity for phases | Complex feature set benefits from focused phases | — Pending |
 
 ---
-*Last updated: 2026-03-20 after Phase 3 completion*
+*Last updated: 2026-03-20 after Phase 4 completion*
