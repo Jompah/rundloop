@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { GeneratedRoute, RouteMode } from '@/types';
-import { saveRoute } from '@/lib/storage';
+import { saveRoute, getSettings } from '@/lib/storage';
 import { Button } from '@/components/ui/Button';
 
 export interface RouteGeneratorProps {
@@ -21,6 +21,14 @@ export interface RouteGeneratorProps {
 export default function RouteGenerator({ onGenerate, isLoading, userLocation, cityName, route, nearbyRoutes, onDistanceChange, onLoadNearby, routeMode, onModeChange }: RouteGeneratorProps) {
   const [distance, setDistance] = useState(5);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    getSettings().then((s) => {
+      if (s.defaultDistance) {
+        setDistance(s.defaultDistance);
+      }
+    });
+  }, []);
 
   const handleSaveRoute = useCallback(async () => {
     if (!route || saved) return;
