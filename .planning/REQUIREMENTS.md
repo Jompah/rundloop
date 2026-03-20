@@ -9,17 +9,17 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 
 ### GPS Foundation
 
-- [ ] **GPS-01**: GPS positions are filtered for accuracy (reject low-accuracy readings, minimum distance delta, teleport detection)
-- [ ] **GPS-02**: GPS tracking survives brief network drops without crashing or losing position data
-- [ ] **GPS-03**: Wake Lock API keeps screen on during active navigation
-- [ ] **GPS-04**: Run state is periodically snapshot to IndexedDB for crash recovery
+- [x] **GPS-01**: GPS positions are filtered for accuracy (reject low-accuracy readings, minimum distance delta, teleport detection)
+- [x] **GPS-02**: GPS tracking survives brief network drops without crashing or losing position data
+- [x] **GPS-03**: Wake Lock API keeps screen on during active navigation
+- [x] **GPS-04**: Run state is periodically snapshot to IndexedDB for crash recovery
 
 ### Storage
 
-- [ ] **STOR-01**: Run history persisted to IndexedDB (replacing localStorage) with full GPS traces
-- [ ] **STOR-02**: Saved/favorite routes persisted to IndexedDB with name and route data
-- [ ] **STOR-03**: Storage persistence requested via navigator.storage.persist() to prevent iOS eviction
-- [ ] **STOR-04**: Settings and user preferences persisted to IndexedDB
+- [x] **STOR-01**: Run history persisted to IndexedDB (replacing localStorage) with full GPS traces
+- [x] **STOR-02**: Saved/favorite routes persisted to IndexedDB with name and route data
+- [x] **STOR-03**: Storage persistence requested via navigator.storage.persist() to prevent iOS eviction
+- [x] **STOR-04**: Settings and user preferences persisted to IndexedDB
 
 ### Run Session Lifecycle
 
@@ -133,14 +133,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GPS-01 | Phase 1 | Pending |
-| GPS-02 | Phase 1 | Pending |
-| GPS-03 | Phase 1 | Pending |
-| GPS-04 | Phase 1 | Pending |
-| STOR-01 | Phase 1 | Pending |
-| STOR-02 | Phase 1 | Pending |
-| STOR-03 | Phase 1 | Pending |
-| STOR-04 | Phase 1 | Pending |
+| GPS-01 | Phase 1 | Complete |
+| GPS-02 | Phase 1 | Complete |
+| GPS-03 | Phase 1 | Complete |
+| GPS-04 | Phase 1 | Complete |
+| STOR-01 | Phase 1 | Complete |
+| STOR-02 | Phase 1 | Complete |
+| STOR-03 | Phase 1 | Complete |
+| STOR-04 | Phase 1 | Complete |
 | RUN-01 | Phase 2 | Pending |
 | RUN-02 | Phase 2 | Pending |
 | RUN-03 | Phase 2 | Pending |
