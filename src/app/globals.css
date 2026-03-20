@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  color-scheme: dark;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -30,6 +34,18 @@ body {
   padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
 }
 
+.safe-top {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.safe-left {
+  padding-left: max(1rem, env(safe-area-inset-left));
+}
+
+.safe-right {
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
 /* Custom range input */
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -40,8 +56,4 @@ input[type='range']::-webkit-slider-thumb {
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-
-.safe-top {
-  padding-top: max(1rem, env(safe-area-inset-top));
 }
