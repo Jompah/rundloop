@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 7: Route Visualization** - Beautiful route rendering with elevation gradients, turn indicators, and dark-mode colors
 - [x] **Phase 8: UI/UX & PWA Polish** - Premium design system, animations, haptics, service worker, and offline shell (completed 2026-03-20)
 - [ ] **Phase 9: Cross-Phase Wiring Fixes** - Fix cross-phase data flow: route polyline in history, unit propagation, calories, default distance
-- [ ] **Phase 10: PWA Completion** - Complete PWA installability with required icons and clean up dead code
+- [x] **Phase 10: PWA Completion** - Complete PWA installability with required icons and clean up dead code (completed 2026-03-20)
 
 ## Phase Details
 
@@ -208,4 +208,4 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 | 7. Route Visualization | 0/3 | Not started | - |
 | 8. UI/UX & PWA Polish | 3/3 | Complete   | 2026-03-20 |
 | 9. Cross-Phase Wiring Fixes | 0/2 | Not started | - |
-| 10. PWA Completion | 0/1 | Not started | - |
+| 10. PWA Completion | 1/1 | Complete   | 2026-03-20 |
