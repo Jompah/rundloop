@@ -170,10 +170,11 @@ Plans:
   2. RunHistoryView and RunDetailOverlay respect the user's km/miles unit setting
   3. RunDetailOverlay uses estimateCalories() with bodyWeightKg from settings
   4. RouteGenerator seeds distance from settings.defaultDistance on mount
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 09-01: TBD
+- [ ] 09-01-PLAN.md — Save route polyline with CompletedRun, pass routeId to startRun
+- [ ] 09-02-PLAN.md — Propagate units/calories/defaultDistance settings to history, detail, and generator views
 
 ### Phase 10: PWA Completion
 **Goal**: Complete PWA installability with required icons and clean up dead code
@@ -206,5 +207,5 @@ Note: Phase 4 (Navigation) and Phase 7 (Visualization) can run in parallel with 
 | 6. Run History & Saved Routes | 0/5 | Not started | - |
 | 7. Route Visualization | 0/3 | Not started | - |
 | 8. UI/UX & PWA Polish | 3/3 | Complete   | 2026-03-20 |
-| 9. Cross-Phase Wiring Fixes | 0/1 | Not started | - |
+| 9. Cross-Phase Wiring Fixes | 0/2 | Not started | - |
 | 10. PWA Completion | 0/1 | Not started | - |
