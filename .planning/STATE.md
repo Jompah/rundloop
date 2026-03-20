@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 08-03-PLAN.md
-last_updated: "2026-03-20T22:20:10.386Z"
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-03-20T23:02:32.496Z"
 progress:
-  total_phases: 8
+  total_phases: 10
   completed_phases: 8
-  total_plans: 25
-  completed_plans: 25
+  total_plans: 27
+  completed_plans: 26
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Runners see the entire loop route upfront before taking a single step
-**Current focus:** Phase 08 — ui-ux-pwa-polish
+**Current focus:** Phase 09 — cross-phase-wiring-fixes
 
 ## Current Position
 
-Phase: 08 (ui-ux-pwa-polish) — COMPLETE
-Plan: 3 of 3 (all complete)
+Phase: 09 (cross-phase-wiring-fixes) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ Plan: 3 of 3 (all complete)
 | Phase 08 P01 | 8min | 2 tasks | 10 files |
 | Phase 08 P02 | 5min | 2 tasks | 6 files |
 | Phase 08 P03 | 5min | 2 tasks | 13 files |
+| Phase 09 P01 | 3min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,7 @@ Recent decisions affecting current work:
 - [Phase 08]: 150ms animation duration for all view transitions and dialog animations for snappy feel
 - [Phase 08]: Replaced navigator.vibrate(200) in milestone effect with haptic('milestone') for consistent haptic patterns
 - [Phase 08]: Used haptic wrapper callbacks on RunMetricsOverlay props rather than modifying RunMetricsOverlay itself
+- [Phase 09]: Kept startRun(null) since GeneratedRoute has no id field; routeId wiring deferred
 
 ### Pending Todos
 
@@ -139,6 +141,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T22:14:00Z
-Stopped at: Completed 08-03-PLAN.md
+Last session: 2026-03-20T23:02:32.296Z
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
