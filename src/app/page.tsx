@@ -5,7 +5,10 @@ import dynamic from 'next/dynamic';
 import RouteGenerator from '@/components/RouteGenerator';
 import NavigationView from '@/components/NavigationView';
 import SettingsView from '@/components/SettingsView';
-import HistoryView from '@/components/HistoryView';
+import TabBar from '@/components/TabBar';
+import { RunHistoryView } from '@/components/RunHistoryView';
+import { RunDetailOverlay } from '@/components/RunDetailOverlay';
+import { SavedRoutesView } from '@/components/SavedRoutesView';
 import EndRunDialog from '@/components/EndRunDialog';
 import CrashRecoveryDialog from '@/components/CrashRecoveryDialog';
 import RunSummaryView from '@/components/RunSummaryView';
@@ -46,6 +49,8 @@ export default function Home() {
   const [recoverySnapshot, setRecoverySnapshot] = useState<ActiveRunSnapshot | null>(null);
   const [showEndRunDialog, setShowEndRunDialog] = useState(false);
   const [completedRunData, setCompletedRunData] = useState<CompletedRun | null>(null);
+  const [selectedRun, setSelectedRun] = useState<CompletedRun | null>(null);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const runSession = useRunSession();
 
   // Initialize IndexedDB: migration + persistent storage
@@ -379,16 +384,6 @@ export default function Home() {
             <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
           </svg>
         </button>
-        <button
-          onClick={() => setView('history')}
-          className="bg-white/90 rounded-full p-3 shadow-lg active:bg-gray-100"
-          aria-label="History"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-        </button>
       </nav>
 
       {/* Settings overlay */}
@@ -396,12 +391,19 @@ export default function Home() {
         <SettingsView onClose={() => setView('generate')} />
       )}
 
-      {/* History overlay */}
+      {/* History view */}
       {view === 'history' && (
-        <HistoryView
-          onClose={() => setView('generate')}
-          onLoadRoute={(loadedRoute) => {
-            setRoute(loadedRoute);
+        <RunHistoryView
+          onSelectRun={(run) => setSelectedRun(run)}
+          refreshKey={historyRefreshKey}
+        />
+      )}
+
+      {/* Saved routes view */}
+      {view === 'routes' && (
+        <SavedRoutesView
+          onRunRoute={(savedRoute) => {
+            setRoute(savedRoute);
             setView('map');
           }}
         />
@@ -474,6 +476,18 @@ export default function Home() {
         />
       )}
 
+      {/* Run detail overlay */}
+      {selectedRun && (
+        <RunDetailOverlay
+          run={selectedRun}
+          onClose={() => setSelectedRun(null)}
+          onDelete={(id) => {
+            setSelectedRun(null);
+            setHistoryRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
+
       {/* Route info bar */}
       {route && view === 'map' && (
         <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-4 z-20 safe-bottom">
@@ -504,6 +518,14 @@ export default function Home() {
             Ny rutt
           </button>
         </div>
+      )}
+
+      {/* Tab bar - visible on generate, history, routes, map */}
+      {(view === 'generate' || view === 'history' || view === 'routes' || view === 'map') && (
+        <TabBar
+          activeTab={view === 'map' ? 'generate' : (view as 'generate' | 'history' | 'routes')}
+          onTabChange={(tab: 'generate' | 'history' | 'routes') => setView(tab)}
+        />
       )}
     </main>
   );
