@@ -46,9 +46,9 @@ Requirements for Phase 1 polish milestone. Each maps to roadmap phases.
 ### Route Visualization
 
 - [ ] **VIZ-01**: Smooth, anti-aliased route lines on the map
-- [ ] **VIZ-02**: Colored gradient along the route indicating elevation changes (green flat, yellow/orange uphill, red steep)
+- [x] **VIZ-02**: Colored gradient along the route indicating elevation changes (green flat, yellow/orange uphill, red steep)
 - [ ] **VIZ-03**: Clear start/finish marker on the route
-- [ ] **VIZ-04**: Turn indicators at key decision points along the route
+- [x] **VIZ-04**: Turn indicators at key decision points along the route
 - [ ] **VIZ-05**: Dark-mode-friendly color scheme optimized for OLED screens
 
 ### Navigation Polish
@@ -168,9 +168,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROUT-03 | Phase 6 | Complete |
 | ROUT-04 | Phase 6 | Complete |
 | VIZ-01 | Phase 7 | Pending |
-| VIZ-02 | Phase 7 | Pending |
+| VIZ-02 | Phase 7 | Complete |
 | VIZ-03 | Phase 7 | Pending |
-| VIZ-04 | Phase 7 | Pending |
+| VIZ-04 | Phase 7 | Complete |
 | VIZ-05 | Phase 7 | Pending |
 | UI-01 | Phase 8 | Pending |
 | UI-02 | Phase 8 | Pending |

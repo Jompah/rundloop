@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 06-05-PLAN.md
-last_updated: "2026-03-20T14:50:13.691Z"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-20T16:31:13.080Z"
 progress:
   total_phases: 8
   completed_phases: 6
-  total_plans: 19
-  completed_plans: 19
+  total_plans: 22
+  completed_plans: 20
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Runners see the entire loop route upfront before taking a single step
-**Current focus:** Phase 06 — run-history-saved-routes
+**Current focus:** Phase 07 — route-visualization
 
 ## Current Position
 
-Phase: 06 (run-history-saved-routes) — COMPLETE
-Plan: 5 of 5
+Phase: 07 (route-visualization) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Plan: 5 of 5
 | Phase 06 P02 | 3min | 2 tasks | 3 files |
 | Phase 06 P04 | 3min | 2 tasks | 2 files |
 | Phase 06 P05 | 3min | 2 tasks | 4 files |
+| Phase 07 P01 | 7min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,9 @@ Recent decisions affecting current work:
 - [Phase 06]: historyRefreshKey counter pattern for triggering RunHistoryView re-fetch after delete
 - [Phase 06]: Used re-export alias to bridge generateAlgorithmicWaypoints/generateRouteAlgorithmic name mismatch
 - [Phase 06]: Converted async findNearbySavedRoutes from useMemo to useState+useEffect for correct async handling
+- [Phase 07]: Inline haversine in elevation.ts following project pattern
+- [Phase 07]: ImageData for canvas arrow image to satisfy MapLibre addImage types
+- [Phase 07]: Grade-based bearing for turn arrows rather than geometric bearing
 
 ### Pending Todos
 
@@ -121,6 +125,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T14:45:03.259Z
-Stopped at: Completed 06-05-PLAN.md
+Last session: 2026-03-20T16:31:13.070Z
+Stopped at: Completed 07-01-PLAN.md
 Resume file: None
