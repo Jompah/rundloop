@@ -17,7 +17,7 @@ function pos(
   accuracy = 5,
   speed: number | null = null
 ): FilteredPosition {
-  return { lat, lng, accuracy, timestamp, speed };
+  return { lat, lng, accuracy, timestamp, speed, heading: null };
 }
 
 describe('computeRollingPace', () => {

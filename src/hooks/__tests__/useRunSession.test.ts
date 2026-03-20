@@ -152,8 +152,8 @@ describe('computeDistance', () => {
   it('returns correct distance for known trace points', () => {
     // Two points ~500m apart in Stockholm
     const trace: FilteredPosition[] = [
-      { lat: 59.3293, lng: 18.0686, accuracy: 5, timestamp: 1000, speed: 3 },
-      { lat: 59.3338, lng: 18.0686, accuracy: 5, timestamp: 2000, speed: 3 },
+      { lat: 59.3293, lng: 18.0686, accuracy: 5, timestamp: 1000, speed: 3, heading: null },
+      { lat: 59.3338, lng: 18.0686, accuracy: 5, timestamp: 2000, speed: 3, heading: null },
     ];
     const dist = computeDistance(trace);
     // Haversine: ~500m (0.0045 deg lat ~ 500m)
@@ -167,16 +167,16 @@ describe('computeDistance', () => {
 
   it('returns 0 for single-point trace', () => {
     const trace: FilteredPosition[] = [
-      { lat: 59.3293, lng: 18.0686, accuracy: 5, timestamp: 1000, speed: 3 },
+      { lat: 59.3293, lng: 18.0686, accuracy: 5, timestamp: 1000, speed: 3, heading: null },
     ];
     expect(computeDistance(trace)).toBe(0);
   });
 
   it('accumulates distance over multiple segments', () => {
     const trace: FilteredPosition[] = [
-      { lat: 59.3293, lng: 18.0686, accuracy: 5, timestamp: 1000, speed: 3 },
-      { lat: 59.3338, lng: 18.0686, accuracy: 5, timestamp: 2000, speed: 3 },
-      { lat: 59.3383, lng: 18.0686, accuracy: 5, timestamp: 3000, speed: 3 },
+      { lat: 59.3293, lng: 18.0686, accuracy: 5, timestamp: 1000, speed: 3, heading: null },
+      { lat: 59.3338, lng: 18.0686, accuracy: 5, timestamp: 2000, speed: 3, heading: null },
+      { lat: 59.3383, lng: 18.0686, accuracy: 5, timestamp: 3000, speed: 3, heading: null },
     ];
     const dist = computeDistance(trace);
     // Should be roughly 2x the single-segment distance (~1000m)

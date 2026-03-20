@@ -31,6 +31,7 @@ function makeFiltered(overrides: Partial<FilteredPosition> = {}): FilteredPositi
     accuracy: 10,
     timestamp: 1000000,
     speed: 2.5,
+    heading: null,
     ...overrides,
   };
 }

@@ -37,6 +37,7 @@ export interface FilteredPosition {
   accuracy: number;
   timestamp: number;
   speed: number | null;
+  heading: number | null;
 }
 
 export interface ActiveRunSnapshot {

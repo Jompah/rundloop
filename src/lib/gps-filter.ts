@@ -96,6 +96,7 @@ export function watchFilteredPosition(
         accuracy: pos.accuracy,
         timestamp: pos.timestamp,
         speed: pos.speed,
+        heading: pos.heading,
       };
       lastAccepted = filtered;
       onAccepted(filtered);

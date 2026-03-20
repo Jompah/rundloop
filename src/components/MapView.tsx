@@ -4,19 +4,26 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { GeneratedRoute } from '@/types';
+import { smoothHeading, bearingBetween } from '@/lib/navigation';
 
 interface MapViewProps {
   route?: GeneratedRoute | null;
   userLocation?: [number, number] | null; // [lng, lat]
+  heading?: number | null;
+  speed?: number | null;
   isNavigating?: boolean;
   onMapReady?: (map: maplibregl.Map) => void;
 }
 
-export default function MapView({ route, userLocation, isNavigating, onMapReady }: MapViewProps) {
+export default function MapView({ route, userLocation, heading, speed, isNavigating, onMapReady }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  const isAutoRotating = useRef(true);
+  const prevHeadingRef = useRef<number | null>(null);
+  const [showRecenter, setShowRecenter] = useState(false);
 
   // Initialize map
   useEffect(() => {
@@ -61,6 +68,25 @@ export default function MapView({ route, userLocation, isNavigating, onMapReady 
       mapRef.current = null;
     };
   }, []);
+
+  // Interaction detection: disable auto-rotation on manual pan/zoom
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isNavigating) return;
+
+    const handleInteraction = () => {
+      isAutoRotating.current = false;
+      setShowRecenter(true);
+    };
+
+    map.on('dragstart', handleInteraction);
+    map.on('zoomstart', handleInteraction);
+
+    return () => {
+      map.off('dragstart', handleInteraction);
+      map.off('zoomstart', handleInteraction);
+    };
+  }, [isNavigating, mapLoaded]);
 
   // Update user location marker
   useEffect(() => {
@@ -127,15 +153,61 @@ export default function MapView({ route, userLocation, isNavigating, onMapReady 
     map.fitBounds(bounds, { padding: 60 });
   }, [route, mapLoaded]);
 
-  // Center on user when navigating
+  // Heading-aware auto-rotation during navigation
   useEffect(() => {
-    if (!mapRef.current || !isNavigating || !userLocation) return;
+    if (!mapRef.current || !userLocation) return;
+
+    if (isNavigating) {
+      if (!isAutoRotating.current) return;
+
+      // Compute smoothed heading
+      let computedHeading: number | null = null;
+
+      if (speed !== null && speed !== undefined && speed > 1.0 && heading !== null && heading !== undefined) {
+        computedHeading = smoothHeading(heading, prevHeadingRef.current, 0.3);
+      } else {
+        // Fallback: use prevHeadingRef or 0
+        computedHeading = prevHeadingRef.current ?? 0;
+      }
+
+      prevHeadingRef.current = computedHeading;
+
+      mapRef.current.easeTo({
+        center: userLocation,
+        bearing: computedHeading ?? 0,
+        pitch: 30,
+        zoom: 16,
+        duration: 500,
+      });
+    } else {
+      // Not navigating: reset rotation state
+      if (prevHeadingRef.current !== null) {
+        isAutoRotating.current = true;
+        prevHeadingRef.current = null;
+        setShowRecenter(false);
+        mapRef.current.easeTo({
+          pitch: 0,
+          bearing: 0,
+          duration: 500,
+        });
+      }
+    }
+  }, [userLocation, isNavigating, heading, speed]);
+
+  const handleRecenter = useCallback(() => {
+    if (!mapRef.current || !userLocation) return;
+    isAutoRotating.current = true;
+    setShowRecenter(false);
+
+    const currentHeading = prevHeadingRef.current ?? 0;
     mapRef.current.easeTo({
       center: userLocation,
+      bearing: currentHeading,
+      pitch: 30,
       zoom: 16,
-      duration: 1000,
+      duration: 500,
     });
-  }, [userLocation, isNavigating]);
+  }, [userLocation]);
 
   const centerOnUser = useCallback(() => {
     if (!mapRef.current || !userLocation) return;
@@ -150,7 +222,22 @@ export default function MapView({ route, userLocation, isNavigating, onMapReady 
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="w-full h-full" />
 
-      {userLocation && (
+      {/* Re-center button: shown during navigation when auto-rotation is disabled */}
+      {isNavigating && showRecenter && (
+        <button
+          onClick={handleRecenter}
+          className="absolute bottom-[220px] right-4 bg-white rounded-full shadow-lg z-10 active:bg-gray-100 flex items-center justify-center"
+          style={{ width: 48, height: 48 }}
+          aria-label="Re-center"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2l4 8-4 12-4-12z" fill="currentColor" stroke="none" />
+          </svg>
+        </button>
+      )}
+
+      {/* Center on user button: shown when NOT navigating */}
+      {!isNavigating && userLocation && (
         <button
           onClick={centerOnUser}
           className="absolute bottom-6 right-4 bg-white rounded-full p-3 shadow-lg z-10 active:bg-gray-100"

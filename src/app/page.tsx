@@ -34,6 +34,8 @@ export default function Home() {
   const [route, setRoute] = useState<GeneratedRoute | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userHeading, setUserHeading] = useState<number | null>(null);
+  const [userSpeed, setUserSpeed] = useState<number | null>(null);
   const [fakeGPSActive, setFakeGPSActive] = useState(false);
   const [fakeGPSLabel, setFakeGPSLabel] = useState('');
   const [showFakeMenu, setShowFakeMenu] = useState(false);
@@ -103,7 +105,11 @@ export default function Home() {
         setCityName(city);
 
         watchId = watchFilteredPosition(
-          (pos) => setUserLocation([pos.lng, pos.lat]),
+          (pos) => {
+            setUserLocation([pos.lng, pos.lat]);
+            setUserHeading(pos.heading);
+            setUserSpeed(pos.speed);
+          },
           (_pos, _reason) => { /* rejected, ignore for location display */ },
           (err) => console.warn('GPS error:', err.message)
         );
@@ -254,6 +260,8 @@ export default function Home() {
       <MapView
         route={route}
         userLocation={userLocation}
+        heading={userHeading}
+        speed={userSpeed}
         isNavigating={view === 'navigate'}
       />
 
