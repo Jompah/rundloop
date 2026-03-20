@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { GeneratedRoute, TurnInstruction, FilteredPosition, AppSettings } from '@/types';
 import { speak, stopSpeaking } from '@/lib/voice';
 import { getSettings } from '@/lib/storage';
 import { formatElapsed } from '@/lib/metrics';
+import { distanceToRoute, findNearestSegmentIndex, getCompassDirection } from '@/lib/navigation';
 import RunMetricsOverlay from './RunMetricsOverlay';
+import OffRouteBanner from './OffRouteBanner';
 
 type RunStatus = 'idle' | 'active' | 'paused' | 'completed';
 
@@ -65,6 +67,12 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
   const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, units: 'km', defaultDistance: 5 });
   useEffect(() => { getSettings().then(setSettings); }, []);
 
+  // Off-route detection state
+  const [offRoute, setOffRoute] = useState(false);
+  const [offRouteDirection, setOffRouteDirection] = useState('');
+  const offRouteAnnouncedRef = useRef(false);
+  const offRouteRepeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const currentStep = route.instructions[currentStepIndex];
   const nextStep = route.instructions[currentStepIndex + 1];
 
@@ -118,6 +126,65 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
     }
   }, [runStatus]);
 
+  // Off-route detection
+  useEffect(() => {
+    if (!userLocation || runStatus !== 'active') {
+      setOffRoute(false);
+      offRouteAnnouncedRef.current = false;
+      if (offRouteRepeatRef.current) {
+        clearInterval(offRouteRepeatRef.current);
+        offRouteRepeatRef.current = null;
+      }
+      return;
+    }
+
+    // userLocation is [lng, lat]; navigation functions expect (lat, lng)
+    const lat = userLocation[1];
+    const lng = userLocation[0];
+    const dist = distanceToRoute(lat, lng, route.polyline);
+
+    if (dist > 50 && !offRouteAnnouncedRef.current) {
+      const nearestIdx = findNearestSegmentIndex(lat, lng, route.polyline);
+      const [targetLng, targetLat] = route.polyline[nearestIdx];
+      const direction = getCompassDirection(lat, lng, targetLat, targetLng);
+
+      setOffRoute(true);
+      setOffRouteDirection(direction);
+      offRouteAnnouncedRef.current = true;
+
+      // Haptic feedback
+      if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200]);
+      }
+
+      // Voice announcement (respects NAV-04 mute toggle)
+      speak(`Off route. Head ${direction} to rejoin.`, settings.voiceEnabled);
+
+      // Repeat every 30 seconds
+      offRouteRepeatRef.current = setInterval(() => {
+        speak(`Off route. Head ${direction} to rejoin.`, settings.voiceEnabled);
+      }, 30000);
+    } else if (dist <= 50 && offRouteAnnouncedRef.current) {
+      setOffRoute(false);
+      offRouteAnnouncedRef.current = false;
+
+      if (offRouteRepeatRef.current) {
+        clearInterval(offRouteRepeatRef.current);
+        offRouteRepeatRef.current = null;
+      }
+
+      // Back on route announcement (respects NAV-04 mute toggle)
+      speak('Back on route.', settings.voiceEnabled);
+    }
+
+    return () => {
+      if (offRouteRepeatRef.current) {
+        clearInterval(offRouteRepeatRef.current);
+        offRouteRepeatRef.current = null;
+      }
+    };
+  }, [userLocation, runStatus, settings.voiceEnabled, route.polyline]);
+
   const progress = route.distance > 0 ? Math.min((totalCovered / route.distance) * 100, 100) : 0;
 
   return (
@@ -148,6 +215,9 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
           </div>
         )}
       </div>
+
+      {/* Off-route banner */}
+      <OffRouteBanner visible={offRoute} direction={offRouteDirection} />
 
       {/* Metrics overlay for active/paused runs */}
       {(runStatus === 'active' || runStatus === 'paused') && (
