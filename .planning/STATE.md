@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-20T10:25:16.503Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-20T10:31:23.082Z"
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-19)
 ## Current Position
 
 Phase: 04 (navigation-polish) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Plan: 2 of 3
 | Phase 03 P01 | 2min | 2 tasks | 2 files |
 | Phase 03 P02 | 2min | 3 tasks | 3 files |
 | Phase 04 P01 | 3min | 2 tasks | 6 files |
+| Phase 04 P02 | 4min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,8 @@ Recent decisions affecting current work:
 - [Phase 04]: Equirectangular projection with cos(lat) correction for point-to-segment distance (no turf.js)
 - [Phase 04]: EMA heading smoothing uses shortest-arc diff to avoid wrap-around through 180
 - [Phase 04]: getSynth in voice.ts updated with globalThis fallback for test environment compatibility
+- [Phase 04]: Re-center button only visible when auto-rotation disabled during navigation
+- [Phase 04]: All speak() calls pass settings.voiceEnabled for NAV-04 mute compliance
 
 ### Pending Todos
 
@@ -98,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T10:25:16.491Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-20T10:31:23.072Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
