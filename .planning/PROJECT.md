@@ -31,13 +31,17 @@ Runners see the entire loop route upfront before taking a single step — no sur
 - ✓ Crash recovery via periodic IndexedDB snapshots — Phase 1
 - ✓ Storage persistence request to prevent iOS 7-day eviction — Phase 1
 - ✓ localStorage to IndexedDB migration — Phase 1
+- ✓ Run session state machine (idle/active/paused/completed) — Phase 2
+- ✓ Pause/resume with timer and GPS tracking coordination — Phase 2
+- ✓ End run with confirmation dialog — Phase 2
+- ✓ Crash recovery detection and resume/discard dialog — Phase 2
+- ✓ GPS filter wired into app (watchFilteredPosition replaces watchPosition) — Phase 2
 
 ### Active
 
 - [ ] Beautiful route visualization (elevation gradients, turn indicators, dark-mode colors)
 - [ ] Polished GPS navigation (map auto-rotation, off-route detection, distance milestones)
 - [ ] Live run metrics overlay (pace, distance, elapsed time, remaining distance)
-- [ ] Pause/resume and end run functionality
 - [ ] Run summary screen (stats, GPS trace overlay, save/discard)
 - [ ] Premium UI/UX (Runkeeper-quality design, dark mode default, haptic feedback, fluid animations)
 - [ ] Run history with IndexedDB persistence and route thumbnails
@@ -90,4 +94,4 @@ Runners see the entire loop route upfront before taking a single step — no sur
 | Fine granularity for phases | Complex feature set benefits from focused phases | — Pending |
 
 ---
-*Last updated: 2026-03-20 after Phase 1 completion*
+*Last updated: 2026-03-20 after Phase 2 completion*
