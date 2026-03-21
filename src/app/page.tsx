@@ -15,11 +15,12 @@ import CrashRecoveryDialog from '@/components/CrashRecoveryDialog';
 import RunSummaryView from '@/components/RunSummaryView';
 import { GeneratedRoute, AppView, RouteMode, RouteWaypoint, ActiveRunSnapshot, CompletedRun } from '@/types';
 import { getCurrentPosition, reverseGeocode, watchFilteredPosition, setFakePosition, clearFakePosition, isFakeGPS } from '@/lib/geolocation';
-import { initDB, dbDelete, dbPut } from '@/lib/db';
+import { initDB, dbDelete, dbPut, dbGet } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
 import { findNearbySavedRoutes, getSettings } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
+import { useMapCentering } from '@/hooks/useMapCentering';
 import { unlockIOSAudio, ensureSpeechReady } from '@/lib/voice';
 import { haptic } from '@/lib/haptics';
 import { Button } from '@/components/ui/Button';
@@ -56,6 +57,23 @@ export default function Home() {
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [gpsError, setGpsError] = useState(false);
   const runSession = useRunSession();
+  const { state: centeringState, dispatch: centeringDispatch } = useMapCentering();
+
+  // Pre-GPS-lock position loading state
+  const [initialCenter, setInitialCenter] = useState<[number, number] | null>(null);
+  const [positionLoaded, setPositionLoaded] = useState(false);
+
+  // Load stored position BEFORE map renders (runs once on mount)
+  useEffect(() => {
+    dbGet<{ key: string; lng: number; lat: number; timestamp: number }>('settings', 'lastPosition')
+      .then((stored) => {
+        if (stored && (Date.now() - stored.timestamp < 24 * 60 * 60 * 1000)) {
+          setInitialCenter([stored.lng, stored.lat]);
+        }
+        setPositionLoaded(true);
+      })
+      .catch(() => setPositionLoaded(true));
+  }, []);
 
   // Initialize IndexedDB: migration + persistent storage
   useEffect(() => {
@@ -129,6 +147,7 @@ export default function Home() {
         const pos = await getCurrentPosition();
         const loc: [number, number] = [pos.lng, pos.lat];
         setUserLocation(loc);
+        centeringDispatch({ type: 'GPS_LOCK', position: loc });
 
         const city = await reverseGeocode(pos.lat, pos.lng);
         setCityName(city);
@@ -138,6 +157,8 @@ export default function Home() {
             setUserLocation([pos.lng, pos.lat]);
             setUserHeading(pos.heading);
             setUserSpeed(pos.speed);
+            centeringDispatch({ type: 'GPS_UPDATE', position: [pos.lng, pos.lat] });
+            dbPut('settings', { key: 'lastPosition', lng: pos.lng, lat: pos.lat, timestamp: Date.now() });
           },
           (_pos, _reason) => { /* rejected, ignore for location display */ },
           (err) => console.warn('GPS error:', err.message)
@@ -291,6 +312,11 @@ export default function Home() {
         heading={userHeading}
         speed={userSpeed}
         isNavigating={view === 'navigate'}
+        initialCenter={initialCenter}
+        positionLoaded={positionLoaded}
+        centeringMode={centeringState.mode}
+        onPan={() => centeringDispatch({ type: 'USER_PAN' })}
+        onRecenter={() => centeringDispatch({ type: 'RECENTER' })}
       />
 
       {/* Error toast */}
@@ -525,7 +551,7 @@ export default function Home() {
         <NavigationView
           route={route}
           userLocation={userLocation}
-          onStop={() => { runSession.reset(); setView('map'); }}
+          onStop={() => { centeringDispatch({ type: 'STOP_NAVIGATION' }); runSession.reset(); setView('map'); }}
           runStatus={runSession.status}
           elapsedMs={runSession.elapsedMs}
           distanceMeters={runSession.distanceMeters}
@@ -550,6 +576,7 @@ export default function Home() {
               }
               setCompletedRunData(completed);
               setShowEndRunDialog(false);
+              centeringDispatch({ type: 'STOP_NAVIGATION' });
               setView('summary');
             }}
             onCancel={() => setShowEndRunDialog(false)}
@@ -607,7 +634,7 @@ export default function Home() {
             <Button
               variant="primary"
               size="lg"
-              onClick={() => { haptic('success'); unlockIOSAudio(); runSession.startRun(null); setView('navigate'); }}
+              onClick={() => { haptic('success'); unlockIOSAudio(); runSession.startRun(null); centeringDispatch({ type: 'START_NAVIGATION' }); setView('navigate'); }}
             >
               Start Run
             </Button>
