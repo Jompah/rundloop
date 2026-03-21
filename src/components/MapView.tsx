@@ -53,9 +53,17 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
       onMapReady?.(map);
     });
 
+    // Ensure map resizes when container dimensions change (fixes iOS Safari
+    // where the container may initially have 0 height due to viewport timing)
+    const ro = new ResizeObserver(() => {
+      map.resize();
+    });
+    ro.observe(mapContainer.current);
+
     mapRef.current = map;
 
     return () => {
+      ro.disconnect();
       routeMarkersRef.current.forEach((m) => m.remove());
       routeMarkersRef.current = [];
       map.remove();
@@ -208,7 +216,7 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
   }, [userLocation]);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="absolute inset-0">
       <div ref={mapContainer} className="w-full h-full" />
 
       {/* Re-center button: shown during navigation when auto-rotation is disabled */}
