@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rundloop-v1';
+const CACHE_NAME = 'rundloop-v2';
 const TILE_CACHE_NAME = 'rundloop-tiles-v1';
 const MAX_TILE_ENTRIES = 50;
 
