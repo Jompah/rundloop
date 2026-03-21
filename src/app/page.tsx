@@ -54,6 +54,7 @@ export default function Home() {
   const [completedRunData, setCompletedRunData] = useState<CompletedRun | null>(null);
   const [selectedRun, setSelectedRun] = useState<CompletedRun | null>(null);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+  const [gpsError, setGpsError] = useState(false);
   const runSession = useRunSession();
 
   // Initialize IndexedDB: migration + persistent storage
@@ -142,9 +143,8 @@ export default function Home() {
           (err) => console.warn('GPS error:', err.message)
         );
       } catch (err) {
-        // Geolocation failed — fall back to Stockholm (Gamla Stan) automatically
-        const fallback = FAKE_CITIES[0];
-        applyFakeGPS(fallback);
+        // Geolocation failed — show error, don't silently fake GPS
+        setGpsError(true);
       }
     };
 
@@ -324,6 +324,43 @@ export default function Home() {
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
+        </div>
+      )}
+
+      {/* GPS permission error banner */}
+      {gpsError && !fakeGPSActive && (
+        <div className="absolute top-16 left-4 right-4 z-30 bg-red-500/90 backdrop-blur-sm text-white px-4 py-3 rounded-xl text-sm shadow-lg">
+          <div className="font-medium mb-1">GPS-position saknas</div>
+          <div className="text-white/90 text-xs mb-3">
+            Tillat platsatkomst i telefonens installningar for att anvanda din riktiga GPS-position, eller simulera en position for att testa appen.
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setGpsError(false);
+                // Retry real GPS
+                getCurrentPosition()
+                  .then(async (pos) => {
+                    setUserLocation([pos.lng, pos.lat]);
+                    const city = await reverseGeocode(pos.lat, pos.lng);
+                    setCityName(city);
+                  })
+                  .catch(() => setGpsError(true));
+              }}
+              className="bg-white/20 px-3 py-1.5 rounded-lg text-xs font-medium active:bg-white/30"
+            >
+              Forsok igen
+            </button>
+            <button
+              onClick={() => {
+                setGpsError(false);
+                applyFakeGPS(FAKE_CITIES[0]);
+              }}
+              className="bg-white/20 px-3 py-1.5 rounded-lg text-xs font-medium active:bg-white/30"
+            >
+              Simulera position
+            </button>
+          </div>
         </div>
       )}
 
@@ -553,7 +590,7 @@ export default function Home() {
       {/* Route info bar */}
       {route && view === 'map' && (
         <motion.div
-          className="absolute bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-4 z-20 safe-bottom"
+          className="absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-4 z-20"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.15, ease: 'easeOut' }}

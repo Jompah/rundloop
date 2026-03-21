@@ -233,11 +233,11 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
         </button>
       )}
 
-      {/* Center on user button: shown when NOT navigating */}
+      {/* Center on user button: shown when NOT navigating, positioned above bottom panels */}
       {!isNavigating && userLocation && (
         <button
           onClick={centerOnUser}
-          className="absolute bottom-6 right-4 bg-gray-800 text-white rounded-full p-3 shadow-lg z-10 active:bg-gray-700"
+          className="absolute right-4 top-24 bg-gray-800 text-white rounded-full p-3 shadow-lg z-30 active:bg-gray-700"
           aria-label="Center on my location"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

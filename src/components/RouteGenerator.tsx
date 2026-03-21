@@ -46,7 +46,7 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
   const presets = [3, 5, 7, 10, 15, 21];
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-6 z-20 safe-bottom overflow-hidden">
+    <div className="absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-6 z-20 overflow-hidden">
       {/* City name */}
       <div className="text-gray-400 text-sm mb-1">
         {userLocation ? cityName || 'Getting location...' : 'Waiting for GPS...'}

@@ -44,7 +44,7 @@ export function RunHistoryView({ onSelectRun, refreshKey }: RunHistoryViewProps)
   }, [refreshKey]);
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-16">
+    <div className="flex flex-col h-full overflow-y-auto" style={{ paddingBottom: 'calc(3.5rem + env(safe-area-inset-bottom) + 1rem)' }}>
       <div className="px-4 pt-4 pb-2">
         <h1 className="text-xl font-bold text-white">History</h1>
       </div>
