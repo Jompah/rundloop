@@ -1,182 +1,197 @@
 # Project Research Summary
 
-**Project:** RundLoop — Running PWA with GPS Navigation
-**Domain:** Mobile-first running PWA with loop route generation, live GPS navigation, and run tracking
-**Researched:** 2026-03-19
-**Confidence:** HIGH
+**Project:** RundLoop v1.1 — Route Quality & Map UX
+**Domain:** Scenic route generation, POI-aware running routes, mobile PWA map UX
+**Researched:** 2026-03-21
+**Confidence:** MEDIUM-HIGH
 
 ## Executive Summary
 
-RundLoop is a polish-phase project: the core loop route generation (AI + algorithmic), MapLibre map rendering, basic navigation, and Next.js/React app framework are already in place. The research task is to identify what is missing from a "real running app" and how to add it correctly. The consensus across all four research areas is clear: the largest gap is not features but infrastructure — the current architecture lacks a run session lifecycle, uses localStorage (which will fail at scale), applies no GPS filtering (making metrics unreliable), and has no service worker for offline resilience. These must be built before any feature polish is meaningful.
+RundLoop v1.1 extends a validated v1.0 production stack (Next.js 16.2, React 19, MapLibre GL JS, OSRM, Claude Haiku, IndexedDB) with scenic route modes and map UX improvements. The research consensus is clear: implement scenic modes (Nature, Explore) via a two-tier approach — first extend the AI prompt with mode-specific instructions (quick win, ships immediately), then optionally enrich waypoints with real POI coordinates from Overpass API (quality improvement, phase 2). The existing route generation pipeline (waypoints -> binary search -> OSRM) is sound and should not be modified. All changes are prompt composition and UI additions on top of stable infrastructure.
 
-The recommended approach treats this milestone as a bottom-up infrastructure build followed by UI integration. The dependency chain is strict: IndexedDB storage and GPS filtering must come first, the RunSession state machine next, then live metrics UI and navigation polish, then post-run summary and history, and finally map visualization enhancements and service worker. The total new bundle impact from recommended libraries is approximately 22KB gzip (idb-keyval, Motion, tree-shaken Turf.js, web-haptics), which is acceptable for a PWA targeting sub-3-second loads.
+The recommended approach requires zero new npm dependencies. Overpass API (free, no API key, raw `fetch()`) handles POI discovery for Nature mode via a server-side Next.js API route with in-memory grid caching. Claude Haiku's training data is sufficient for Explore mode landmarks in major cities. The most important sequencing constraint is iOS GPS permission UX: it must be fixed before map auto-centering is built, and both must ship before scenic modes, because scenic route quality depends on having an accurate GPS anchor point.
 
-The dominant risks are all iOS Safari PWA constraints: GPS tracking stops when the app is backgrounded, storage is silently evicted after 7 days of inactivity, Web Speech API requires an explicit audio context unlock before voice navigation works, and the OSRM public API is unsuitable for production beyond a handful of users. All six critical pitfalls are addressable with known patterns (Wake Lock, IndexedDB persistence, storage.persist(), speech unlock on user gesture, self-hosted or commercial OSRM, adaptive GPS polling), but they must be built in from the start — retrofitting them after the UX is wired up is significantly more expensive.
+Key risks are: (1) LLM coordinate hallucination producing waypoints in water, on highways, or in wrong neighborhoods — mitigated by AI output validation and Overpass as coordinate ground truth; (2) Overpass rate limiting if uncached — mitigated by server-side grid caching with 1-hour TTL and graceful fallback to standard routing; (3) GPS centering race condition on iOS PWA causing a disorienting Stockholm flash — mitigated by caching last-known position in IndexedDB and implementing an explicit permission flow before calling `getCurrentPosition`.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The existing stack (Next.js 16.2, React 19, Tailwind 4, MapLibre 5.20, TypeScript 5) is fixed and sound. The research identified five additions for this milestone: **idb-keyval 6.2.2** replaces localStorage for run data (0.6KB, async, no size limit); **Motion 12.x** (formerly Framer Motion) enables gesture animations and layout transitions needed for Runkeeper-quality polish (~15KB gzip); **@turf/helpers + @turf/distance + @turf/along + @turf/nearest-point-on-line** (tree-shaken, ~5KB total) replace the existing manual haversine for off-route detection, GPS snap-to-route, and progress-along-route; a **manual service worker** (`public/sw.js`) follows the Next.js 16 official recommendation over Serwist for app shell caching; and **web-haptics** (MEDIUM confidence, ~1KB) provides iOS haptic feedback via a Safari 17.4+ undocumented workaround. GPX export requires no dependency — it is ~30 lines of XML string templating.
+The existing stack requires no additions for v1.1. The only new external service is the Overpass API (`overpass-api.de`), accessed via a Next.js API route (`/api/pois`) using raw `fetch()`. The server-side proxy is required to avoid CORS issues and to enable grid-cell caching. OSRM's public `nearest` service can snap flexible start points to walkable roads — but confidence is MEDIUM (it is part of the OSRM spec; public endpoint availability is unconfirmed and must be verified during implementation).
 
 **Core technologies:**
-- **idb-keyval 6.2.2:** IndexedDB storage — 573 bytes, async, replaces blocking localStorage for GPS traces
-- **Motion 12.x:** Animation — only option supporting layout animations + gesture interactions for premium feel
-- **@turf/* (tree-shaken):** Geospatial — off-route detection, snap-to-route, distance-along-line (replaces manual haversine)
-- **Manual sw.js:** Service worker — Next.js 16 recommends hand-written SW; Serwist adds build complexity for limited gain
-- **Wake Lock API:** Native browser API — keep screen on during runs; iOS 16.4+ supported, PWA bug fixed iOS 18.4
-- **web-haptics:** Haptic feedback — MEDIUM confidence; uses undocumented WebKit trick; fallback is Web Audio click
+- Overpass API: POI discovery for Nature mode — free, well-documented, no API key, `around:` radius syntax verified HIGH confidence
+- Next.js API route `/api/pois`: Server-side Overpass proxy with in-memory grid caching — eliminates CORS, enables caching, required for rate limit management
+- OSRM `nearest` service: Snap flexible start point to walkable road — same public endpoint as v1.0, availability unconfirmed (MEDIUM confidence)
+- No new npm packages: Every v1.1 capability is achievable with the existing stack
+
+**Reference:** STACK.md contains full OSM tag taxonomy by route mode and Overpass query examples.
 
 ### Expected Features
 
-The research identified a clear gap between what is built and what users expect from a running app. The most critical missing piece is the live metrics overlay (pace, distance, elapsed time, remaining distance) — this is what every runner looks at constantly and is the most visible gap vs competitors.
+**Must have (table stakes):**
+- Map auto-centers on GPS at app open — every map app does this; Stockholm hardcode is jarring for all non-Stockholm users
+- "Center on me" button (44x44px, bottom-right, crosshair icon) — universal standard across Google Maps, Apple Maps, OsmAnd, Gaia GPS
+- Route mode toggle UI (Standard / Nature / Explore segmented control) — must be prominent on main view, not buried in settings
+- Nature mode biases routes toward parks, green spaces, waterways — core value prop of the feature
+- Explore mode routes past landmarks and viewpoints — core value prop of the feature
+- Flexible start point within 300m of GPS — tap-to-set-start pattern validated by Ride with GPS and plotaroute
+- iOS Safari black screen fix, layout fix (button/tab bar overlap), GPS permission UX fix — prerequisites for GPS centering to function
 
-**Must have (table stakes currently missing or incomplete):**
-- **Live run metrics overlay** (rolling km pace, total distance, elapsed time, remaining distance) — the single most-checked screen during a run
-- **Pause/resume run** — runners stop at traffic lights; without this the app is unusable
-- **Run summary screen** — the reward moment; distance, time, average pace, GPS trace; must save or discard
-- **Keep screen on (Wake Lock)** — trivial to implement; critical for usability; without it navigation is useless
-- **Run history with IndexedDB persistence** — sorted list of completed runs; without history, each run is disposable
+**Should have (competitive):**
+- Overpass API POI enrichment for Nature mode — distinguishes data-driven routes from hallucinated ones; TrailRouter's competitive advantage
+- OSRM-routed walking segment from GPS to flexible start (shown as dashed line) — without this the flexible start creates a confusing dead zone at run start
+- Graceful fallback with user feedback when scenic data unavailable — "No parks found nearby — showing standard route"
 
-**Should have (differentiators that are partially built or high-impact):**
-- **Elevation gradient route coloring** — visual "wow" that makes screenshots shareable; high impact, medium effort
-- **Off-route detection** — makes voice navigation reliable; needs Turf nearest-point-on-line
-- **Split times per km** — expected by intermediate runners; shown in run summary
-- **Route shuffle explicit UX** — make regeneration delightful; the feature exists, the UX does not
-
-**Defer to next milestone (v2+):**
-- GPX export — valuable but not needed for personal-use phase
-- Route sharing links — requires server-side storage
-- Progress analytics / charts — needs sufficient run history data to be useful
-- Personal records — needs run history accumulation
-- Save/reuse favorite routes — lower urgency than live metrics
+**Defer (v2+):**
+- Nature "green score" rating — requires spatial polygon intersection analysis, disproportionate complexity
+- POI labels/chips on map and route preview card — depends on Overpass being stable first
+- Terrain/surface preference toggles — requires OSRM profile customization
+- Full TrailRouter-style green-weighted routing engine — multi-month infrastructure project
 
 ### Architecture Approach
 
-The current architecture has a single god component (`page.tsx`) owning all state with no run session model, no structured metrics computation, and no GPS filtering. The recommended refactor introduces two React contexts: **RunSessionProvider** (owns the GPS subscription, runs the session state machine, computes metrics, persists to IndexedDB) and **MapController** (wraps the MapLibre instance imperatively). Five new library modules underpin these contexts: `gps-engine.ts` (filtering pipeline), `metrics.ts` (pure functions: pace, distance, splits), `navigation.ts` (step tracking, off-route detection), `run-storage.ts` (IndexedDB for completed runs), and `route-storage.ts` (IndexedDB for generated routes). Views (`GenerateView`, `PreRunView`, `ActiveRunView`, `RunSummaryView`, `HistoryView`) become thin consumers of these contexts. The session lifecycle is modeled as an explicit state machine (`idle -> active -> paused -> completed`) via a reducer, preventing impossible states.
+The core architectural principle for v1.1 is "prompt composition over pipeline branching." The existing pipeline (AI prompt -> RouteWaypoint[] -> binary search calibration -> OSRM -> render) is mode-agnostic and must not be modified for scenic modes. Two orthogonal type dimensions must be kept separate: `RouteMode` ('ai' | 'algorithmic') controls the generation engine; `ScenicMode` ('standard' | 'nature' | 'explore') controls the AI prompt flavor. Merging these into a flat enum would create combinatorial coupling. Scenic modes only apply when `routeMode === 'ai'` — the UI should gray out the toggle when algorithmic is selected.
 
 **Major components:**
-1. **RunSessionProvider** — GPS subscription lifecycle, state machine, metrics computation, IndexedDB persistence (crash recovery every 30s)
-2. **GPS Engine (`gps-engine.ts`)** — filters raw positions (accuracy > 30m rejected, < 2m delta rejected, > 45 km/h rejected); emits clean GeoPosition events
-3. **MetricsCalculator (`metrics.ts`)** — pure functions: rolling 30s pace, accumulated distance, elapsed time, per-km splits
-4. **NavigationEngine (`navigation.ts`)** — current step from GPS vs. route instructions, off-route detection via Turf nearest-point-on-line
-5. **RunStorage / RouteStorage** — IndexedDB wrappers via idb-keyval; replaces localStorage; handles migration
-6. **MapController** — imperative MapLibre wrapper; exposes `fitToRoute()`, `updateUserPosition()`, `rotateToBearing()`; avoids React-MapLibre reconciliation flicker
-7. **WakeLockManager** — acquires on run start, re-acquires on visibility change, releases on run end
-8. **Service Worker (`public/sw.js`)** — app shell caching only; GPS cannot run in SW on iOS
+1. `RouteModeToggle.tsx` (NEW) — segmented control for Standard/Nature/Explore; pure UI, no dependencies
+2. `CenterOnMeButton.tsx` (NEW) — map FAB; must integrate into a unified centering state machine (idle/centered/navigating) — not more boolean flags
+3. `route-ai.ts` (MODIFY) — composable `MODE_INSTRUCTIONS` record; adds `scenicMode` and `flexibleStart` parameters; validates and clamps AI-generated start points within 300m
+4. `types/index.ts` (MODIFY) — add `ScenicMode` type; extend `AppSettings` with `scenicMode` and `flexibleStart`
+5. `MapView.tsx` (MODIFY) — auto-center on mount, expose flyTo for center button, unify centering state machine refactoring existing `isAutoRotating`/`showRecenter` booleans
+6. `/api/pois` (NEW Next.js API route) — Overpass proxy with in-memory grid cache, 1-hour TTL, fallback behavior
+
+**Unchanged components:** `route-osrm.ts`, `route-algorithmic.ts`, `route-visuals.ts`, `geolocation.ts`, `NavigationView.tsx`, `useRunSession.ts`, all storage/DB code.
 
 ### Critical Pitfalls
 
-1. **iOS GPS suspension when app loses focus** — use Wake Lock to prevent screen-off; store run state to IndexedDB every 10-30 seconds for crash recovery; detect and handle GPS gaps (timestamp delta) rather than ignoring them; warn users before starting a run
-2. **Raw GPS data makes metrics unusable** — reject positions with accuracy > 25-30m; apply rolling 30s pace window (never use coords.speed); snap displayed position to route polyline; test by leaving phone stationary 5 minutes (phantom distance should be < 10m)
-3. **Web Speech API silent failures on iOS Safari** — unlock audio context with a silent utterance on first user gesture (Start Run button); listen for `voiceschanged` event before accessing voices; call `cancel()` then fresh `speak()` after any visibility change; keep utterances under 200 characters; test only on real iPhone in standalone PWA mode
-4. **iOS storage eviction after 7 days of inactivity** — call `navigator.storage.persist()` on app launch; handle missing/empty IndexedDB gracefully on every load; design Phase 2 cloud sync as the permanent solution
-5. **OSRM public demo API is not production-ready** — self-host OSRM with Sweden OSM extract (~$5-10/month VPS) or switch to Mapbox Directions (100k free/month); add circuit breaker (3 failures -> user-friendly error); cache routes aggressively; must be resolved before multi-user testing
-6. **Map rendering drains battery during navigation** — set `map.setMaxFPS(30)` during navigation; update map position at most every 2-3 seconds (not every GPS tick); avoid continuous heading rotation animation; target < 15% battery per hour; validate with real 30-minute test runs
+1. **LLM coordinate hallucination** — Claude Haiku invents plausible but incorrect coordinates for scenic waypoints, placing them in water, on highways, or wrong neighborhoods. Prevent by: validating all AI-generated waypoints post-generation (reject any outside route bounding box or not OSRM-routable within 500m); using real Overpass coordinates as waypoints rather than asking Claude to invent coordinates (Tier 2).
+
+2. **Overpass rate limiting blocks route generation** — Public endpoint uses slot/cooldown model; under load, requests queue and return HTTP 429. Prevent by: server-side in-memory cache keyed on ~1km grid cells (round lat/lng to 2 decimal places, 1-hour TTL); graceful fallback to standard AI prompt when Overpass returns 429 or times out; never block route generation on POI fetch failure.
+
+3. **GPS auto-center race condition on iOS PWA** — `getCurrentPosition` takes 2-10 seconds on iOS; permission dialog in standalone PWA mode has documented bugs where it never appears. Prevent by: caching last-known position in IndexedDB; checking `navigator.permissions.query({name:'geolocation'})` before triggering native dialog; showing custom pre-prompt; setting 5-second timeout with "Can't find your location" fallback.
+
+4. **"Center on me" button fights existing centering code** — `MapView.tsx` already has `isAutoRotating` and `showRecenter` booleans; adding another centering concept creates ambiguous states and map jitter. Prevent by: refactoring to a unified state machine (`idle` / `centered` / `navigating`) before adding the button — not more booleans on top of booleans.
+
+5. **Flexible start creates unrunnable first segment** — The walk from GPS position to flexible start is invisible in the current model; it can cross highways or require navigation through buildings. Prevent by: always OSRM-routing the GPS-to-start segment; showing it as a dashed "Walk to start" line; validating with OSRM walking distance (not haversine) to enforce the 300m constraint.
 
 ## Implications for Roadmap
 
-Based on research, the architecture's dependency chain dictates a strict bottom-up build order. The run session state machine is the central integration point everything flows through — it cannot be built until the storage and GPS engine foundations exist. UI and visualization can proceed in parallel once the session provider works.
+The dependency graph dictates a clear ordering. iOS GPS permission must be fixed before auto-centering. Auto-centering must be stable before adding the "center on me" button. Type system changes must precede all feature implementation. Tier 1 scenic prompts must be validated before Tier 2 Overpass enrichment is layered on. iOS fixes are independent of scenic mode work and can be parallelized with phases that have no GPS dependency.
 
-### Phase 1: Storage and GPS Foundation
-**Rationale:** IndexedDB (idb-keyval) and GPS filtering are leaf dependencies with no prerequisites. Without them, all subsequent features are built on a broken foundation. This phase produces no visible UI change but makes everything else correct.
-**Delivers:** `RunStorage`, `RouteStorage` (IndexedDB wrappers), `gps-engine.ts` (filtering pipeline), `metrics.ts` (pure functions), `WakeLockManager`, migration from localStorage
-**Addresses:** All table stakes features that need reliable data persistence; sets up split times, run history, crash recovery
-**Avoids:** Phantom distance from GPS noise (Pitfall 2), storage eviction loss (Pitfall 4), localStorage 5MB limit
+### Phase 1: iOS Fixes and GPS Map Centering
 
-### Phase 2: Run Session Lifecycle
-**Rationale:** The RunSession state machine is the central integration point. Once it exists, the UI and navigation layers can be wired in. Nothing in Phase 3+ can be built without this.
-**Delivers:** `RunSession` state machine + reducer, `RunSessionProvider` React context, GPS crash recovery (30s IndexedDB snapshots), pause/resume state, elapsed time computation
-**Addresses:** Pause/resume run, end run with confirmation (table stakes); prevents lost-run scenarios
-**Avoids:** iOS GPS suspension data loss (Pitfall 1), missing run lifecycle causing impossible UI states
+**Rationale:** iOS GPS permission is a prerequisite for all GPS-dependent features. The map centering state machine must be unified before adding the "center on me" button — otherwise two independent centering systems will conflict. These are highest-value, lowest-complexity improvements and are entirely independent of scenic mode work.
 
-### Phase 3: Live Metrics UI
-**Rationale:** With the session provider in place, the most visible gap (no live metrics) can be closed. This is what makes the app feel like a real running app.
-**Delivers:** `ActiveRunView` live metrics overlay (pace, distance, elapsed time, remaining distance), pause/resume/end controls, audio km milestones, navigation step integration
-**Addresses:** Live pace display, live distance, elapsed time, audio milestones (all table stakes), remaining distance (differentiator)
-**Avoids:** Instantaneous pace display anti-feature (use rolling 30s window), information overload (max 3 metrics), small touch targets during run (48px+ minimum)
+**Delivers:** GPS works reliably on iOS PWA; map centers on user location at app open; "center on me" button available; no Stockholm flash for non-Stockholm users; no layout issues from button/tab bar overlap; black screen on iOS Safari resolved.
 
-### Phase 4: Post-Run and History
-**Rationale:** The run lifecycle must complete with a summary and history. Without this, runs are ephemeral. Depends on Phase 2 (completed run data) and Phase 3 (metrics).
-**Delivers:** `RunSummaryView` (stats, GPS trace, save/discard), `HistoryView` (IndexedDB-backed list), split times display
-**Addresses:** Run summary, run history (table stakes), split times per km (differentiator)
-**Avoids:** Storage eviction by requesting persist() in this phase's storage setup
+**Addresses:** iOS GPS permission UX fix, map auto-center on open, "center on me" button, iOS Safari black screen, iOS layout fix.
 
-### Phase 5: Navigation and Map Polish
-**Rationale:** With the core run loop working, navigation quality and visual polish become the differentiators. Off-route detection requires Turf and depends on an active run session existing.
-**Delivers:** Off-route detection (Turf `nearestPointOnLine`), voice alert re-routing, map heading rotation, route gradient visualization (elevation colors via MapLibre `line-gradient`), GPS trace overlay during run
-**Addresses:** Off-route detection, elevation gradient, full route preview (differentiators); turn-by-turn voice reliability
-**Avoids:** False off-route alerts (require 3 consecutive positions, suppress when accuracy > 30m), MapLibre re-render flicker (update source data, not recreate layers), battery drain (map max 30fps)
+**Avoids:** GPS centering race condition on iOS PWA (Pitfall 3); "center on me" state machine conflicts (Pitfall 4).
 
-### Phase 6: PWA and Infrastructure
-**Rationale:** Service worker, OSRM production migration, and animation polish. These have no upstream feature dependencies and can be scoped to a hardening milestone. OSRM must be resolved before any multi-user testing.
-**Delivers:** Manual service worker (app shell caching), OSRM self-hosted or Mapbox migration, Motion animations for view transitions, route shuffle explicit UX
-**Addresses:** Offline resilience, production routing reliability, Runkeeper-quality UI polish
-**Avoids:** OSRM public API failure at scale (Pitfall 5), cold-load perceived performance
+### Phase 2: Type System and Prompt Architecture
+
+**Rationale:** All scenic mode features depend on `ScenicMode` type and composable prompt structure. This phase is invisible to users but unblocks Phases 3 and 4 without requiring orchestration changes mid-feature. Doing it first reduces risk of type errors propagating through multiple components simultaneously.
+
+**Delivers:** `ScenicMode` type in `types/index.ts`; `AppSettings` extended; `route-ai.ts` refactored to composable `MODE_INSTRUCTIONS` templates; `AIRouteRequest` extended; all existing tests pass.
+
+**Addresses:** Architecture pattern (prompt composition over pipeline branching); separation of `RouteMode` and `ScenicMode` as orthogonal axes.
+
+**Avoids:** Merging route mode and scenic mode into flat enum (Architecture Anti-Pattern 2 from ARCHITECTURE.md).
+
+### Phase 3: Scenic Route Modes — Tier 1 (AI Prompt)
+
+**Rationale:** Mode toggle UI and AI prompt changes deliver immediate differentiation with low risk. Ship before adding Overpass complexity. Validate prompt quality empirically in multiple cities before building Tier 2 on top.
+
+**Delivers:** Route mode toggle UI (Standard / Nature / Explore) on main view; Nature mode prompt producing visibly greener routes in well-mapped cities; Explore mode routing past landmarks and viewpoints; mode preference persisted in IndexedDB; scenic distance calibration validated (±15% tolerance empirically confirmed).
+
+**Addresses:** Route mode toggle UI, Nature mode (Tier 1), Explore mode (Tier 1).
+
+**Avoids:** Scenic distance calibration breaking with POI-attracted waypoints (Pitfall 5 from PITFALLS.md) — must be tested with 20 routes per mode before shipping.
+
+**Research flag:** MEDIUM — Claude Haiku scenic prompt quality needs empirical validation across multiple cities; may require iterative prompt tuning.
+
+### Phase 4: Flexible Start Point
+
+**Rationale:** Independent of scenic mode but depends on GPS foundation (Phase 1). More complex than it appears — the walking segment routing and visual distinction are mandatory deliverables, not nice-to-haves. Flexible start is also a prerequisite for Nature mode auto-snapping to park entrances in a future iteration.
+
+**Delivers:** Tap-to-set-start interaction within 300m radius of GPS; OSRM-routed walking segment from GPS to flexible start (shown as dashed "Walk to start" line); start point clamping when tap exceeds 300m using OSRM walking distance not haversine; reset to GPS position button; AI prompt instruction for flexible start waypoint.
+
+**Addresses:** Flexible start point feature; walking segment routing and visual distinction.
+
+**Avoids:** Flexible start generating unrunnable first/last segments (Pitfall 5 from PITFALLS.md).
+
+### Phase 5: Overpass POI Enrichment — Tier 2 (Nature Mode)
+
+**Rationale:** Only build this after Tier 1 scenic modes are validated and shipping. Overpass adds meaningful route quality improvement for well-mapped areas but introduces the most external dependency risk of any v1.1 feature. Server-side caching and fallback must be first-class requirements from the start, not added later.
+
+**Delivers:** Next.js API route `/api/pois`; Overpass QL queries for Nature mode OSM tags (parks, water, forest, meadow, gardens); in-memory grid cache (1-hour TTL, ~1km grid cells); graceful fallback to Tier 1 AI-only prompt when Overpass fails or returns fewer than 2 POIs; user feedback when falling back; integration with waypoint generation using real POI coordinates instead of AI-invented ones.
+
+**Addresses:** Overpass POI enrichment for Nature mode; LLM coordinate hallucination (by using real coordinates).
+
+**Avoids:** Overpass rate limiting (Pitfall 2); OSM POI data gaps causing silent failure (Pitfall 3); LLM coordinate hallucination (Pitfall 1).
+
+**Research flag:** HIGH — Overpass integration requires empirical testing across multiple regions including poor-coverage areas; fallback logic must be validated by disabling Overpass in devtools; OSRM `nearest` availability must be confirmed before using it for start point snapping.
 
 ### Phase Ordering Rationale
 
-- **Storage before session:** You cannot persist a run session without a working storage layer. Build the foundation first even though it produces no visible output.
-- **Session before UI:** The state machine is the API contract that all views program against. Defining it first prevents UI components from duplicating state.
-- **Metrics before post-run:** You cannot show a run summary without a complete metrics computation pipeline tested live.
-- **Navigation polish after core loop:** Off-route detection and map rotation are delighters, not foundations. A working-but-rough navigation is more valuable than a polished navigation that loses data.
-- **PWA/infrastructure last:** Service worker can be retrofitted without architecture changes. OSRM migration is operational work that does not affect the React component tree.
+- iOS GPS must precede map auto-centering (direct dependency); centering state machine must be unified before adding "center on me" button
+- Type system refactoring must precede all feature implementation (compiler dependency, reduces risk)
+- Tier 1 scenic modes must precede Tier 2 Overpass enrichment (validate quality before adding complexity and failure modes)
+- Flexible start is independent of scenic mode but depends on GPS stability — place after Phase 1
+- Overpass phase is last: most external dependencies, most failure modes to test, most validation required
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 5 (Navigation and Map Polish):** Elevation data sourcing for gradient visualization is unresolved. OSRM's route response includes elevation if the OSM data has it, but the public API may not. The Open-Elevation API is an alternative (free, OSS). Research needed when planning this phase.
-- **Phase 6 (OSRM migration):** Self-hosting OSRM with the foot profile for a Sweden OSM extract requires infrastructure setup. Mapbox Directions is a simpler alternative but has per-request costs at scale. Decision needs cost modeling.
+Phases needing deeper research or empirical validation during planning:
+- **Phase 3 (Scenic prompts):** Claude Haiku's scenic route quality is MEDIUM confidence — needs empirical prompt testing in at least 3 cities (well-mapped, average, and poorly-mapped) before considering it done. Budget 2-3 prompt iteration cycles.
+- **Phase 5 (Overpass):** OSRM `nearest` service availability on public endpoint is unconfirmed — verify with a test HTTP call before designing the flexible start snapping flow. OSM coverage gaps must be validated in non-European locations.
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1 (Storage/GPS):** idb-keyval and Geolocation API are well-documented. GPS filtering patterns are well-established. No research needed.
-- **Phase 2 (Run Session):** useReducer state machine is a standard React pattern. No research needed.
-- **Phase 3 (Live Metrics):** Rolling window pace and timer implementation are straightforward. No research needed.
-- **Phase 4 (History):** IndexedDB pagination is well-documented. No research needed.
+Phases with standard patterns (research-phase not needed):
+- **Phase 1 (iOS/GPS):** iOS PWA geolocation issues have known documented workarounds. MapLibre `flyTo` API is stable and well-documented.
+- **Phase 2 (Types/Prompt refactor):** Pure TypeScript refactoring with no external dependencies. Patterns are clear.
+- **Phase 4 (Flexible start):** Haversine + OSRM routing patterns are established; geometry is straightforward.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All recommended libraries verified against official docs and npm. Version numbers confirmed. Bundle impacts measured. iOS compatibility matrix verified against caniuse.com and WebKit bugs. |
-| Features | HIGH | Competitive analysis against Strava, NRC, Runkeeper with cited sources. Feature priorities grounded in what running apps actually ship, not speculation. |
-| Architecture | HIGH | Patterns derived from first-principles analysis of the existing codebase + well-documented MDN/web.dev sources. State machine, GPS filtering, and IndexedDB patterns have broad documentation. |
-| Pitfalls | HIGH | All six critical pitfalls are documented from official sources (WebKit bugs, Apple developer forums, OSRM usage policy). Reproduction steps provided. iOS-specific behaviors verified against real device reports. |
+| Stack | HIGH | Existing stack validated in production. Overpass API free, well-documented, query syntax verified against official docs. Zero new npm deps confirmed by direct requirement analysis. |
+| Features | HIGH | Table stakes derived from Komoot, Strava, TrailRouter, Google Maps patterns. iOS bugs are confirmed existing issues. 300m flexible start constraint from PRD. Feature priority order based on implementation dependency graph. |
+| Architecture | HIGH | Based on direct codebase analysis of `route-ai.ts`, `page.tsx`, `MapView.tsx`, `types/index.ts`. Prompt composition pattern is clear and low-risk. Component boundaries cleanly defined. |
+| Pitfalls | MEDIUM-HIGH | LLM hallucination sourced from peer-reviewed research (Nature 2025). Overpass rate limiting documented in official API commons. iOS PWA geolocation bug documented by Apple. OSM coverage gap from SAGE journal (22% completeness, note: focuses on private businesses; parks likely better covered). OSRM `nearest` availability is MEDIUM — spec-based inference, needs empirical verification. |
 
-**Overall confidence:** HIGH
+**Overall confidence:** MEDIUM-HIGH
 
 ### Gaps to Address
 
-- **Elevation data for gradient visualization:** OSRM's foot routing may or may not return elevation data depending on the OSM data quality for the region. The Open-Elevation API is an alternative but adds a dependency. Verify during Phase 5 planning whether OSRM's response includes `nodes[].elevation` for Swedish OSM data.
-- **web-haptics stability:** MEDIUM confidence only. The `<input switch>` haptic trick is undocumented WebKit behavior. Monitor Apple developer changelog. If removed in an iOS update, fall back to short Web Audio click sound. Low risk — haptics are an enhancement, not a core feature.
-- **Motion 12.x import path:** The library was rebranded from `framer-motion` to `motion`. Import from `motion/react`, not `framer-motion`. Verify build output does not include both packages if any dependencies still reference `framer-motion`.
-- **Kalman filter for GPS:** PITFALLS.md recommends `kalmanjs` for GPS noise reduction beyond the simple accuracy/speed rejection filter. STACK.md does not include it. The simpler filtering (accuracy threshold + speed check) may be sufficient for MVP. Validate during Phase 1 implementation with real device testing before deciding whether to add kalmanjs.
+- **OSRM `nearest` service availability:** Verify with a test HTTP call during Phase 4 implementation. Fallback: use raw haversine offset point (OSRM `route` will snap to nearest road anyway).
+- **Claude Haiku scenic prompt quality by city:** Training data quality varies significantly. Empirically test in at least 3 locations during Phase 3. If quality is insufficient for less-known cities, Tier 2 Overpass enrichment becomes higher priority.
+- **Overpass regional coverage:** 22% completeness study focuses on commercial POIs; parks and natural features likely better covered but not validated. Test with US suburban and rural locations during Phase 5. Fallback behavior is mandatory before shipping.
+- **Client-side API key exposure:** Existing architecture uses `anthropic-dangerous-direct-browser-access`. Documented tech debt from v1.0. Do not address in v1.1 feature phases — document and defer to a dedicated security phase.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Next.js PWA Guide (official, v16.2.0)](https://nextjs.org/docs/app/guides/progressive-web-apps) — service worker approach
-- [MDN: Screen Wake Lock API](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API) — Wake Lock patterns
-- [MDN: Offline and background operation for PWAs](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation) — offline architecture
-- [WebKit Storage Policy Updates](https://webkit.org/blog/14403/updates-to-storage-policy/) — 7-day storage eviction
-- [WebKit Bug 254545: Wake Lock in Home Screen Web Apps](https://bugs.webkit.org/show_bug.cgi?id=254545) — iOS 18.4 fix confirmed
-- [OSRM API Usage Policy](https://github.com/Project-OSRM/osrm-backend/wiki/Api-usage-policy) — public API not for production
-- [Can I Use: Wake Lock API](https://caniuse.com/wake-lock) — iOS 16.4+ confirmed
-- [MapLibre GL JS Documentation](https://maplibre.org/maplibre-gl-js/docs/) — rendering, gradients, performance
-- [idb-keyval npm](https://www.npmjs.com/package/idb-keyval) — v6.2.2 confirmed
-- [Motion (formerly Framer Motion)](https://motion.dev/) — v12.x import paths
+- Codebase analysis: `src/lib/route-ai.ts`, `src/lib/route-osrm.ts`, `src/lib/route-algorithmic.ts`, `src/app/page.tsx`, `src/types/index.ts`, `src/components/MapView.tsx` — architecture, pipeline, existing type system
+- [Overpass API Wiki](https://wiki.openstreetmap.org/wiki/Overpass_API) — API behavior, rate limits, query syntax
+- [Overpass QL Reference](https://wiki.openstreetmap.org/wiki/Overpass_API/Overpass_QL) — `around:` syntax, `out center;`, timeout/maxsize parameters
+- [OSM Key:leisure](https://wiki.openstreetmap.org/wiki/Key:leisure), [Key:natural](https://wiki.openstreetmap.org/wiki/Key:natural), [Key:tourism](https://wiki.openstreetmap.org/wiki/Key:tourism) — OSM tag taxonomy for Nature/Explore modes
+- [How Trail Router Works](https://trailrouter.com/blog/how-trail-router-works/) — OSM-based green routing; green index, perimeter waypoints validated approach
 
 ### Secondary (MEDIUM confidence)
-- [PWA iOS Limitations and Safari Support 2026](https://www.magicbell.com/blog/pwa-ios-limitations-safari-support-complete-guide) — iOS PWA constraint overview
-- [The State of Speech Synthesis in Safari](https://weboutloud.io/bulletin/speech_synthesis_in_safari/) — iOS SpeechSynthesis quirks
-- [MapLibre Performance (GitHub Issue #96)](https://github.com/maplibre/maplibre-gl-js/issues/96) — GPU re-render issues
-- [Strava vs Nike Run Club feature comparison](https://vernekard.medium.com/strava-vs-nike-run-club-whats-the-best-running-app-a96fcc61bb94) — competitive feature analysis
-- [Running Apps UX Research](https://fernandocomet.medium.com/running-apps-ux-research-7e07e41f556c) — UX patterns
-- [web-haptics GitHub](https://github.com/lochie/web-haptics) — iOS haptic workaround
+- [Overpass rate limit issues (GitHub)](https://github.com/drolbr/Overpass-API/issues/333) — slot/cooldown rate limiting behavior
+- [LLM spatial hallucination (Nature, 2025)](https://www.nature.com/articles/s41598-025-93601-5) — LLMs assume non-existent paths, coordinate generation unreliable
+- [LLM geocoding performance (GDELT)](https://blog.gdeltproject.org/generative-ai-experiments-the-surprisingly-poor-performance-of-llm-based-geocoders-geographic-bias-why-gpt-3-5-gemini-pro-outperform-gpt-4-0-in-underrepresented-geographies/) — coordinate generation unreliability by geography
+- [iOS PWA geolocation bug (Apple Developer Forums)](https://developer.apple.com/forums/thread/694999) — location alert not appearing in standalone mode
+- [Ride with GPS — Change Start](https://support.ridewithgps.com/hc/en-us/articles/27321702268443-Change-Start) — flexible start point UX pattern
+- [Google Maps iOS SDK — My Location Button](https://developers.google.com/maps/documentation/ios-sdk/examples/enable-my-location) — "center on me" button standard pattern
+- [Gaia GPS — Locate and Orient](https://help.gaiagps.com/hc/en-us/articles/360047951533-Locate-and-Orient-Yourself-on-the-Map) — three-state location button pattern (off/centered/heading-locked)
 
 ### Tertiary (LOW confidence)
-- [web-haptics package](https://github.com/lochie/web-haptics) — uses undocumented WebKit behavior; may break on iOS update
+- [OSM POI quality research (SAGE)](https://journals.sagepub.com/doi/10.1177/03611981231169280) — 22% completeness finding (focuses on private businesses; parks likely better covered but not validated for this study)
+- OSRM `nearest` service on public endpoint — inferred from OSRM API spec; needs empirical verification before relying on it
 
 ---
-*Research completed: 2026-03-19*
+*Research completed: 2026-03-21*
 *Ready for roadmap: yes*
