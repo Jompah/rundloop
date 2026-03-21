@@ -9,9 +9,9 @@ Requirements for v1.1 milestone (Route Quality & Map UX). Each maps to roadmap p
 
 ### Map UX
 
-- [ ] **MAP-01**: Map auto-centers on user GPS position on app open
-- [ ] **MAP-02**: "Center on me" button visible on map to re-center anytime
-- [ ] **MAP-03**: Map centering state machine (auto-rotate during nav vs free-pan vs centered)
+- [x] **MAP-01**: Map auto-centers on user GPS position on app open
+- [x] **MAP-02**: "Center on me" button visible on map to re-center anytime
+- [x] **MAP-03**: Map centering state machine (auto-rotate during nav vs free-pan vs centered)
 
 ### Route Quality
 
@@ -56,9 +56,9 @@ Requirements for v1.1 milestone (Route Quality & Map UX). Each maps to roadmap p
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MAP-01 | Phase 11 | Pending |
-| MAP-02 | Phase 11 | Pending |
-| MAP-03 | Phase 11 | Pending |
+| MAP-01 | Phase 11 | Complete |
+| MAP-02 | Phase 11 | Complete |
+| MAP-03 | Phase 11 | Complete |
 | ROUTE-01 | Phase 12 | Pending |
 | ROUTE-02 | Phase 13 | Pending |
 | ROUTE-03 | Phase 13 | Pending |
