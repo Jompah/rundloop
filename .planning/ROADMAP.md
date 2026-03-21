@@ -42,7 +42,10 @@
   2. User can tap a "center on me" button to re-center the map on their current GPS position at any time
   3. Map centering behaves correctly across states: free-pan returns to idle, center button snaps back, navigation mode auto-rotates with heading
   4. iOS Safari renders the map without a black screen, buttons do not overlap the tab bar, and GPS permission is requested explicitly with retry option
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 11-01-PLAN.md — TDD: centering state machine reducer and useMapCentering hook
+- [ ] 11-02-PLAN.md — Wire centering hook into MapView and page.tsx, replace Stockholm hardcode
 
 Note: IOS-01, IOS-02, IOS-03 are pre-completed (already committed to codebase). Remaining scope is MAP-01, MAP-02, MAP-03.
 
@@ -96,7 +99,7 @@ Note: Phase 14 depends on Phase 11 (not 13), so it could run in parallel with 12
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1-10 | v1.0 | 28/28 | Complete | 2026-03-21 |
-| 11. iOS Fixes & GPS Map Centering | v1.1 | 0/? | Not started | - |
+| 11. iOS Fixes & GPS Map Centering | v1.1 | 0/2 | Planning | - |
 | 12. Route Mode Architecture | v1.1 | 0/? | Not started | - |
 | 13. Scenic Route Modes | v1.1 | 0/? | Not started | - |
 | 14. Flexible Start Point | v1.1 | 0/? | Not started | - |
