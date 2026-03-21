@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Route Quality & Map UX
 status: unknown
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-03-21T07:50:14.166Z"
+stopped_at: Completed 11-02-PLAN.md
+last_updated: "2026-03-21T07:56:32.859Z"
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -49,6 +49,7 @@ Plan: 1 of 2
 
 *Updated after each plan completion*
 | Phase 11 P01 | 3min | 2 tasks | 2 files |
+| Phase 11 P02 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -60,6 +61,8 @@ Plan: 1 of 2
 - Roadmap: Scenic modes split into Architecture (12) then Implementation (13) to isolate type system changes
 - [Phase 11]: Exported centeringReducer separately for pure unit testing without React
 - [Phase 11]: Used GPS_UPDATE for stored IndexedDB position to avoid premature centered state
+- [Phase 11]: Position persistence uses dbPut on every GPS update for freshness
+- [Phase 11]: flyTo (1500ms) for first lock, easeTo (300ms) for subsequent updates, flyTo (800ms) for user recenter
 
 ### Pending Todos
 
@@ -73,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T07:50:14.150Z
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-03-21T07:56:32.843Z
+Stopped at: Completed 11-02-PLAN.md
 Resume file: None
