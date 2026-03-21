@@ -63,19 +63,19 @@ Runners see the entire loop route upfront before taking a single step — no sur
 - ✓ Cross-phase wiring fixes (route polyline in history, unit propagation, calories, default distance) — v1.0
 - ✓ PWA icons (192px and 512px) and manifest completion — v1.0
 - ✓ Dead code cleanup (removed unused /api/generate-route) — v1.0
+- ✓ iOS Safari map rendering fix (black screen) — Validated in Phase 11: iOS Fixes & GPS Map Centering
+- ✓ iOS layout fix (button overlap with tab bar) — Validated in Phase 11: iOS Fixes & GPS Map Centering
+- ✓ iOS GPS UX (explicit permission flow instead of silent simulation) — Validated in Phase 11: iOS Fixes & GPS Map Centering
+- ✓ Map centers on user GPS position on app open — Validated in Phase 11: iOS Fixes & GPS Map Centering
+- ✓ "Center on me" button to re-center map on GPS — Validated in Phase 11: iOS Fixes & GPS Map Centering
 
 ### Active
 
-- [ ] Map centers on user GPS position on app open
-- [ ] "Center on me" button to re-center map on GPS
 - [ ] Route mode: Nature run (parks, waterfronts, green areas)
 - [ ] Route mode: Explore run (landmarks, viewpoints, touristy areas)
 - [ ] Route mode toggle in UI
 - [ ] AI waypoint selection respects route mode
 - [ ] Flexible start point within 300m of GPS location
-- [ ] iOS Safari map rendering fix (black screen)
-- [ ] iOS layout fix (button overlap with tab bar)
-- [ ] iOS GPS UX (explicit permission flow instead of silent simulation)
 
 ### Out of Scope
 
@@ -123,7 +123,7 @@ Runners see the entire loop route upfront before taking a single step — no sur
 
 ## Current State
 
-v1.0 MVP shipped. All 10 phases (28 plans) completed and validated. The app delivers GPS-guided turn-by-turn navigation, live run metrics, route visualization with elevation gradients and turn indicators, run history and saved routes, voice guidance with iOS audio unlock, post-run summaries, progress analytics, route sharing, and full PWA offline support.
+v1.0 MVP shipped. All 10 phases (28 plans) completed and validated. Phase 11 (iOS Fixes & GPS Map Centering) completed: fixed iOS Safari black screen rendering, button/tab bar overlap, and GPS permission UX; implemented GPS-based map auto-centering on app open with a centering state machine and "center on me" button. The app delivers GPS-guided turn-by-turn navigation, live run metrics, route visualization with elevation gradients and turn indicators, run history and saved routes, voice guidance with iOS audio unlock, post-run summaries, progress analytics, route sharing, and full PWA offline support.
 
 ## Current Milestone: v1.1 Route Quality & Map UX
 
@@ -138,4 +138,4 @@ v1.0 MVP shipped. All 10 phases (28 plans) completed and validated. The app deli
 - iOS Safari bug fixes (black screen, layout, GPS UX)
 
 ---
-*Last updated: 2026-03-21 after v1.1 milestone start*
+*Last updated: 2026-03-21 after Phase 11 completion*
