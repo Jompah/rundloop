@@ -66,7 +66,16 @@ Runners see the entire loop route upfront before taking a single step — no sur
 
 ### Active
 
-(Planning next milestone)
+- [ ] Map centers on user GPS position on app open
+- [ ] "Center on me" button to re-center map on GPS
+- [ ] Route mode: Nature run (parks, waterfronts, green areas)
+- [ ] Route mode: Explore run (landmarks, viewpoints, touristy areas)
+- [ ] Route mode toggle in UI
+- [ ] AI waypoint selection respects route mode
+- [ ] Flexible start point within 300m of GPS location
+- [ ] iOS Safari map rendering fix (black screen)
+- [ ] iOS layout fix (button overlap with tab bar)
+- [ ] iOS GPS UX (explicit permission flow instead of silent simulation)
 
 ### Out of Scope
 
@@ -116,5 +125,17 @@ Runners see the entire loop route upfront before taking a single step — no sur
 
 v1.0 MVP shipped. All 10 phases (28 plans) completed and validated. The app delivers GPS-guided turn-by-turn navigation, live run metrics, route visualization with elevation gradients and turn indicators, run history and saved routes, voice guidance with iOS audio unlock, post-run summaries, progress analytics, route sharing, and full PWA offline support.
 
+## Current Milestone: v1.1 Route Quality & Map UX
+
+**Goal:** Improve route generation quality with scenic/nature and explore modes, fix map centering and iOS UX issues, and add flexible start points within 300m.
+
+**Target features:**
+- Map auto-centers on GPS location on app open
+- "Center on me" crosshair button (standard navigation UX)
+- Route mode toggle: Nature (parks, waterfronts, green areas) vs Explore (landmarks, touristy viewpoints)
+- AI-powered scenic waypoint selection based on mode
+- Flexible route start point (within 300m of GPS location)
+- iOS Safari bug fixes (black screen, layout, GPS UX)
+
 ---
-*Last updated: 2026-03-21 after v1.0 milestone*
+*Last updated: 2026-03-21 after v1.1 milestone start*

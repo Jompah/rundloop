@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: unknown
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-03-20T23:19:02.052Z"
+milestone: v1.1
+milestone_name: Route Quality & Map UX
+status: defining-requirements
+stopped_at: ""
+last_updated: "2026-03-21T05:19:22.083Z"
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 28
-  completed_plans: 28
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -19,12 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Runners see the entire loop route upfront before taking a single step
-**Current focus:** Phase 10 — pwa-completion
+**Current focus:** Milestone v1.1 — Route Quality & Map UX
 
 ## Current Position
 
-Phase: 10 (pwa-completion) — EXECUTING
-Plan: 1 of 1
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-21 — Milestone v1.1 started
 
 ## Performance Metrics
 
