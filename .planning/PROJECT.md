@@ -2,7 +2,7 @@
 
 ## What This Is
 
-RundLoop is a mobile-first Progressive Web App for runners that generates beautiful loop routes of a specified distance, shows the full route before the run begins, and provides GPS-guided turn-by-turn navigation during the run. Built with Next.js, MapLibre GL JS, and OSRM foot-routing, with an MVP already live at rundloop.vercel.app.
+RundLoop is a mobile-first Progressive Web App for runners that generates beautiful loop routes of a specified distance, shows the full route before the run begins, and provides GPS-guided turn-by-turn navigation during the run. The v1.0 MVP ships with GPS navigation and live metrics, route visualization with elevation gradients and turn indicators, run history and saved routes, voice guidance with iOS audio unlock, post-run summaries with GPS trace overlay, progress analytics, route sharing (unique links and GPX export), and full PWA offline support with service worker caching. Built with Next.js, MapLibre GL JS, OSRM foot-routing, and IndexedDB persistence.
 
 ## Core Value
 
@@ -12,59 +12,61 @@ Runners see the entire loop route upfront before taking a single step — no sur
 
 ### Validated
 
-- ✓ Basic route generation (AI and algorithmic modes) — existing
-- ✓ Distance slider with binary search calibration — existing
-- ✓ Multi-sample retry for waypoint convergence — existing
-- ✓ MapLibre map rendering with route display — existing
-- ✓ Basic GPS tracking via Geolocation API — existing
-- ✓ Rudimentary voice navigation via Web Speech API — existing
-- ✓ Next.js app with Tailwind CSS styling — existing
-- ✓ PWA manifest and basic setup — existing
-- ✓ OSRM foot-routing integration — existing
-- ✓ Claude Haiku API for AI route generation — existing
-- ✓ Settings view — existing
-- ✓ History view (basic) — existing
-- ✓ Vercel deployment — existing
-- ✓ IndexedDB persistence layer (runs, routes, settings stores) — Phase 1
-- ✓ GPS position filtering (30m accuracy, 3m jitter, 12.5m/s teleport rejection) — Phase 1
-- ✓ Wake Lock API integration with iOS visibility re-acquisition — Phase 1
-- ✓ Crash recovery via periodic IndexedDB snapshots — Phase 1
-- ✓ Storage persistence request to prevent iOS 7-day eviction — Phase 1
-- ✓ localStorage to IndexedDB migration — Phase 1
-- ✓ Run session state machine (idle/active/paused/completed) — Phase 2
-- ✓ Pause/resume with timer and GPS tracking coordination — Phase 2
-- ✓ End run with confirmation dialog — Phase 2
-- ✓ Crash recovery detection and resume/discard dialog — Phase 2
-- ✓ GPS filter wired into app (watchFilteredPosition replaces watchPosition) — Phase 2
-- ✓ Rolling pace calculation (30 s sliding window over GPS samples) — Phase 3
-- ✓ Live distance accumulation from filtered GPS positions — Phase 3
-- ✓ Elapsed time display (timer driven by run session state machine) — Phase 3
-- ✓ Remaining distance overlay (route geometry minus completed distance) — Phase 3
-- ✓ Live run metrics overlay wired into NavigationView — Phase 3
-- ✓ Map auto-rotation (heading-up bearing locked to GPS course) — Phase 4
-- ✓ Off-route detection with automatic rerouting prompt — Phase 4
-- ✓ Voice distance milestones (every km/mile announcement) — Phase 4
-- ✓ iOS audio unlock (silent AudioContext tap to bypass autoplay policy) — Phase 4
-- ✓ Post-run summary screen with stats (distance, duration, pace, calories) — Phase 5
-- ✓ GPS trace overlay on summary map — Phase 5
-- ✓ Save/discard run at end of session — Phase 5
-- ✓ Calorie estimation from distance and elapsed time — Phase 5
-- ✓ Run history browsing with IndexedDB persistence and route thumbnails — Validated in Phase 6: Run History & Saved Routes
-- ✓ Saved routes management (save, list, reuse favorite routes) — Validated in Phase 6: Run History & Saved Routes
-- ✓ Bottom tab navigation (map/history/saved routes/settings) — Validated in Phase 6: Run History & Saved Routes
-- ✓ Gap closure for pre-existing TypeScript errors — Validated in Phase 6: Run History & Saved Routes
-- ✓ Elevation gradient route coloring (speed/altitude-based color ramp) — Validated in Phase 7: Route Visualization
-- ✓ Dark-mode OLED map tiles (custom dark tile style optimized for OLED screens) — Validated in Phase 7: Route Visualization
-- ✓ Start/finish markers (distinct icons at route endpoints) — Validated in Phase 7: Route Visualization
-- ✓ Turn indicators (directional arrows along route at waypoints) — Validated in Phase 7: Route Visualization
-- ✓ Premium UI/UX (Runkeeper-quality design, dark mode default, haptic feedback, fluid animations) — Validated in Phase 8: UI/UX & PWA Polish
-- ✓ Service worker for offline app shell caching — Validated in Phase 8: UI/UX & PWA Polish
-- ✓ Progress analytics (weekly/monthly summaries, pace trends, personal records) — Validated in Phase 8: UI/UX & PWA Polish
-- ✓ Route sharing (unique links, GPX export) — Validated in Phase 8: UI/UX & PWA Polish
+- ✓ Basic route generation (AI and algorithmic modes) — v1.0
+- ✓ Distance slider with binary search calibration — v1.0
+- ✓ Multi-sample retry for waypoint convergence — v1.0
+- ✓ MapLibre map rendering with route display — v1.0
+- ✓ Basic GPS tracking via Geolocation API — v1.0
+- ✓ Voice navigation via Web Speech API — v1.0
+- ✓ Next.js app with Tailwind CSS styling — v1.0
+- ✓ PWA manifest and service worker — v1.0
+- ✓ OSRM foot-routing integration — v1.0
+- ✓ Claude Haiku API for AI route generation — v1.0
+- ✓ Settings view — v1.0
+- ✓ Vercel deployment — v1.0
+- ✓ IndexedDB persistence layer (runs, routes, settings stores) — v1.0
+- ✓ GPS position filtering (30m accuracy, 3m jitter, 12.5m/s teleport rejection) — v1.0
+- ✓ Wake Lock API integration with iOS visibility re-acquisition — v1.0
+- ✓ Crash recovery via periodic IndexedDB snapshots — v1.0
+- ✓ Storage persistence request to prevent iOS 7-day eviction — v1.0
+- ✓ localStorage to IndexedDB migration — v1.0
+- ✓ Run session state machine (idle/active/paused/completed) — v1.0
+- ✓ Pause/resume with timer and GPS tracking coordination — v1.0
+- ✓ End run with confirmation dialog — v1.0
+- ✓ Crash recovery detection and resume/discard dialog — v1.0
+- ✓ GPS filter wired into app (watchFilteredPosition replaces watchPosition) — v1.0
+- ✓ Rolling pace calculation (30 s sliding window over GPS samples) — v1.0
+- ✓ Live distance accumulation from filtered GPS positions — v1.0
+- ✓ Elapsed time display (timer driven by run session state machine) — v1.0
+- ✓ Remaining distance overlay (route geometry minus completed distance) — v1.0
+- ✓ Live run metrics overlay wired into NavigationView — v1.0
+- ✓ Map auto-rotation (heading-up bearing locked to GPS course) — v1.0
+- ✓ Off-route detection with automatic rerouting prompt — v1.0
+- ✓ Voice distance milestones (every km/mile announcement) — v1.0
+- ✓ iOS audio unlock (silent AudioContext tap to bypass autoplay policy) — v1.0
+- ✓ Post-run summary screen with stats (distance, duration, pace, calories) — v1.0
+- ✓ GPS trace overlay on summary map — v1.0
+- ✓ Save/discard run at end of session — v1.0
+- ✓ Calorie estimation from distance and elapsed time — v1.0
+- ✓ Run history browsing with IndexedDB persistence and route thumbnails — v1.0
+- ✓ Saved routes management (save, list, reuse favorite routes) — v1.0
+- ✓ Bottom tab navigation (map/history/saved routes/settings) — v1.0
+- ✓ Gap closure for pre-existing TypeScript errors — v1.0
+- ✓ Elevation gradient route coloring (speed/altitude-based color ramp) — v1.0
+- ✓ Dark-mode OLED map tiles (custom dark tile style optimized for OLED screens) — v1.0
+- ✓ Start/finish markers (distinct icons at route endpoints) — v1.0
+- ✓ Turn indicators (directional arrows along route at waypoints) — v1.0
+- ✓ Premium UI/UX (Runkeeper-quality design, dark mode default, haptic feedback, fluid animations) — v1.0
+- ✓ Service worker for offline app shell caching — v1.0
+- ✓ Progress analytics (weekly/monthly summaries, pace trends, personal records) — v1.0
+- ✓ Route sharing (unique links, GPX export) — v1.0
+- ✓ Cross-phase wiring fixes (route polyline in history, unit propagation, calories, default distance) — v1.0
+- ✓ PWA icons (192px and 512px) and manifest completion — v1.0
+- ✓ Dead code cleanup (removed unused /api/generate-route) — v1.0
 
 ### Active
 
-(All requirements validated — v1.0 complete)
+(Planning next milestone)
 
 ### Out of Scope
 
@@ -80,8 +82,9 @@ Runners see the entire loop route upfront before taking a single step — no sur
 
 ## Context
 
-- MVP is live at rundloop.vercel.app with basic route generation and navigation
-- Tech stack: Next.js 16.2.0, Tailwind CSS 4, MapLibre GL JS, OSRM (foot profile), Claude Haiku API
+- v1.0 MVP shipped 2026-03-21 at rundloop.vercel.app
+- ~125 tests across unit and integration suites
+- Tech stack: Next.js, TypeScript, Tailwind CSS 4, MapLibre GL JS, OSRM (foot profile), Claude Haiku API, IndexedDB
 - Hosted on Vercel, deployed from main branch
 - Primary target: iPhone/iOS Safari as installed PWA (375px-430px width)
 - Visual benchmark: Runkeeper — app must look and feel as polished or better
@@ -103,15 +106,15 @@ Runners see the entire loop route upfront before taking a single step — no sur
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| PWA over native app | Faster iteration, no app store friction, works across platforms | — Pending |
-| Dark mode as default | Runners often run early/late, saves battery on OLED, premium feel | — Pending |
-| OSRM for routing | Free, self-hostable, foot profile available, already integrated | — Pending |
-| IndexedDB for local storage (Phase 1) | No backend needed for personal use, fast, offline-capable | — Pending |
-| Fine granularity for phases | Complex feature set benefits from focused phases | — Pending |
+| PWA over native app | Faster iteration, no app store friction, works across platforms | Validated in v1.0 |
+| Dark mode as default | Runners often run early/late, saves battery on OLED, premium feel | Validated in v1.0 |
+| OSRM for routing | Free, self-hostable, foot profile available, already integrated | Validated in v1.0 |
+| IndexedDB for local storage | No backend needed for personal use, fast, offline-capable | Validated in v1.0 |
+| Fine granularity for phases | Complex feature set benefits from focused phases | Validated in v1.0 |
 
 ## Current State
 
-Phase 8 (UI/UX & PWA Polish) is complete. ALL 8 PHASES COMPLETE — milestone v1.0 is done. The app now features Runkeeper-quality design with dark mode default, haptic feedback, and fluid animations; a service worker for offline app shell caching; progress analytics with weekly/monthly summaries, pace trends, and personal records; and route sharing via unique links and GPX export. Phases 1–8 are fully validated.
+v1.0 MVP shipped. All 10 phases (28 plans) completed and validated. The app delivers GPS-guided turn-by-turn navigation, live run metrics, route visualization with elevation gradients and turn indicators, run history and saved routes, voice guidance with iOS audio unlock, post-run summaries, progress analytics, route sharing, and full PWA offline support.
 
 ---
-*Last updated: 2026-03-20 after Phase 8 completion — milestone v1.0 complete*
+*Last updated: 2026-03-21 after v1.0 milestone*
