@@ -30,9 +30,9 @@ Requirements for v1.1 milestone (Route Quality & Map UX). Each maps to roadmap p
 
 ### iOS Fixes
 
-- [ ] **IOS-01**: Map renders correctly on iOS Safari (no black screen)
-- [ ] **IOS-02**: UI elements not overlapped by bottom tab bar
-- [ ] **IOS-03**: Explicit GPS permission flow (retry/simulate instead of silent fallback)
+- [x] **IOS-01**: Map renders correctly on iOS Safari (no black screen)
+- [x] **IOS-02**: UI elements not overlapped by bottom tab bar
+- [x] **IOS-03**: Explicit GPS permission flow (retry/simulate instead of silent fallback)
 
 ## Future Requirements
 
@@ -54,31 +54,29 @@ Requirements for v1.1 milestone (Route Quality & Map UX). Each maps to roadmap p
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MAP-01 | — | Pending |
-| MAP-02 | — | Pending |
-| MAP-03 | — | Pending |
-| ROUTE-01 | — | Pending |
-| ROUTE-02 | — | Pending |
-| ROUTE-03 | — | Pending |
-| ROUTE-04 | — | Pending |
-| ROUTE-05 | — | Pending |
-| ROUTE-06 | — | Pending |
-| ROUTE-07 | — | Pending |
-| START-01 | — | Pending |
-| START-02 | — | Pending |
-| IOS-01 | — | Pending |
-| IOS-02 | — | Pending |
-| IOS-03 | — | Pending |
+| MAP-01 | Phase 11 | Pending |
+| MAP-02 | Phase 11 | Pending |
+| MAP-03 | Phase 11 | Pending |
+| ROUTE-01 | Phase 12 | Pending |
+| ROUTE-02 | Phase 13 | Pending |
+| ROUTE-03 | Phase 13 | Pending |
+| ROUTE-04 | Phase 12 | Pending |
+| ROUTE-05 | Phase 15 | Pending |
+| ROUTE-06 | Phase 15 | Pending |
+| ROUTE-07 | Phase 15 | Pending |
+| START-01 | Phase 14 | Pending |
+| START-02 | Phase 14 | Pending |
+| IOS-01 | Phase 11 | Complete (pre-committed) |
+| IOS-02 | Phase 11 | Complete (pre-committed) |
+| IOS-03 | Phase 11 | Complete (pre-committed) |
 
 **Coverage:**
 - v1.1 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15 ⚠️
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-21*
-*Last updated: 2026-03-21 after initial definition*
+*Last updated: 2026-03-21 after roadmap creation*

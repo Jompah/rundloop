@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Route Quality & Map UX
-status: defining-requirements
+status: roadmap-created
 stopped_at: ""
-last_updated: "2026-03-21T05:19:22.083Z"
+last_updated: "2026-03-21T06:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -16,25 +16,28 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-19)
+See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** Runners see the entire loop route upfront before taking a single step
-**Current focus:** Milestone v1.1 — Route Quality & Map UX
+**Current focus:** Phase 11 - iOS Fixes & GPS Map Centering
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-21 — Milestone v1.1 started
+Phase: 11 of 15 (iOS Fixes & GPS Map Centering)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-03-21 - v1.1 roadmap created (5 phases, 15 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-
-- Total plans completed: 0
+- Total plans completed: 0 (v1.1)
 - Average duration: -
 - Total execution time: 0 hours
+
+**v1.0 Reference:** 28 plans completed, avg ~3 min/plan
 
 **By Phase:**
 
@@ -43,96 +46,19 @@ Last activity: 2026-03-21 — Milestone v1.1 started
 | - | - | - | - |
 
 **Recent Trend:**
-
 - Last 5 plans: -
 - Trend: -
 
 *Updated after each plan completion*
-| Phase 01 P00 | 2min | 2 tasks | 5 files |
-| Phase 01 P01 | 3min | 2 tasks | 3 files |
-| Phase 01 P02 | 5min | 2 tasks | 6 files |
-| Phase 01 P03 | 2min | 2 tasks | 2 files |
-| Phase 01 P04 | 1min | 2 tasks | 1 files |
-| Phase 02 P01 | 2min | 1 tasks | 2 files |
-| Phase 02 P02 | 3min | 2 tasks | 4 files |
-| Phase 03 P01 | 2min | 2 tasks | 2 files |
-| Phase 03 P02 | 2min | 3 tasks | 3 files |
-| Phase 04 P01 | 3min | 2 tasks | 6 files |
-| Phase 04 P02 | 4min | 2 tasks | 9 files |
-| Phase 04 P03 | 3min | 2 tasks | 5 files |
-| Phase 05 P01 | 2min | 2 tasks | 4 files |
-| Phase 05 P02 | 3min | 2 tasks | 3 files |
-| Phase 06 P01 | 6min | 4 tasks | 8 files |
-| Phase 06 P03 | 2min | 2 tasks | 2 files |
-| Phase 06 P02 | 3min | 2 tasks | 3 files |
-| Phase 06 P04 | 3min | 2 tasks | 2 files |
-| Phase 06 P05 | 3min | 2 tasks | 4 files |
-| Phase 07 P01 | 7min | 2 tasks | 3 files |
-| Phase 07 P02 | 2min | 1 tasks | 1 files |
-| Phase 07 P03 | 2min | 2 tasks | 2 files |
-| Phase 08 P01 | 8min | 2 tasks | 10 files |
-| Phase 08 P02 | 5min | 2 tasks | 6 files |
-| Phase 08 P03 | 5min | 2 tasks | 13 files |
-| Phase 09 P01 | 3min | 1 tasks | 1 files |
-| Phase 09 P02 | 3min | 2 tasks | 3 files |
-| Phase 10 P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
-
-- Roadmap: Fine granularity (8 phases) following strict dependency chain from research
-- Roadmap: Phase 4 (Navigation) and Phase 7 (Visualization) can parallelize — independent dependency paths
-- [Phase 01]: Used vitest globals mode to avoid explicit imports in test files
-- [Phase 01]: Used raw IndexedDB API with promise wrappers (no idb/idb-keyval dependency)
-- [Phase 01]: All storage.ts functions made async; consumer updates deferred to Phase 2+
-- [Phase 01]: Used inline haversineMeters copy in gps-filter since storage.ts has it private
-- [Phase 01]: Snapshot overwrites same run ID to avoid row accumulation in IndexedDB
-- [Phase 01]: Incomplete run detection uses duck typing (absence of endTime) to distinguish snapshot from completed run
-- [Phase 01]: Fire-and-forget initDB() -- no await needed since getDB() singleton handles ordering
-- [Phase 02]: Exported runReducer and computeDistance as named exports for direct unit testing without React rendering
-- [Phase 02]: Used useRef for trace and timing data to avoid re-renders on every GPS point
-- [Phase 02]: Timer uses wall-clock math (Date.now() - startTime - pausedDuration) not interval increments
-- [Phase 02]: Inline haversine in CrashRecoveryDialog for self-contained snapshot distance computation
-- [Phase 02]: Run controls conditionally rendered based on runStatus prop for clear state-driven UI
-- [Phase 03]: Guard computeAveragePace at < 10m distance threshold to avoid GPS noise producing infinite pace
-- [Phase 03]: Rolling pace uses 30s default window for smooth readings at typical GPS update frequency
-- [Phase 03]: Compute metrics inline on render rather than via separate interval
-- [Phase 03]: Async settings loading with useState/useEffect for getSettings() in client components
-- [Phase 04]: Equirectangular projection with cos(lat) correction for point-to-segment distance (no turf.js)
-- [Phase 04]: EMA heading smoothing uses shortest-arc diff to avoid wrap-around through 180
-- [Phase 04]: getSynth in voice.ts updated with globalThis fallback for test environment compatibility
-- [Phase 04]: Re-center button only visible when auto-rotation disabled during navigation
-- [Phase 04]: All speak() calls pass settings.voiceEnabled for NAV-04 mute compliance
-- [Phase 04]: voiceStyle default is concise for minimal distraction during runs
-- [Phase 04]: Milestone reset on runStatus=idle to support multiple runs per session
-- [Phase 05]: Body weight stored internally as kg; converted to lbs for display when units=miles
-- [Phase 05]: bodyWeightKg optional on AppSettings; fallback 70kg in display code
-- [Phase 05]: Direct maplibre-gl import in use client component (no dynamic import needed since useEffect is client-only)
-- [Phase 06]: Explicit save action replaces auto-save on generation for user control
-- [Phase 06]: Cloned DiscardConfirmDialog pattern for DeleteRouteDialog consistency
-- [Phase 06]: Used button elements for history cards for accessibility and keyboard support
-- [Phase 06]: Tab bar shows generate tab as active on map view
-- [Phase 06]: historyRefreshKey counter pattern for triggering RunHistoryView re-fetch after delete
-- [Phase 06]: Used re-export alias to bridge generateAlgorithmicWaypoints/generateRouteAlgorithmic name mismatch
-- [Phase 06]: Converted async findNearbySavedRoutes from useMemo to useState+useEffect for correct async handling
-- [Phase 07]: Inline haversine in elevation.ts following project pattern
-- [Phase 07]: ImageData for canvas arrow image to satisfy MapLibre addImage types
-- [Phase 07]: Grade-based bearing for turn arrows rather than geometric bearing
-- [Phase 07]: Elevation fetch .finally() for markers ensures render regardless of gradient success
-- [Phase 07]: Kept actual GPS trace layer unchanged (cyan on top)
-- [Phase 07]: Fire-and-forget elevation fetch: markers render immediately, gradient appears when API responds
-- [Phase 08]: PWAProvider client wrapper pattern to embed client components (SW reg + OfflineBanner) inside server layout
-- [Phase 08]: Installed motion package for AnimatePresence animations
-- [Phase 08]: Tile CDN caching with 50-entry eviction in separate sw cache bucket
-- [Phase 08]: 150ms animation duration for all view transitions and dialog animations for snappy feel
-- [Phase 08]: Replaced navigator.vibrate(200) in milestone effect with haptic('milestone') for consistent haptic patterns
-- [Phase 08]: Used haptic wrapper callbacks on RunMetricsOverlay props rather than modifying RunMetricsOverlay itself
-- [Phase 09]: Kept startRun(null) since GeneratedRoute has no id field; routeId wiring deferred
-- [Phase 10]: Used sharp (already installed) for SVG-to-PNG icon conversion
+- Roadmap: 5 phases for v1.1 (fine granularity), starting at phase 11
+- Roadmap: IOS-01/02/03 pre-completed, included for traceability
+- Roadmap: Phase 14 (Flexible Start) depends on Phase 11 only, can parallelize with 12/13
+- Roadmap: Scenic modes split into Architecture (12) then Implementation (13) to isolate type system changes
 
 ### Pending Todos
 
@@ -140,12 +66,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- Research flag: Phase 7 (Visualization) needs elevation data source verification during planning
-- Research flag: OSRM public API not production-ready — needs resolution before multi-user testing (Phase 8 or separate)
-- web-haptics library uses undocumented WebKit behavior — may need fallback (Phase 8)
+- Research flag: Claude Haiku scenic prompt quality needs empirical validation across multiple cities (Phase 13)
+- Research flag: OSRM `nearest` service availability on public endpoint unconfirmed (Phase 14)
+- Research flag: Overpass regional coverage gaps need testing in non-European locations (Phase 15)
 
 ## Session Continuity
 
-Last session: 2026-03-20T23:16:03.044Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-03-21
+Stopped at: v1.1 roadmap created, ready to plan Phase 11
 Resume file: None
