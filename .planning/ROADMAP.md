@@ -99,7 +99,7 @@ Note: Phase 14 depends on Phase 11 (not 13), so it could run in parallel with 12
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1-10 | v1.0 | 28/28 | Complete | 2026-03-21 |
-| 11. iOS Fixes & GPS Map Centering | 2/2 | Complete   | 2026-03-21 | - |
+| 11. iOS Fixes & GPS Map Centering | 2/2 | Complete    | 2026-03-21 | - |
 | 12. Route Mode Architecture | v1.1 | 0/? | Not started | - |
 | 13. Scenic Route Modes | v1.1 | 0/? | Not started | - |
 | 14. Flexible Start Point | v1.1 | 0/? | Not started | - |
