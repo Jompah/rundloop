@@ -21,9 +21,14 @@ interface MapViewProps {
   speed?: number | null;
   isNavigating?: boolean;
   onMapReady?: (map: maplibregl.Map) => void;
+  initialCenter?: [number, number] | null;
+  positionLoaded?: boolean;
+  centeringMode?: 'initializing' | 'centered' | 'free-pan' | 'navigating';
+  onPan?: () => void;
+  onRecenter?: () => void;
 }
 
-export default function MapView({ route, userLocation, heading, speed, isNavigating, onMapReady }: MapViewProps) {
+export default function MapView({ route, userLocation, heading, speed, isNavigating, onMapReady, initialCenter, positionLoaded, centeringMode, onPan, onRecenter }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -32,6 +37,7 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
 
   const isAutoRotating = useRef(true);
   const prevHeadingRef = useRef<number | null>(null);
+  const hasInitialFlyTo = useRef(false);
   const [showRecenter, setShowRecenter] = useState(false);
 
   // Initialize map
@@ -41,8 +47,8 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
     const map = new maplibregl.Map({
       container: mapContainer.current,
       style: DARK_STYLE,
-      center: [18.0686, 59.3293], // Stockholm default
-      zoom: 13,
+      center: initialCenter || [0, 0],
+      zoom: initialCenter ? 13 : 2,
       attributionControl: false,
     });
 
@@ -71,14 +77,17 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
     };
   }, []);
 
-  // Interaction detection: disable auto-rotation on manual pan/zoom
+  // Interaction detection: disable auto-rotation on manual pan/zoom, dispatch onPan
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !isNavigating) return;
+    if (!map) return;
 
     const handleInteraction = () => {
-      isAutoRotating.current = false;
-      setShowRecenter(true);
+      if (isNavigating) {
+        isAutoRotating.current = false;
+        setShowRecenter(true);
+      }
+      onPan?.();
     };
 
     map.on('dragstart', handleInteraction);
@@ -88,7 +97,7 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
       map.off('dragstart', handleInteraction);
       map.off('zoomstart', handleInteraction);
     };
-  }, [isNavigating, mapLoaded]);
+  }, [isNavigating, mapLoaded, onPan]);
 
   // Update user location marker
   useEffect(() => {
@@ -191,6 +200,38 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
     }
   }, [userLocation, isNavigating, heading, speed]);
 
+  // flyTo on first GPS lock (transition to centered mode)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !userLocation) return;
+    if (centeringMode !== 'centered') return;
+    if (hasInitialFlyTo.current) return;
+
+    hasInitialFlyTo.current = true;
+    map.flyTo({
+      center: userLocation,
+      zoom: 15,
+      duration: 1500,
+      essential: true,
+    });
+  }, [centeringMode, userLocation, mapLoaded]);
+
+  // easeTo for continuous following in centered mode
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !userLocation) return;
+    if (centeringMode !== 'centered') return;
+    if (!hasInitialFlyTo.current) return;
+
+    map.easeTo({
+      center: userLocation,
+      zoom: 15,
+      bearing: 0,
+      pitch: 0,
+      duration: 300,
+    });
+  }, [userLocation, centeringMode, mapLoaded]);
+
   const handleRecenter = useCallback(() => {
     if (!mapRef.current || !userLocation) return;
     isAutoRotating.current = true;
@@ -203,15 +244,6 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
       pitch: 30,
       zoom: 16,
       duration: 500,
-    });
-  }, [userLocation]);
-
-  const centerOnUser = useCallback(() => {
-    if (!mapRef.current || !userLocation) return;
-    mapRef.current.flyTo({
-      center: userLocation,
-      zoom: 15,
-      duration: 1000,
     });
   }, [userLocation]);
 
@@ -233,11 +265,18 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
         </button>
       )}
 
-      {/* Center on user button: shown when NOT navigating, positioned above bottom panels */}
-      {!isNavigating && userLocation && (
+      {/* Center on user button: shown only in free-pan mode */}
+      {!isNavigating && userLocation && centeringMode === 'free-pan' && (
         <button
-          onClick={centerOnUser}
-          className="absolute right-4 top-24 bg-gray-800 text-white rounded-full p-3 shadow-lg z-30 active:bg-gray-700"
+          onClick={() => {
+            onRecenter?.();
+            mapRef.current?.flyTo({
+              center: userLocation,
+              zoom: 15,
+              duration: 800,
+            });
+          }}
+          className="absolute right-4 top-24 bg-gray-800 text-white rounded-full p-3 shadow-lg z-30 active:bg-gray-700 transition-opacity duration-150"
           aria-label="Center on my location"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -250,6 +289,15 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
       {!mapLoaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0a]">
           <div className="text-white">Loading map...</div>
+        </div>
+      )}
+
+      {/* GPS locating overlay: shown in initializing mode when no stored position */}
+      {mapLoaded && centeringMode === 'initializing' && !initialCenter && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <div className="bg-[#0a0a0a]/80 px-4 py-2 rounded-lg">
+            <span className="text-white text-sm font-semibold">Locating...</span>
+          </div>
         </div>
       )}
     </div>
