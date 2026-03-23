@@ -1,6 +1,21 @@
 import maplibregl from 'maplibre-gl';
 import type { TurnInstruction } from '@/types';
+import type { Landmark } from '@/lib/overpass';
 import { buildGradientExpression } from './elevation';
+
+const LANDMARK_ICONS: Record<string, string> = {
+  museum: '\uD83C\uDFDB\uFE0F',
+  monument: '\uD83D\uDDFF',
+  viewpoint: '\uD83D\uDC41\uFE0F',
+  park: '\uD83C\uDF33',
+  church: '\u26EA',
+  historic: '\uD83C\uDFF0',
+  artwork: '\uD83C\uDFA8',
+  fountain: '\u26F2',
+  ruins: '\uD83C\uDFDA\uFE0F',
+  castle: '\uD83C\uDFF0',
+  landmark: '\uD83D\uDCCD',
+};
 
 /** Shared dark map style URL (CartoDB dark-matter vector tiles). */
 export const DARK_STYLE =
@@ -203,6 +218,71 @@ export function addTurnIndicators(
 }
 
 /**
+ * Add landmark markers to the map as emoji icons with circular backgrounds.
+ */
+export function addLandmarkMarkers(map: maplibregl.Map, landmarks: Landmark[]): void {
+  // Remove existing landmark markers if any
+  removeLandmarkMarkers(map);
+
+  if (!landmarks || landmarks.length === 0) return;
+
+  // Add a GeoJSON source with all landmarks
+  map.addSource('landmarks', {
+    type: 'geojson',
+    data: {
+      type: 'FeatureCollection',
+      features: landmarks.map((lm, i) => ({
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: [lm.lng, lm.lat] },
+        properties: {
+          name: lm.name,
+          type: lm.type,
+          description: lm.description || '',
+          icon: LANDMARK_ICONS[lm.type] || '\uD83D\uDCCD',
+          index: i,
+        },
+      })),
+    },
+  });
+
+  // Add a circle behind for visibility
+  map.addLayer({
+    id: 'landmark-circles',
+    type: 'circle',
+    source: 'landmarks',
+    paint: {
+      'circle-radius': 14,
+      'circle-color': '#ffffff',
+      'circle-opacity': 0.9,
+      'circle-stroke-width': 2,
+      'circle-stroke-color': '#6366f1',
+    },
+  });
+
+  // Use symbol layer with text for the emoji icons
+  map.addLayer({
+    id: 'landmark-icons',
+    type: 'symbol',
+    source: 'landmarks',
+    layout: {
+      'text-field': ['get', 'icon'],
+      'text-size': 20,
+      'text-allow-overlap': true,
+      'text-anchor': 'center',
+    },
+  });
+}
+
+/**
+ * Remove landmark marker layers and source from the map.
+ */
+export function removeLandmarkMarkers(map: maplibregl.Map): void {
+  if (map.getLayer('landmark-icons')) map.removeLayer('landmark-icons');
+  if (map.getLayer('landmark-circles')) map.removeLayer('landmark-circles');
+  if (map.getSource('landmarks')) map.removeSource('landmarks');
+}
+
+/**
  * Remove all route visual layers and sources from the map.
  * Does NOT remove HTML markers (caller manages those via returned refs).
  */
@@ -214,4 +294,7 @@ export function removeRouteVisuals(map: maplibregl.Map): void {
   // Remove sources
   if (map.getSource('route')) map.removeSource('route');
   if (map.getSource('turn-indicators')) map.removeSource('turn-indicators');
+
+  // Remove landmark markers
+  removeLandmarkMarkers(map);
 }

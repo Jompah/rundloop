@@ -11,6 +11,7 @@ import {
   addGradientRoute,
   addStartFinishMarkers,
   addTurnIndicators,
+  addLandmarkMarkers,
   removeRouteVisuals,
 } from '@/lib/route-visuals';
 
@@ -150,6 +151,11 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
         if (route.instructions) {
           const turns = getSignificantTurns(route.instructions);
           addTurnIndicators(map, turns);
+        }
+
+        // Add landmark markers
+        if (route.landmarks && route.landmarks.length > 0) {
+          addLandmarkMarkers(map, route.landmarks);
         }
       });
 

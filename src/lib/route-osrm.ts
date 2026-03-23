@@ -62,7 +62,14 @@ function formatInstruction(step: OSRMStep): string {
   }
 }
 
-export async function routeViaOSRM(waypoints: RouteWaypoint[]): Promise<GeneratedRoute> {
+/**
+ * Route waypoints via OSRM foot profile.
+ * @param waypoints - Array of lat/lng waypoints
+ * @param paceSecondsPerKm - Running pace in seconds per km (default 360 = 6:00/km).
+ *   OSRM returns walking pace (~5 km/h) which gives unrealistic running times.
+ *   We keep OSRM's accurate distance but override duration with this pace.
+ */
+export async function routeViaOSRM(waypoints: RouteWaypoint[], paceSecondsPerKm: number = 360): Promise<GeneratedRoute> {
   if (waypoints.length < 2) {
     throw new Error('Need at least 2 waypoints for routing');
   }
@@ -101,11 +108,16 @@ export async function routeViaOSRM(waypoints: RouteWaypoint[]): Promise<Generate
     }
   }
 
+  // Override OSRM walking duration with running pace estimate.
+  // OSRM foot profile returns ~5 km/h (walking), which gives unrealistic running times.
+  // Keep OSRM's accurate distance, just recalculate time based on running pace.
+  const runningDuration = (route.distance / 1000) * paceSecondsPerKm;
+
   return {
     waypoints,
     polyline: route.geometry.coordinates,
     distance: route.distance,
-    duration: route.duration,
+    duration: runningDuration,
     instructions,
   };
 }

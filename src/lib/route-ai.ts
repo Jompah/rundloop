@@ -20,6 +20,8 @@ Requirements:
 - Prefer parks, waterfront paths, pedestrian areas, and quiet residential streets
 - Avoid highways, industrial areas, and busy roads
 - Create an interesting loop, not an out-and-back route
+- Create a loop that visits different streets - avoid running the same street twice
+- Prefer routes through different neighborhoods rather than out-and-back patterns
 - Generate 6-12 waypoints that define the route shape
 
 Return ONLY a JSON array of waypoints, no other text. Each waypoint has lat and lng:

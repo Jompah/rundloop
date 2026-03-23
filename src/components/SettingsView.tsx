@@ -10,7 +10,7 @@ interface SettingsViewProps {
 }
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
-  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5 });
+  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5, paceSecondsPerKm: 360 });
   useEffect(() => { getSettings().then(setSettings); }, []);
   const [saved, setSaved] = useState(false);
 
@@ -134,6 +134,52 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
             onChange={(e) => setSettings({ ...settings, defaultDistance: parseFloat(e.target.value) })}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500"
           />
+        </div>
+
+        {/* Running Pace */}
+        <div>
+          <label className="text-sm font-medium text-gray-400 block mb-2">
+            Running Pace
+          </label>
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <input
+                type="number"
+                min={1}
+                max={15}
+                placeholder="6"
+                value={Math.floor((settings.paceSecondsPerKm ?? 360) / 60)}
+                onChange={(e) => {
+                  const mins = parseInt(e.target.value) || 0;
+                  const secs = (settings.paceSecondsPerKm ?? 360) % 60;
+                  setSettings({ ...settings, paceSecondsPerKm: mins * 60 + secs });
+                }}
+                className="bg-gray-800 text-white rounded-lg px-4 py-3 w-full pr-14"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">min</span>
+            </div>
+            <span className="text-gray-400 text-lg font-bold">:</span>
+            <div className="relative flex-1">
+              <input
+                type="number"
+                min={0}
+                max={59}
+                placeholder="00"
+                value={String((settings.paceSecondsPerKm ?? 360) % 60).padStart(2, '0')}
+                onChange={(e) => {
+                  const secs = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                  const mins = Math.floor((settings.paceSecondsPerKm ?? 360) / 60);
+                  setSettings({ ...settings, paceSecondsPerKm: mins * 60 + secs });
+                }}
+                className="bg-gray-800 text-white rounded-lg px-4 py-3 w-full pr-14"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">sec</span>
+            </div>
+            <span className="text-gray-400 text-sm whitespace-nowrap">/km</span>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Used for estimated run time. Default: 6:00/km
+          </p>
         </div>
 
         {/* Body Weight */}

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import dynamic from 'next/dynamic';
+import type maplibregl from 'maplibre-gl';
 import RouteGenerator from '@/components/RouteGenerator';
 import NavigationView from '@/components/NavigationView';
 import SettingsView from '@/components/SettingsView';
@@ -13,11 +14,14 @@ import { SavedRoutesView } from '@/components/SavedRoutesView';
 import EndRunDialog from '@/components/EndRunDialog';
 import CrashRecoveryDialog from '@/components/CrashRecoveryDialog';
 import RunSummaryView from '@/components/RunSummaryView';
+import LandmarkPanel from '@/components/LandmarkPanel';
 import { GeneratedRoute, AppView, RouteMode, RouteWaypoint, ActiveRunSnapshot, CompletedRun } from '@/types';
 import { getCurrentPosition, reverseGeocode, watchFilteredPosition, setFakePosition, clearFakePosition, isFakeGPS } from '@/lib/geolocation';
+import { fetchLandmarksNearRoute } from '@/lib/overpass';
 import { initDB, dbDelete, dbPut, dbGet } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
+import { analyzeStreetDuplication, shouldRejectRoute } from '@/lib/street-dedup';
 import { findNearbySavedRoutes, getSettings } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
 import { useMapCentering } from '@/hooks/useMapCentering';
@@ -58,6 +62,7 @@ export default function Home() {
   const [gpsError, setGpsError] = useState(false);
   const runSession = useRunSession();
   const { state: centeringState, dispatch: centeringDispatch } = useMapCentering();
+  const mapInstanceRef = useRef<maplibregl.Map | null>(null);
 
   // Pre-GPS-lock position loading state
   const [initialCenter, setInitialCenter] = useState<[number, number] | null>(null);
@@ -192,13 +197,16 @@ export default function Home() {
       let overallBestRoute: GeneratedRoute | null = null;
       let overallBestDiff = Infinity;
 
+      // Load settings once for pace and AI route generation
+      const settings = await getSettings();
+      const paceSecondsPerKm = settings.paceSecondsPerKm ?? 360;
+
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         // Generate initial waypoints (different each time due to random rotation / AI variance)
         let initialWaypoints: RouteWaypoint[];
         if (routeMode === 'algorithmic') {
           initialWaypoints = await generateRouteAlgorithmic(startLat, startLng, distance);
         } else {
-          const settings = await getSettings();
           initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings });
         }
 
@@ -211,7 +219,7 @@ export default function Home() {
         let bestDiff = Infinity;
 
         // First, route the initial waypoints to establish a baseline
-        const initialRoute = await routeViaOSRM(initialWaypoints);
+        const initialRoute = await routeViaOSRM(initialWaypoints, paceSecondsPerKm);
         const initialKm = initialRoute.distance / 1000;
         const initialRatio = initialKm / distance;
 
@@ -247,7 +255,7 @@ export default function Home() {
               };
             });
 
-            const candidate = await routeViaOSRM(scaledWaypoints);
+            const candidate = await routeViaOSRM(scaledWaypoints, paceSecondsPerKm);
             const actualKm = candidate.distance / 1000;
             const ratio = actualKm / distance;
             const diff = Math.abs(ratio - 1);
@@ -273,6 +281,15 @@ export default function Home() {
           }
         }
 
+        // Street deduplication quality check
+        if (bestRoute) {
+          const dupAnalysis = analyzeStreetDuplication(bestRoute.instructions)
+          if (shouldRejectRoute(dupAnalysis)) {
+            console.log(`[Attempt ${attempt + 1}] ${(dupAnalysis.duplicationRate * 100).toFixed(0)}% duplicate streets (${dupAnalysis.nonConsecutiveDuplicates.join(', ')}), retrying...`)
+            continue // Skip to next attempt
+          }
+        }
+
         // Update overall best across all attempts
         if (bestDiff < overallBestDiff) {
           overallBestDiff = bestDiff;
@@ -293,6 +310,14 @@ export default function Home() {
       generatedRoute = overallBestRoute!;
 
       if (generatedRoute) {
+        // Fetch nearby landmarks (non-blocking -- route works without them)
+        try {
+          const landmarks = await fetchLandmarksNearRoute(generatedRoute.polyline);
+          generatedRoute.landmarks = landmarks;
+        } catch (e) {
+          console.warn('Landmark fetch failed:', e);
+        }
+
         setRoute(generatedRoute);
         setView('map');
       }
@@ -317,6 +342,7 @@ export default function Home() {
         centeringMode={centeringState.mode}
         onPan={() => centeringDispatch({ type: 'USER_PAN' })}
         onRecenter={() => centeringDispatch({ type: 'RECENTER' })}
+        onMapReady={(map) => { mapInstanceRef.current = map; }}
       />
 
       {/* Error toast */}
@@ -559,6 +585,7 @@ export default function Home() {
           onPause={() => runSession.pauseRun()}
           onResume={() => runSession.resumeRun()}
           onEndRun={() => setShowEndRunDialog(true)}
+          landmarks={route.landmarks}
         />
       )}
 
@@ -617,7 +644,7 @@ export default function Home() {
       {/* Route info bar */}
       {route && view === 'map' && (
         <motion.div
-          className="absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-4 z-20"
+          className="absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-4 z-20 max-h-[60vh] overflow-y-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.15, ease: 'easeOut' }}
@@ -639,6 +666,14 @@ export default function Home() {
               Start Run
             </Button>
           </div>
+          {route.landmarks && route.landmarks.length > 0 && (
+            <LandmarkPanel
+              landmarks={route.landmarks}
+              onLandmarkClick={(lm) => {
+                mapInstanceRef.current?.flyTo({ center: [lm.lng, lm.lat], zoom: 16, duration: 800 });
+              }}
+            />
+          )}
           <Button
             variant="secondary"
             fullWidth

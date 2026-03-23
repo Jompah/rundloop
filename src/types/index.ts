@@ -1,3 +1,6 @@
+import type { Landmark, LandmarkType } from '@/lib/overpass';
+export type { Landmark, LandmarkType };
+
 export interface RouteWaypoint {
   lat: number;
   lng: number;
@@ -10,6 +13,7 @@ export interface GeneratedRoute {
   distance: number; // meters
   duration: number; // seconds
   instructions: TurnInstruction[];
+  landmarks?: Landmark[];
 }
 
 export interface TurnInstruction {
@@ -27,6 +31,7 @@ export interface AppSettings {
   units: 'km' | 'miles';
   defaultDistance: number; // km
   bodyWeightKg?: number;
+  paceSecondsPerKm: number; // running pace in seconds per km (default 360 = 6:00/km)
 }
 
 export type AppView = 'map' | 'generate' | 'navigate' | 'settings' | 'history' | 'routes' | 'summary';

@@ -6,6 +6,7 @@ const defaultSettings: AppSettings = {
   voiceStyle: 'concise',
   units: 'km',
   defaultDistance: 5,
+  paceSecondsPerKm: 360, // 6:00/km default running pace
 };
 
 export interface SavedRoute {

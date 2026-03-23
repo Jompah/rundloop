@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GeneratedRoute, TurnInstruction, FilteredPosition, AppSettings } from '@/types';
+import { GeneratedRoute, TurnInstruction, FilteredPosition, AppSettings, Landmark } from '@/types';
 import { speak, stopSpeaking } from '@/lib/voice';
 import { haptic } from '@/lib/haptics';
 import { getSettings } from '@/lib/storage';
@@ -10,6 +10,20 @@ import { detectMilestone, formatMilestoneMessage } from '@/lib/milestones';
 import { distanceToRoute, findNearestSegmentIndex, getCompassDirection } from '@/lib/navigation';
 import RunMetricsOverlay from './RunMetricsOverlay';
 import OffRouteBanner from './OffRouteBanner';
+
+const LANDMARK_ICONS: Record<string, string> = {
+  museum: '\uD83C\uDFDB\uFE0F',
+  monument: '\uD83D\uDDFF',
+  viewpoint: '\uD83D\uDC41\uFE0F',
+  park: '\uD83C\uDF33',
+  church: '\u26EA',
+  historic: '\uD83C\uDFF0',
+  artwork: '\uD83C\uDFA8',
+  fountain: '\u26F2',
+  ruins: '\uD83C\uDFDA\uFE0F',
+  castle: '\uD83C\uDFF0',
+  landmark: '\uD83D\uDCCD',
+};
 
 type RunStatus = 'idle' | 'active' | 'paused' | 'completed';
 
@@ -24,6 +38,7 @@ interface NavigationViewProps {
   onPause: () => void;
   onResume: () => void;
   onEndRun: () => void;
+  landmarks?: Landmark[];
 }
 
 function getDistanceBetween(
@@ -61,12 +76,12 @@ function getDirectionIcon(type: TurnInstruction['type']): string {
   }
 }
 
-export default function NavigationView({ route, userLocation, onStop, runStatus, elapsedMs, distanceMeters, trace, onPause, onResume, onEndRun }: NavigationViewProps) {
+export default function NavigationView({ route, userLocation, onStop, runStatus, elapsedMs, distanceMeters, trace, onPause, onResume, onEndRun, landmarks }: NavigationViewProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [distanceToNext, setDistanceToNext] = useState<number | null>(null);
   const [totalCovered, setTotalCovered] = useState(0);
   const [lastSpokenStep, setLastSpokenStep] = useState(-1);
-  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5 });
+  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5, paceSecondsPerKm: 360 });
   useEffect(() => { getSettings().then(setSettings); }, []);
 
   // Milestone tracking refs
@@ -78,6 +93,11 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
   const [offRouteDirection, setOffRouteDirection] = useState('');
   const offRouteAnnouncedRef = useRef(false);
   const offRouteRepeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Landmark proximity notification state
+  const [nearbyLandmark, setNearbyLandmark] = useState<Landmark | null>(null);
+  const shownLandmarkIdsRef = useRef(new Set<number>());
+  const landmarkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentStep = route.instructions[currentStepIndex];
   const nextStep = route.instructions[currentStepIndex + 1];
@@ -223,6 +243,54 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
     };
   }, [userLocation, runStatus, settings.voiceEnabled, route.polyline]);
 
+  // Landmark proximity detection
+  useEffect(() => {
+    if (!userLocation || !landmarks || landmarks.length === 0 || runStatus !== 'active') return;
+
+    const PROXIMITY_THRESHOLD = 100; // meters
+
+    for (const lm of landmarks) {
+      if (shownLandmarkIdsRef.current.has(lm.id)) continue;
+
+      const dist = getDistanceBetween(userLocation, [lm.lng, lm.lat]);
+      if (dist <= PROXIMITY_THRESHOLD) {
+        shownLandmarkIdsRef.current.add(lm.id);
+        setNearbyLandmark(lm);
+
+        // Auto-dismiss after 5 seconds
+        if (landmarkTimerRef.current) clearTimeout(landmarkTimerRef.current);
+        landmarkTimerRef.current = setTimeout(() => {
+          setNearbyLandmark(null);
+          landmarkTimerRef.current = null;
+        }, 5000);
+
+        break; // Show one at a time
+      }
+    }
+  }, [userLocation, landmarks, runStatus]);
+
+  // Reset landmark tracking when run resets
+  useEffect(() => {
+    if (runStatus === 'idle') {
+      shownLandmarkIdsRef.current = new Set();
+      setNearbyLandmark(null);
+      if (landmarkTimerRef.current) {
+        clearTimeout(landmarkTimerRef.current);
+        landmarkTimerRef.current = null;
+      }
+    }
+  }, [runStatus]);
+
+  // Cleanup landmark timer on unmount
+  useEffect(() => {
+    return () => {
+      if (landmarkTimerRef.current) {
+        clearTimeout(landmarkTimerRef.current);
+        landmarkTimerRef.current = null;
+      }
+    };
+  }, []);
+
   const progress = route.distance > 0 ? Math.min((totalCovered / route.distance) * 100, 100) : 0;
 
   return (
@@ -256,6 +324,34 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
 
       {/* Off-route banner */}
       <OffRouteBanner visible={offRoute} direction={offRouteDirection} />
+
+      {/* Landmark proximity notification */}
+      {nearbyLandmark && (
+        <div
+          className="mx-4 mt-2 bg-indigo-600/90 backdrop-blur-sm rounded-xl px-4 py-3 flex items-center gap-3 shadow-lg animate-in slide-in-from-top duration-300"
+          style={{ animation: 'slideInFromTop 0.3s ease-out' }}
+        >
+          <span className="text-2xl flex-shrink-0">
+            {LANDMARK_ICONS[nearbyLandmark.type] || '\uD83D\uDCCD'}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-white font-semibold text-sm truncate">{nearbyLandmark.name}</p>
+            {nearbyLandmark.description && (
+              <p className="text-indigo-200 text-xs truncate">{nearbyLandmark.description}</p>
+            )}
+          </div>
+          <button
+            onClick={() => setNearbyLandmark(null)}
+            className="text-white/60 hover:text-white flex-shrink-0"
+            aria-label="Dismiss"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* Metrics overlay for active/paused runs */}
       {(runStatus === 'active' || runStatus === 'paused') && (
