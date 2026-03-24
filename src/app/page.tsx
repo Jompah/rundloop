@@ -15,14 +15,14 @@ import EndRunDialog from '@/components/EndRunDialog';
 import CrashRecoveryDialog from '@/components/CrashRecoveryDialog';
 import RunSummaryView from '@/components/RunSummaryView';
 import LandmarkPanel from '@/components/LandmarkPanel';
-import { GeneratedRoute, AppView, RouteMode, RouteWaypoint, ActiveRunSnapshot, CompletedRun } from '@/types';
+import { GeneratedRoute, AppView, RouteMode, ScenicMode, RouteWaypoint, ActiveRunSnapshot, CompletedRun } from '@/types';
 import { getCurrentPosition, reverseGeocode, watchFilteredPosition, setFakePosition, clearFakePosition, isFakeGPS } from '@/lib/geolocation';
 import { fetchLandmarksNearRoute } from '@/lib/overpass';
 import { initDB, dbDelete, dbPut, dbGet } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
 import { analyzeStreetDuplication, shouldRejectRoute } from '@/lib/street-dedup';
-import { findNearbySavedRoutes, getSettings } from '@/lib/storage';
+import { findNearbySavedRoutes, getSettings, saveSettings } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
 import { useMapCentering } from '@/hooks/useMapCentering';
 import { unlockIOSAudio, ensureSpeechReady } from '@/lib/voice';
@@ -54,6 +54,7 @@ export default function Home() {
   const [showFakeMenu, setShowFakeMenu] = useState(false);
   const [selectedDistance, setSelectedDistance] = useState(5);
   const [routeMode, setRouteMode] = useState<RouteMode>('algorithmic');
+  const [scenicMode, setScenicMode] = useState<ScenicMode>('standard');
   const [recoverySnapshot, setRecoverySnapshot] = useState<ActiveRunSnapshot | null>(null);
   const [showEndRunDialog, setShowEndRunDialog] = useState(false);
   const [completedRunData, setCompletedRunData] = useState<CompletedRun | null>(null);
@@ -83,6 +84,19 @@ export default function Home() {
   // Initialize IndexedDB: migration + persistent storage
   useEffect(() => {
     initDB();
+  }, []);
+
+  // Load persisted scenic mode preference
+  useEffect(() => {
+    getSettings().then((s) => {
+      if (s.scenicMode) setScenicMode(s.scenicMode);
+    });
+  }, []);
+
+  const handleScenicModeChange = useCallback(async (mode: ScenicMode) => {
+    setScenicMode(mode);
+    const settings = await getSettings();
+    await saveSettings({ ...settings, scenicMode: mode });
   }, []);
 
   // Check for crashed/incomplete runs on mount
@@ -207,7 +221,7 @@ export default function Home() {
         if (routeMode === 'algorithmic') {
           initialWaypoints = await generateRouteAlgorithmic(startLat, startLng, distance);
         } else {
-          initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings });
+          initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode });
         }
 
         // --- Iterative distance calibration via binary search ---
@@ -326,7 +340,7 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [userLocation, cityName, routeMode]);
+  }, [userLocation, cityName, routeMode, scenicMode]);
 
   return (
     <main className="h-[100dvh] w-full relative overflow-hidden bg-gray-950">
@@ -438,6 +452,8 @@ export default function Home() {
               onLoadNearby={handleLoadNearby}
               routeMode={routeMode}
               onModeChange={setRouteMode}
+              scenicMode={scenicMode}
+              onScenicModeChange={handleScenicModeChange}
             />
           </motion.div>
         )}

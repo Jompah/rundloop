@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import type { GeneratedRoute, RouteMode } from '@/types';
+import type { GeneratedRoute, RouteMode, ScenicMode } from '@/types';
 import { saveRoute, getSettings } from '@/lib/storage';
 import { Button } from '@/components/ui/Button';
 
@@ -16,9 +16,11 @@ export interface RouteGeneratorProps {
   onLoadNearby?: (route: GeneratedRoute) => void;
   routeMode?: RouteMode;
   onModeChange?: (mode: RouteMode) => void;
+  scenicMode?: ScenicMode;
+  onScenicModeChange?: (mode: ScenicMode) => void;
 }
 
-export default function RouteGenerator({ onGenerate, isLoading, userLocation, cityName, route, nearbyRoutes, onDistanceChange, onLoadNearby, routeMode, onModeChange }: RouteGeneratorProps) {
+export default function RouteGenerator({ onGenerate, isLoading, userLocation, cityName, route, nearbyRoutes, onDistanceChange, onLoadNearby, routeMode, onModeChange, scenicMode, onScenicModeChange }: RouteGeneratorProps) {
   const [distance, setDistance] = useState(5);
   const [saved, setSaved] = useState(false);
 
@@ -51,6 +53,29 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
       <div className="text-gray-400 text-sm mb-1">
         {userLocation ? cityName || 'Getting location...' : 'Waiting for GPS...'}
       </div>
+
+      {/* Scenic mode toggle - only for AI routes */}
+      {routeMode === 'ai' && (
+        <div className="flex gap-1 mb-4 bg-gray-800 rounded-xl p-1">
+          {([
+            { value: 'standard' as ScenicMode, label: 'Standard' },
+            { value: 'nature' as ScenicMode, label: 'Natur' },
+            { value: 'explore' as ScenicMode, label: 'Utforska' },
+          ]).map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => onScenicModeChange?.(value)}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+                scenicMode === value
+                  ? 'bg-green-500 text-white'
+                  : 'text-gray-400 active:bg-gray-700'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Distance display */}
       <div className="text-center mb-4">

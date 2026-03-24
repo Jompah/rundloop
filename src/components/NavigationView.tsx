@@ -81,7 +81,7 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
   const [distanceToNext, setDistanceToNext] = useState<number | null>(null);
   const [totalCovered, setTotalCovered] = useState(0);
   const [lastSpokenStep, setLastSpokenStep] = useState(-1);
-  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5, paceSecondsPerKm: 360 });
+  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5, paceSecondsPerKm: 360, scenicMode: 'standard' });
   useEffect(() => { getSettings().then(setSettings); }, []);
 
   // Milestone tracking refs

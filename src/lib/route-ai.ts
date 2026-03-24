@@ -1,4 +1,4 @@
-import { RouteWaypoint, AppSettings } from '@/types';
+import { RouteWaypoint, AppSettings, ScenicMode } from '@/types';
 
 interface AIRouteRequest {
   lat: number;
@@ -6,10 +6,31 @@ interface AIRouteRequest {
   distanceKm: number;
   cityName: string;
   settings: AppSettings;
+  scenicMode?: ScenicMode;
 }
 
-const ROUTE_PROMPT = (lat: number, lng: number, distanceKm: number, cityName: string) => `
-You are a running route planner. Generate a circular running route.
+const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
+  standard: `- Prefer parks, waterfront paths, pedestrian areas, and quiet residential streets
+- Avoid highways, industrial areas, and busy roads
+- Create an interesting loop, not an out-and-back route
+- Create a loop that visits different streets - avoid running the same street twice
+- Prefer routes through different neighborhoods rather than out-and-back patterns`,
+  nature: `- PRIORITIZE parks, nature reserves, waterfront paths, rivers, lakes, canals, and green corridors
+- Seek out tree-lined streets, botanical gardens, and urban forests
+- Avoid highways, industrial areas, busy roads, and commercial districts
+- Prefer unpaved trails and park paths when available
+- Create a loop through the greenest, most natural areas near the starting point
+- If a large park exists within range, route THROUGH it rather than around it`,
+  explore: `- PRIORITIZE landmarks, monuments, viewpoints, historic buildings, and cultural sites
+- Route past famous squares, cathedrals, museums, bridges, and tourist attractions
+- Seek scenic viewpoints and photo-worthy locations
+- Avoid highways and industrial areas but embrace lively pedestrian streets
+- Create a sightseeing loop that showcases the most interesting parts of the city
+- Prefer routes that pass through the historic city center or notable neighborhoods`,
+};
+
+function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string): string {
+  return `You are a running route planner. Generate a circular running route.
 
 Starting point: ${lat}, ${lng} (${cityName})
 Desired distance: ${distanceKm} km
@@ -17,18 +38,14 @@ Desired distance: ${distanceKm} km
 Requirements:
 - The route must START and END at the starting point coordinates
 - The total distance should be approximately ${distanceKm} km
-- Prefer parks, waterfront paths, pedestrian areas, and quiet residential streets
-- Avoid highways, industrial areas, and busy roads
-- Create an interesting loop, not an out-and-back route
-- Create a loop that visits different streets - avoid running the same street twice
-- Prefer routes through different neighborhoods rather than out-and-back patterns
+${SCENIC_INSTRUCTIONS[scenicMode]}
 - Generate 6-12 waypoints that define the route shape
 
 Return ONLY a JSON array of waypoints, no other text. Each waypoint has lat and lng:
 [{"lat": 59.33, "lng": 18.07}, {"lat": 59.34, "lng": 18.08}, ...]
 
-The first and last waypoint must be the starting point.
-`;
+The first and last waypoint must be the starting point.`;
+}
 
 async function callClaude(prompt: string, apiKey: string): Promise<string> {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -101,7 +118,7 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
     throw new Error('No API key configured. Go to Settings to add your Claude or Perplexity key.');
   }
 
-  const prompt = ROUTE_PROMPT(lat, lng, distanceKm, cityName);
+  const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName);
 
   let response: string;
   if (settings.apiProvider === 'perplexity') {

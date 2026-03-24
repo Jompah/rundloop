@@ -1,4 +1,4 @@
-import { AppSettings, GeneratedRoute } from '@/types';
+import { AppSettings, GeneratedRoute, ScenicMode } from '@/types';
 import { dbGet, dbPut, dbDelete, dbGetAll } from './db';
 
 const defaultSettings: AppSettings = {
@@ -7,6 +7,7 @@ const defaultSettings: AppSettings = {
   units: 'km',
   defaultDistance: 5,
   paceSecondsPerKm: 360, // 6:00/km default running pace
+  scenicMode: 'standard' as ScenicMode,
 };
 
 export interface SavedRoute {

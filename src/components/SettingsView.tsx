@@ -10,7 +10,7 @@ interface SettingsViewProps {
 }
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
-  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5, paceSecondsPerKm: 360 });
+  const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5, paceSecondsPerKm: 360, scenicMode: 'standard' });
   useEffect(() => { getSettings().then(setSettings); }, []);
   const [saved, setSaved] = useState(false);
 

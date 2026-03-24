@@ -32,11 +32,14 @@ export interface AppSettings {
   defaultDistance: number; // km
   bodyWeightKg?: number;
   paceSecondsPerKm: number; // running pace in seconds per km (default 360 = 6:00/km)
+  scenicMode: ScenicMode;
 }
 
 export type AppView = 'map' | 'generate' | 'navigate' | 'settings' | 'history' | 'routes' | 'summary';
 
 export type RouteMode = 'ai' | 'algorithmic';
+
+export type ScenicMode = 'standard' | 'nature' | 'explore';
 
 export interface FilteredPosition {
   lat: number;
