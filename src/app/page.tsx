@@ -22,7 +22,7 @@ import { initDB, dbDelete, dbPut, dbGet } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic, NaturePOI } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
 import { analyzeStreetDuplication, shouldRejectRoute } from '@/lib/street-dedup';
-import { assessRouteQuality, hasExcessiveShortSegments } from '@/lib/route-quality';
+import { assessRouteQuality, hasExcessiveShortSegments, detectDeadEndDetours } from '@/lib/route-quality';
 import { findNearbySavedRoutes, getSettings, saveSettings, haversineMeters } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
 import { useMapCentering } from '@/hooks/useMapCentering';
@@ -165,6 +165,13 @@ export default function Home() {
 
   // Request location on user gesture (iOS requires user interaction for geolocation)
   const requestLocation = useCallback(async () => {
+    // Check if geolocation API is available at all
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setGpsError(true);
+      setGpsErrorMessage('Din webbläsare stöder inte GPS');
+      return;
+    }
+
     setGpsRequesting(true);
     setGpsError(false);
     setGpsErrorMessage(null);
@@ -172,6 +179,8 @@ export default function Home() {
       const pos = await getCurrentPosition();
       const loc: [number, number] = [pos.lng, pos.lat];
       setUserLocation(loc);
+      setGpsError(false);
+      setGpsErrorMessage(null);
       centeringDispatch({ type: 'GPS_LOCK', position: loc });
 
       const city = await reverseGeocode(pos.lat, pos.lng);
@@ -220,7 +229,7 @@ export default function Home() {
 
     const MAX_ITERATIONS = 4; // Fewer iterations = less aggressive scaling = cleaner geometry
     const TOLERANCE_UNDER = 0.15; // Accept routes up to 15% shorter than target
-    const TOLERANCE_OVER = 0.10;  // Accept routes up to 10% longer (asymmetric -- slightly short > detour-heavy long)
+    const TOLERANCE_OVER = 0.05;  // Accept routes up to 5% longer (asymmetric -- slightly short > detour-heavy long)
     const MAX_ATTEMPTS = 3; // Retry with different initial waypoints to handle OSRM non-monotonicity
     const startLat = userLocation[1]; // userLocation is [lng, lat]
     const startLng = userLocation[0];
@@ -288,8 +297,8 @@ export default function Home() {
         // Track baseline as candidate (quality-adjusted diff)
         const initialQuality = assessRouteQuality(initialRoute);
         const initialSmooth = !hasExcessiveShortSegments(initialRoute.polyline);
-        // Penalize detour-heavy routes: add up to 0.15 to the diff for low-quality routes
-        bestDiff = Math.abs(initialRatio - 1) + (initialSmooth ? 0 : 0.15);
+        // Penalize detour-heavy routes: add up to 0.30 to the diff for low-quality routes
+        bestDiff = Math.abs(initialRatio - 1) + (initialSmooth ? 0 : 0.30);
         bestRoute = initialRoute;
 
         console.log(`[Attempt ${attempt + 1}] Kvalitet: ${initialQuality}/100, smooth=${initialSmooth}`);
@@ -331,7 +340,7 @@ export default function Home() {
 
             // Route smoothness check: penalize routes with excessive short segments
             const isSmooth = !hasExcessiveShortSegments(candidate.polyline);
-            const qualityPenalty = isSmooth ? 0 : 0.15;
+            const qualityPenalty = isSmooth ? 0 : 0.30;
             const adjustedDiff = rawDiff + qualityPenalty;
 
             const quality = assessRouteQuality(candidate);
@@ -353,6 +362,16 @@ export default function Home() {
             } else {
               lowScale = midScale; // Too short, expand lower bound
             }
+          }
+        }
+
+        // Post-processing: detect dead-end detours
+        if (bestRoute) {
+          const detours = detectDeadEndDetours(bestRoute.instructions);
+          console.log(`[Attempt ${attempt + 1}] Dead-end detours: ${detours.length}${detours.length > 0 ? ` (${detours.map(d => d.streetName).join(', ')})` : ''}`);
+          if (detours.length > 0 && attempt < MAX_ATTEMPTS - 1) {
+            console.log(`[Attempt ${attempt + 1}] Detected ${detours.length} dead-end detour(s), trying different waypoints...`);
+            continue; // Skip to next attempt
           }
         }
 

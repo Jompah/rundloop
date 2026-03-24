@@ -93,6 +93,7 @@ export function getCurrentPosition(): Promise<GeoPosition> {
       reject,
       {
         enableHighAccuracy: true,
+        maximumAge: 0,
         timeout: 10000,
       }
     );

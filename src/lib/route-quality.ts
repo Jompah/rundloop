@@ -11,7 +11,7 @@ import { GeneratedRoute, TurnInstruction } from '@/types';
  */
 export function countShortSegments(
   polyline: [number, number][],
-  thresholdMeters: number = 50
+  thresholdMeters: number = 30
 ): number {
   if (polyline.length < 2) return 0;
 
@@ -65,6 +65,88 @@ function detectBacktracking(instructions: TurnInstruction[]): string[] {
   return backtracked;
 }
 
+export interface DeadEndDetour {
+  streetName: string;
+  distance: number; // meters
+}
+
+/**
+ * Detect dead-end detour patterns in route instructions.
+ * These are short side-trips where OSRM routes onto a street and quickly exits
+ * the same way, adding distance without meaningful progress.
+ *
+ * Detection patterns:
+ * 1. A street name appears exactly once in the full route (visited as a dead-end side trip)
+ * 2. An instruction goes onto a street and within 2 instructions exits the same way
+ * 3. Two consecutive turns are within 80m of each other (sharp in-and-out)
+ */
+export function detectDeadEndDetours(instructions: TurnInstruction[]): DeadEndDetour[] {
+  const detours: DeadEndDetour[] = [];
+  const seenStreets = new Set<string>();
+
+  // Extract street names from all instructions
+  const streetEntries: { name: string; index: number; distance: number; location: [number, number] }[] = [];
+  for (let i = 0; i < instructions.length; i++) {
+    const inst = instructions[i];
+    const match = inst.text.match(/(?:onto|on|along)\s+(.+?)(?:\s*$)/i);
+    if (match) {
+      const name = match[1].trim().toLowerCase();
+      if (name === 'the path') continue; // Skip unnamed segments
+      streetEntries.push({ name, index: i, distance: inst.distance, location: inst.location });
+    }
+  }
+
+  // Pattern 1: Street name appears exactly once (dead-end side trip)
+  const streetCounts = new Map<string, number>();
+  for (const entry of streetEntries) {
+    streetCounts.set(entry.name, (streetCounts.get(entry.name) || 0) + 1);
+  }
+  for (const entry of streetEntries) {
+    if (streetCounts.get(entry.name) === 1 && entry.distance < 200) {
+      if (!seenStreets.has(entry.name)) {
+        detours.push({ streetName: entry.name, distance: entry.distance });
+        seenStreets.add(entry.name);
+      }
+    }
+  }
+
+  // Pattern 2: Enter and exit same street within 2 instructions
+  for (let i = 0; i < streetEntries.length - 2; i++) {
+    const enter = streetEntries[i];
+    // Check if within 2 instructions ahead the route goes back the same direction
+    for (let j = i + 1; j <= Math.min(i + 2, streetEntries.length - 1); j++) {
+      const exit = streetEntries[j];
+      if (enter.name === exit.name && !seenStreets.has(enter.name)) {
+        detours.push({ streetName: enter.name, distance: enter.distance + exit.distance });
+        seenStreets.add(enter.name);
+        break;
+      }
+    }
+  }
+
+  // Pattern 3: Two consecutive turns within 80m of each other (sharp in-and-out)
+  for (let i = 0; i < instructions.length - 1; i++) {
+    const inst = instructions[i];
+    const next = instructions[i + 1];
+    if (inst.type === 'arrive' || inst.type === 'depart' || next.type === 'arrive' || next.type === 'depart') continue;
+
+    const dist = haversineMeters(
+      inst.location[1], inst.location[0],
+      next.location[1], next.location[0]
+    );
+    if (dist < 80 && inst.distance < 150) {
+      const match = inst.text.match(/(?:onto|on|along)\s+(.+?)(?:\s*$)/i);
+      const streetName = match ? match[1].trim().toLowerCase() : `segment-${i}`;
+      if (!seenStreets.has(streetName)) {
+        detours.push({ streetName, distance: inst.distance });
+        seenStreets.add(streetName);
+      }
+    }
+  }
+
+  return detours;
+}
+
 /**
  * Assess the overall quality of a generated route.
  * Returns a score from 0 (terrible) to 100 (perfect).
@@ -73,14 +155,15 @@ function detectBacktracking(instructions: TurnInstruction[]): string[] {
  * - Short segment ratio: many short segments = side-street detours
  * - Backtracking: same street used twice in different parts
  * - Detour ratio: actual distance vs straight-line efficiency
+ * - Dead-end detours: side trips onto dead-end streets
  */
 export function assessRouteQuality(route: GeneratedRoute): number {
   let score = 100;
 
   const totalSegments = Math.max(route.polyline.length - 1, 1);
 
-  // --- Factor 1: Short segments (under 50m) ---
-  const shortCount = countShortSegments(route.polyline, 50);
+  // --- Factor 1: Short segments (under 30m) ---
+  const shortCount = countShortSegments(route.polyline, 30);
   const shortRatio = shortCount / totalSegments;
   // Penalize: more than 10% short segments is bad, more than 25% is terrible
   if (shortRatio > 0.25) {
@@ -103,6 +186,10 @@ export function assessRouteQuality(route: GeneratedRoute): number {
   ).length;
   score -= tinySteps * 3;
 
+  // --- Factor 4: Dead-end detours ---
+  const deadEndDetours = detectDeadEndDetours(route.instructions);
+  score -= deadEndDetours.length * 20;
+
   return Math.max(0, Math.min(100, score));
 }
 
@@ -119,7 +206,7 @@ export function hasExcessiveShortSegments(
   thresholdRatio: number = 0.20
 ): boolean {
   const totalSegments = Math.max(polyline.length - 1, 1);
-  const shortCount = countShortSegments(polyline, 50);
+  const shortCount = countShortSegments(polyline, 30);
   return (shortCount / totalSegments) > thresholdRatio;
 }
 

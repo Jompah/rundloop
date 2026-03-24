@@ -68,6 +68,8 @@ Requirements:
 ${SCENIC_INSTRUCTIONS[scenicMode]}
 - Generate 6-12 waypoints that define the route shape${labelInstruction}
 - Place waypoints ONLY at major intersections or along main roads, never on residential dead-end streets
+- NEVER generate waypoints on dead-end streets or cul-de-sacs. Every waypoint must be at a through-intersection with at least 2 different exit directions.
+- For dense historic urban areas like Gamla Stan, prefer the main walking streets and quays rather than narrow alleys.
 - Prefer smooth circular or figure-8 loops over routes with sharp turns into side streets
 - It is better to be 10-15% shorter than the target distance than to include short detour streets to hit exact distance
 - Round all coordinates to 4 decimal places (e.g. 59.3251, not 59.32517843)
