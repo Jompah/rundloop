@@ -14,35 +14,50 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - Avoid highways, industrial areas, and busy roads
 - Create an interesting loop, not an out-and-back route
 - Create a loop that visits different streets - avoid running the same street twice
-- Prefer routes through different neighborhoods rather than out-and-back patterns`,
+- Prefer routes through different neighborhoods rather than out-and-back patterns
+- Spread waypoints across different compass directions from the start (north, east, south, west) to create a varied loop`,
   nature: `- PRIORITIZE parks, nature reserves, waterfront paths, rivers, lakes, canals, and green corridors
+- Actively seek the BEST green spaces and water features near the starting point - name specific parks, trails, or waterfront areas you route through
+- In city centers: find hidden gardens, riverside paths, canal walks, and park connectors that most people overlook
 - Seek out tree-lined streets, botanical gardens, and urban forests
 - Avoid highways, industrial areas, busy roads, and commercial districts
 - Prefer unpaved trails and park paths when available
 - Create a loop through the greenest, most natural areas near the starting point
-- If a large park exists within range, route THROUGH it rather than around it`,
+- If a large park exists within range, route THROUGH it rather than around it
+- Spread waypoints across different compass directions from the start to maximize green coverage
+- Each waypoint should be in a distinctly different area - avoid clustering waypoints in the same park or street`,
   explore: `- PRIORITIZE landmarks, monuments, viewpoints, historic buildings, and cultural sites
+- Actively seek the MOST interesting and notable places near the starting point - name specific landmarks, squares, or attractions you route past
+- In city centers: include famous streets, historic squares, iconic bridges, notable churches or cathedrals, and scenic viewpoints
 - Route past famous squares, cathedrals, museums, bridges, and tourist attractions
 - Seek scenic viewpoints and photo-worthy locations
 - Avoid highways and industrial areas but embrace lively pedestrian streets
 - Create a sightseeing loop that showcases the most interesting parts of the city
-- Prefer routes that pass through the historic city center or notable neighborhoods`,
+- Prefer routes that pass through the historic city center or notable neighborhoods
+- Spread waypoints across different notable areas - avoid clustering around one landmark
+- Each waypoint should showcase a DIFFERENT interesting place or viewpoint`,
 };
 
 function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string): string {
+  const labelInstruction = scenicMode !== 'standard'
+    ? `\n- Include a "label" field on each waypoint describing what is at that location (park name, landmark name, street name, etc.)`
+    : '';
+
   return `You are a running route planner. Generate a circular running route.
 
 Starting point: ${lat}, ${lng} (${cityName})
 Desired distance: ${distanceKm} km
 
+Consider the specific geography and notable places of ${cityName} when selecting waypoints.
+
 Requirements:
 - The route must START and END at the starting point coordinates
 - The total distance should be approximately ${distanceKm} km
 ${SCENIC_INSTRUCTIONS[scenicMode]}
-- Generate 6-12 waypoints that define the route shape
+- Generate 6-12 waypoints that define the route shape${labelInstruction}
 
-Return ONLY a JSON array of waypoints, no other text. Each waypoint has lat and lng:
-[{"lat": 59.33, "lng": 18.07}, {"lat": 59.34, "lng": 18.08}, ...]
+Return ONLY a JSON array of waypoints, no other text. Each waypoint has lat, lng, and optionally label:
+[{"lat": 59.33, "lng": 18.07, "label": "Kungstradgarden"}, {"lat": 59.34, "lng": 18.08}, ...]
 
 The first and last waypoint must be the starting point.`;
 }
@@ -108,6 +123,7 @@ function parseWaypoints(response: string): RouteWaypoint[] {
   return parsed.map((p: any) => ({
     lat: parseFloat(p.lat),
     lng: parseFloat(p.lng),
+    ...(p.label ? { label: String(p.label) } : {}),
   }));
 }
 

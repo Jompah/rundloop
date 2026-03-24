@@ -55,7 +55,7 @@ export function analyzeStreetDuplication(instructions: TurnInstruction[]): Stree
   }
 }
 
-const DEDUP_THRESHOLD = 0.15  // Max 15% non-consecutive street repeats
+const DEDUP_THRESHOLD = 0.10  // Max 10% non-consecutive street repeats
 
 export function shouldRejectRoute(analysis: StreetDuplicateAnalysis): boolean {
   return analysis.duplicationRate > DEDUP_THRESHOLD
