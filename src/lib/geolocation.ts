@@ -112,4 +112,20 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
   }
 }
 
+/**
+ * Map GeolocationPositionError codes to user-facing Swedish messages.
+ */
+export function geoErrorMessage(error: GeolocationPositionError): string {
+  switch (error.code) {
+    case 1: // PERMISSION_DENIED
+      return 'Du behöver tillåta platsåtkomst i webbläsarens inställningar';
+    case 2: // POSITION_UNAVAILABLE
+      return 'Kunde inte hitta din position. Kontrollera att GPS är aktiverat.';
+    case 3: // TIMEOUT
+      return 'Det tog för lång tid att hitta din position. Försök igen.';
+    default:
+      return 'Ett okänt GPS-fel uppstod. Försök igen.';
+  }
+}
+
 export { watchFilteredPosition } from './gps-filter';

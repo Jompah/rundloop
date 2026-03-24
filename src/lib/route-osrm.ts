@@ -1,4 +1,5 @@
 import { RouteWaypoint, GeneratedRoute, TurnInstruction } from '@/types';
+import { countShortSegments } from '@/lib/route-quality';
 
 const OSRM_BASE = 'https://router.project-osrm.org';
 
@@ -113,9 +114,19 @@ export async function routeViaOSRM(waypoints: RouteWaypoint[], paceSecondsPerKm:
   // Keep OSRM's accurate distance, just recalculate time based on running pace.
   const runningDuration = (route.distance / 1000) * paceSecondsPerKm;
 
+  // Log short segment analysis for debugging route quality
+  const polyline = route.geometry.coordinates as [number, number][];
+  const shortCount = countShortSegments(polyline, 50);
+  const totalSegments = Math.max(polyline.length - 1, 1);
+  if (shortCount > 0) {
+    console.log(
+      `[OSRM] Korta segment (<50m): ${shortCount}/${totalSegments} (${((shortCount / totalSegments) * 100).toFixed(1)}%)`
+    );
+  }
+
   return {
     waypoints,
-    polyline: route.geometry.coordinates,
+    polyline,
     distance: route.distance,
     duration: runningDuration,
     instructions,

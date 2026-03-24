@@ -67,9 +67,13 @@ Requirements:
 - The total distance should be approximately ${distanceKm} km
 ${SCENIC_INSTRUCTIONS[scenicMode]}
 - Generate 6-12 waypoints that define the route shape${labelInstruction}
+- Place waypoints ONLY at major intersections or along main roads, never on residential dead-end streets
+- Prefer smooth circular or figure-8 loops over routes with sharp turns into side streets
+- It is better to be 10-15% shorter than the target distance than to include short detour streets to hit exact distance
+- Round all coordinates to 4 decimal places (e.g. 59.3251, not 59.32517843)
 
 Return ONLY a JSON array of waypoints, no other text. Each waypoint has lat, lng, and optionally label:
-[{"lat": 59.33, "lng": 18.07, "label": "Kungstradgarden"}, {"lat": 59.34, "lng": 18.08}, ...]
+[{"lat": 59.3251, "lng": 18.0711, "label": "Kungstradgarden"}, {"lat": 59.3400, "lng": 18.0800}, ...]
 
 The first and last waypoint must be the starting point.`;
 }

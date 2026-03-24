@@ -16,12 +16,13 @@ import CrashRecoveryDialog from '@/components/CrashRecoveryDialog';
 import RunSummaryView from '@/components/RunSummaryView';
 import LandmarkPanel from '@/components/LandmarkPanel';
 import { GeneratedRoute, AppView, RouteMode, ScenicMode, RouteWaypoint, ActiveRunSnapshot, CompletedRun } from '@/types';
-import { getCurrentPosition, reverseGeocode, watchFilteredPosition, setFakePosition, clearFakePosition, isFakeGPS } from '@/lib/geolocation';
+import { getCurrentPosition, reverseGeocode, watchFilteredPosition, setFakePosition, clearFakePosition, isFakeGPS, geoErrorMessage } from '@/lib/geolocation';
 import { fetchLandmarksNearRoute } from '@/lib/overpass';
 import { initDB, dbDelete, dbPut, dbGet } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic, NaturePOI } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
 import { analyzeStreetDuplication, shouldRejectRoute } from '@/lib/street-dedup';
+import { assessRouteQuality, hasExcessiveShortSegments } from '@/lib/route-quality';
 import { findNearbySavedRoutes, getSettings, saveSettings, haversineMeters } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
 import { useMapCentering } from '@/hooks/useMapCentering';
@@ -157,51 +158,69 @@ export default function Home() {
     setShowFakeMenu(false);
   }, []);
 
-  // Get user location on mount
+  // GPS watch ID ref for cleanup
+  const gpsWatchIdRef = useRef<number | undefined>(undefined);
+  const [gpsErrorMessage, setGpsErrorMessage] = useState<string | null>(null);
+  const [gpsRequesting, setGpsRequesting] = useState(false);
+
+  // Request location on user gesture (iOS requires user interaction for geolocation)
+  const requestLocation = useCallback(async () => {
+    setGpsRequesting(true);
+    setGpsError(false);
+    setGpsErrorMessage(null);
+    try {
+      const pos = await getCurrentPosition();
+      const loc: [number, number] = [pos.lng, pos.lat];
+      setUserLocation(loc);
+      centeringDispatch({ type: 'GPS_LOCK', position: loc });
+
+      const city = await reverseGeocode(pos.lat, pos.lng);
+      setCityName(city);
+
+      // Start watching position after successful initial lock
+      if (gpsWatchIdRef.current !== undefined) {
+        navigator.geolocation.clearWatch(gpsWatchIdRef.current);
+      }
+      gpsWatchIdRef.current = watchFilteredPosition(
+        (pos) => {
+          setUserLocation([pos.lng, pos.lat]);
+          setUserHeading(pos.heading);
+          setUserSpeed(pos.speed);
+          centeringDispatch({ type: 'GPS_UPDATE', position: [pos.lng, pos.lat] });
+          dbPut('settings', { key: 'lastPosition', lng: pos.lng, lat: pos.lat, timestamp: Date.now() });
+        },
+        (_pos, _reason) => { /* rejected, ignore for location display */ },
+        (err) => console.warn('GPS error:', err.message)
+      );
+    } catch (err: any) {
+      setGpsError(true);
+      if (err && typeof err.code === 'number') {
+        setGpsErrorMessage(geoErrorMessage(err as GeolocationPositionError));
+      } else {
+        setGpsErrorMessage('Kunde inte hämta din position. Försök igen.');
+      }
+    } finally {
+      setGpsRequesting(false);
+    }
+  }, [centeringDispatch]);
+
+  // Cleanup GPS watch on unmount
   useEffect(() => {
-    let watchId: number;
-
-    const initLocation = async () => {
-      try {
-        const pos = await getCurrentPosition();
-        const loc: [number, number] = [pos.lng, pos.lat];
-        setUserLocation(loc);
-        centeringDispatch({ type: 'GPS_LOCK', position: loc });
-
-        const city = await reverseGeocode(pos.lat, pos.lng);
-        setCityName(city);
-
-        watchId = watchFilteredPosition(
-          (pos) => {
-            setUserLocation([pos.lng, pos.lat]);
-            setUserHeading(pos.heading);
-            setUserSpeed(pos.speed);
-            centeringDispatch({ type: 'GPS_UPDATE', position: [pos.lng, pos.lat] });
-            dbPut('settings', { key: 'lastPosition', lng: pos.lng, lat: pos.lat, timestamp: Date.now() });
-          },
-          (_pos, _reason) => { /* rejected, ignore for location display */ },
-          (err) => console.warn('GPS error:', err.message)
-        );
-      } catch (err) {
-        // Geolocation failed — show error, don't silently fake GPS
-        setGpsError(true);
+    return () => {
+      if (gpsWatchIdRef.current !== undefined) {
+        navigator.geolocation.clearWatch(gpsWatchIdRef.current);
       }
     };
-
-    initLocation();
-
-    return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
-    };
-  }, [applyFakeGPS]);
+  }, []);
 
   const handleGenerate = useCallback(async (distance: number) => {
     if (!userLocation) return;
     setIsLoading(true);
     setError(null);
 
-    const MAX_ITERATIONS = 6; // Per attempt (reduced from 8 since we now retry with different waypoints)
-    const TOLERANCE = 0.20;
+    const MAX_ITERATIONS = 4; // Fewer iterations = less aggressive scaling = cleaner geometry
+    const TOLERANCE_UNDER = 0.15; // Accept routes up to 15% shorter than target
+    const TOLERANCE_OVER = 0.10;  // Accept routes up to 10% longer (asymmetric -- slightly short > detour-heavy long)
     const MAX_ATTEMPTS = 3; // Retry with different initial waypoints to handle OSRM non-monotonicity
     const startLat = userLocation[1]; // userLocation is [lng, lat]
     const startLng = userLocation[0];
@@ -242,6 +261,15 @@ export default function Home() {
           initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined });
         }
 
+        // Snap waypoints to 4 decimal places (~11m precision).
+        // This prevents waypoints landing in the middle of residential blocks
+        // where OSRM must detour through side streets to reach them.
+        initialWaypoints = initialWaypoints.map((wp) => ({
+          ...wp,
+          lat: Math.round(wp.lat * 10000) / 10000,
+          lng: Math.round(wp.lng * 10000) / 10000,
+        }));
+
         // --- Iterative distance calibration via binary search ---
         // Binary search over a scale factor applied to the initial waypoints.
         // This avoids oscillation from proportional scaling on non-linear OSRM routes.
@@ -257,12 +285,21 @@ export default function Home() {
 
         console.log(`[Attempt ${attempt + 1}/${MAX_ATTEMPTS}] baseline=${initialKm.toFixed(2)}km, target=${distance}km, ratio=${initialRatio.toFixed(2)}`);
 
-        // Track baseline as candidate
-        bestDiff = Math.abs(initialRatio - 1);
+        // Track baseline as candidate (quality-adjusted diff)
+        const initialQuality = assessRouteQuality(initialRoute);
+        const initialSmooth = !hasExcessiveShortSegments(initialRoute.polyline);
+        // Penalize detour-heavy routes: add up to 0.15 to the diff for low-quality routes
+        bestDiff = Math.abs(initialRatio - 1) + (initialSmooth ? 0 : 0.15);
         bestRoute = initialRoute;
 
+        console.log(`[Attempt ${attempt + 1}] Kvalitet: ${initialQuality}/100, smooth=${initialSmooth}`);
+
+        // Check asymmetric tolerance: accept -15% to +10%
+        const isWithinTolerance = (ratio: number) =>
+          ratio >= (1 - TOLERANCE_UNDER) && ratio <= (1 + TOLERANCE_OVER);
+
         // If not already within tolerance, run binary search
-        if (!(initialRatio >= (1 - TOLERANCE) && initialRatio <= (1 + TOLERANCE))) {
+        if (!isWithinTolerance(initialRatio)) {
           // Determine initial bounds based on first measurement
           if (initialRatio > 1) {
             // Route is too long, we need to shrink. Current scale (1.0) is too big.
@@ -281,8 +318,8 @@ export default function Home() {
             const scaledWaypoints: RouteWaypoint[] = initialWaypoints.map((wp, idx) => {
               if (idx === 0 || idx === initialWaypoints.length - 1) return wp;
               return {
-                lat: startLat + (wp.lat - startLat) * midScale,
-                lng: startLng + (wp.lng - startLng) * midScale,
+                lat: Math.round((startLat + (wp.lat - startLat) * midScale) * 10000) / 10000,
+                lng: Math.round((startLng + (wp.lng - startLng) * midScale) * 10000) / 10000,
                 ...(wp.label ? { label: wp.label } : {}),
               };
             });
@@ -290,17 +327,23 @@ export default function Home() {
             const candidate = await routeViaOSRM(scaledWaypoints, paceSecondsPerKm);
             const actualKm = candidate.distance / 1000;
             const ratio = actualKm / distance;
-            const diff = Math.abs(ratio - 1);
+            const rawDiff = Math.abs(ratio - 1);
 
-            console.log(`[Attempt ${attempt + 1} iter ${i + 1}] scale=${midScale.toFixed(3)}, actual=${actualKm.toFixed(2)}km, target=${distance}km`);
+            // Route smoothness check: penalize routes with excessive short segments
+            const isSmooth = !hasExcessiveShortSegments(candidate.polyline);
+            const qualityPenalty = isSmooth ? 0 : 0.15;
+            const adjustedDiff = rawDiff + qualityPenalty;
 
-            if (diff < bestDiff) {
-              bestDiff = diff;
+            const quality = assessRouteQuality(candidate);
+            console.log(`[Attempt ${attempt + 1} iter ${i + 1}] scale=${midScale.toFixed(3)}, actual=${actualKm.toFixed(2)}km, target=${distance}km, kvalitet=${quality}/100, smooth=${isSmooth}`);
+
+            if (adjustedDiff < bestDiff) {
+              bestDiff = adjustedDiff;
               bestRoute = candidate;
             }
 
-            // Within tolerance? Done with this attempt!
-            if (ratio >= (1 - TOLERANCE) && ratio <= (1 + TOLERANCE)) {
+            // Within asymmetric tolerance? Done with this attempt!
+            if (isWithinTolerance(ratio) && isSmooth) {
               break;
             }
 
@@ -328,10 +371,13 @@ export default function Home() {
           overallBestRoute = bestRoute;
         }
 
-        // If within tolerance, no need for more attempts
-        if (overallBestDiff <= TOLERANCE) {
-          console.log(`[Attempt ${attempt + 1}] Within tolerance (${(overallBestDiff * 100).toFixed(1)}%), done.`);
-          break;
+        // If within tolerance (using raw distance diff from overall best), no need for more attempts
+        if (overallBestRoute) {
+          const overallRatio = overallBestRoute.distance / 1000 / distance;
+          if (isWithinTolerance(overallRatio)) {
+            console.log(`[Attempt ${attempt + 1}] Inom tolerans (${((overallRatio - 1) * 100).toFixed(1)}%), klar.`);
+            break;
+          }
         }
 
         if (attempt < MAX_ATTEMPTS - 1) {
@@ -439,33 +485,69 @@ export default function Home() {
         <div className="absolute top-16 left-4 right-4 z-30 bg-red-500/90 backdrop-blur-sm text-white px-4 py-3 rounded-xl text-sm shadow-lg">
           <div className="font-medium mb-1">GPS-position saknas</div>
           <div className="text-white/90 text-xs mb-3">
-            Tillat platsatkomst i telefonens installningar for att anvanda din riktiga GPS-position, eller simulera en position for att testa appen.
+            {gpsErrorMessage || 'Tillåt platsåtkomst i telefonens inställningar för att använda din riktiga GPS-position, eller simulera en position för att testa appen.'}
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => {
-                setGpsError(false);
-                // Retry real GPS
-                getCurrentPosition()
-                  .then(async (pos) => {
-                    setUserLocation([pos.lng, pos.lat]);
-                    const city = await reverseGeocode(pos.lat, pos.lng);
-                    setCityName(city);
-                  })
-                  .catch(() => setGpsError(true));
-              }}
+              onClick={requestLocation}
               className="bg-white/20 px-3 py-1.5 rounded-lg text-xs font-medium active:bg-white/30"
             >
-              Forsok igen
+              Försök igen
             </button>
             <button
               onClick={() => {
                 setGpsError(false);
+                setGpsErrorMessage(null);
                 applyFakeGPS(FAKE_CITIES[0]);
               }}
               className="bg-white/20 px-3 py-1.5 rounded-lg text-xs font-medium active:bg-white/30"
             >
               Simulera position
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Hitta min position - prominent button when location is unknown */}
+      {!userLocation && !gpsError && !fakeGPSActive && (
+        <div className="absolute inset-0 z-25 flex flex-col items-center justify-center px-6">
+          <div className="bg-gray-900/90 backdrop-blur-md rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+            <div className="mb-4 flex justify-center">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-blue-400">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="3" />
+                <line x1="12" y1="2" x2="12" y2="5" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+                <line x1="2" y1="12" x2="5" y2="12" />
+                <line x1="19" y1="12" x2="22" y2="12" />
+              </svg>
+            </div>
+            <h2 className="text-white text-xl font-bold mb-2">Var är du?</h2>
+            <p className="text-gray-400 text-sm mb-6">
+              RundLoop behöver din position för att skapa löprutter i ditt område.
+            </p>
+            <button
+              onClick={requestLocation}
+              disabled={gpsRequesting}
+              className="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 disabled:bg-blue-500/50 text-white font-semibold text-lg py-4 px-6 rounded-xl transition-colors shadow-lg shadow-blue-500/25"
+            >
+              {gpsRequesting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Söker position...
+                </span>
+              ) : (
+                'Hitta min position'
+              )}
+            </button>
+            <button
+              onClick={() => setShowFakeMenu(true)}
+              className="mt-3 w-full text-gray-400 hover:text-gray-300 text-sm py-2 transition-colors"
+            >
+              Simulera position istället
             </button>
           </div>
         </div>
