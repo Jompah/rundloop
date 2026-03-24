@@ -148,6 +148,47 @@ export function addStartFinishMarkers(
 }
 
 /**
+ * Add a dashed "walk to start" line from the user's GPS position to the route start.
+ * Uses a distinct dashed style to differentiate from the main route.
+ */
+export function addWalkToStartLine(
+  map: maplibregl.Map,
+  walkCoords: [number, number][],
+  sourceId = 'walk-to-start',
+  layerId = 'walk-to-start-line'
+): void {
+  if (walkCoords.length < 2) return;
+
+  map.addSource(sourceId, {
+    type: 'geojson',
+    data: {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString',
+        coordinates: walkCoords,
+      },
+    },
+  });
+
+  map.addLayer({
+    id: layerId,
+    type: 'line',
+    source: sourceId,
+    layout: {
+      'line-join': 'round',
+      'line-cap': 'round',
+    },
+    paint: {
+      'line-width': 3,
+      'line-color': '#94a3b8', // slate-400 gray
+      'line-dasharray': [3, 3],
+      'line-opacity': 0.8,
+    },
+  });
+}
+
+/**
  * Add turn indicator arrows at significant turn locations.
  * Creates a canvas-drawn white arrow image and renders as a symbol layer.
  */
@@ -290,10 +331,12 @@ export function removeRouteVisuals(map: maplibregl.Map): void {
   // Remove layers first (must be removed before their sources)
   if (map.getLayer('route-gradient')) map.removeLayer('route-gradient');
   if (map.getLayer('turn-arrows')) map.removeLayer('turn-arrows');
+  if (map.getLayer('walk-to-start-line')) map.removeLayer('walk-to-start-line');
 
   // Remove sources
   if (map.getSource('route')) map.removeSource('route');
   if (map.getSource('turn-indicators')) map.removeSource('turn-indicators');
+  if (map.getSource('walk-to-start')) map.removeSource('walk-to-start');
 
   // Remove landmark markers
   removeLandmarkMarkers(map);

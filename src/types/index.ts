@@ -14,6 +14,7 @@ export interface GeneratedRoute {
   duration: number; // seconds
   instructions: TurnInstruction[];
   landmarks?: Landmark[];
+  walkToStart?: [number, number][]; // [lng, lat] pairs from GPS to route start (dashed line)
 }
 
 export interface TurnInstruction {

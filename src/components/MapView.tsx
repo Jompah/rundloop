@@ -12,6 +12,7 @@ import {
   addStartFinishMarkers,
   addTurnIndicators,
   addLandmarkMarkers,
+  addWalkToStartLine,
   removeRouteVisuals,
 } from '@/lib/route-visuals';
 
@@ -157,11 +158,19 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
         if (route.landmarks && route.landmarks.length > 0) {
           addLandmarkMarkers(map, route.landmarks);
         }
+
+        // Add walk-to-start dashed line
+        if (route.walkToStart && route.walkToStart.length >= 2) {
+          addWalkToStartLine(map, route.walkToStart);
+        }
       });
 
-    // Fit map to route bounds
+    // Fit map to route bounds (include walk-to-start if present)
     const bounds = new maplibregl.LngLatBounds();
     route.polyline.forEach((coord) => bounds.extend(coord as [number, number]));
+    if (route.walkToStart) {
+      route.walkToStart.forEach((coord) => bounds.extend(coord as [number, number]));
+    }
     map.fitBounds(bounds, { padding: 60 });
   }, [route, mapLoaded]);
 

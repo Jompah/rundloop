@@ -22,7 +22,7 @@ import { initDB, dbDelete, dbPut, dbGet } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
 import { analyzeStreetDuplication, shouldRejectRoute } from '@/lib/street-dedup';
-import { findNearbySavedRoutes, getSettings, saveSettings } from '@/lib/storage';
+import { findNearbySavedRoutes, getSettings, saveSettings, haversineMeters } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
 import { useMapCentering } from '@/hooks/useMapCentering';
 import { unlockIOSAudio, ensureSpeechReady } from '@/lib/voice';
@@ -330,6 +330,29 @@ export default function Home() {
           generatedRoute.landmarks = landmarks;
         } catch (e) {
           console.warn('Landmark fetch failed:', e);
+        }
+
+        // Compute walk-to-start segment if route start differs from GPS
+        if (generatedRoute.polyline.length > 0) {
+          const routeStart = generatedRoute.polyline[0]; // [lng, lat]
+          const gpsLng = startLng;
+          const gpsLat = startLat;
+          const distToRouteStart = haversineMeters(gpsLat, gpsLng, routeStart[1], routeStart[0]);
+
+          if (distToRouteStart > 10 && distToRouteStart <= 300) {
+            // Route start is 10-300m from GPS - show walk segment
+            generatedRoute.walkToStart = [
+              [gpsLng, gpsLat],
+              routeStart,
+            ];
+          } else if (distToRouteStart > 300) {
+            // Route start beyond 300m - clamp by showing walk segment anyway
+            console.warn(`Route start ${distToRouteStart.toFixed(0)}m from GPS, clamping`);
+            generatedRoute.walkToStart = [
+              [gpsLng, gpsLat],
+              routeStart,
+            ];
+          }
         }
 
         setRoute(generatedRoute);
