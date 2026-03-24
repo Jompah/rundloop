@@ -19,7 +19,7 @@ import { GeneratedRoute, AppView, RouteMode, ScenicMode, RouteWaypoint, ActiveRu
 import { getCurrentPosition, reverseGeocode, watchFilteredPosition, setFakePosition, clearFakePosition, isFakeGPS } from '@/lib/geolocation';
 import { fetchLandmarksNearRoute } from '@/lib/overpass';
 import { initDB, dbDelete, dbPut, dbGet } from '@/lib/db';
-import { generateRouteWaypoints, generateRouteAlgorithmic } from '@/lib/route-ai';
+import { generateRouteWaypoints, generateRouteAlgorithmic, NaturePOI } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
 import { analyzeStreetDuplication, shouldRejectRoute } from '@/lib/street-dedup';
 import { findNearbySavedRoutes, getSettings, saveSettings, haversineMeters } from '@/lib/storage';
@@ -215,13 +215,31 @@ export default function Home() {
       const settings = await getSettings();
       const paceSecondsPerKm = settings.paceSecondsPerKm ?? 360;
 
+      // Fetch nature POIs for Nature mode (before route generation)
+      let naturePOIs: NaturePOI[] = [];
+      if (scenicMode === 'nature' && routeMode === 'ai') {
+        try {
+          const poiRes = await fetch(`/api/pois?lat=${startLat}&lng=${startLng}&radius=${Math.round(distance * 500)}`);
+          if (poiRes.ok) {
+            const poiData = await poiRes.json();
+            naturePOIs = (poiData.pois || []).slice(0, 8); // Max 8 POIs
+          }
+        } catch (e) {
+          console.warn('POI fetch failed, using AI-only routing:', e);
+        }
+      }
+
+      if (scenicMode === 'nature' && routeMode === 'ai' && naturePOIs.length < 2) {
+        console.log('Fewer than 2 nature POIs found, using AI-only routing');
+      }
+
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         // Generate initial waypoints (different each time due to random rotation / AI variance)
         let initialWaypoints: RouteWaypoint[];
         if (routeMode === 'algorithmic') {
           initialWaypoints = await generateRouteAlgorithmic(startLat, startLng, distance);
         } else {
-          initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode });
+          initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined });
         }
 
         // --- Iterative distance calibration via binary search ---

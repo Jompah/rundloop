@@ -1,5 +1,12 @@
 import { RouteWaypoint, AppSettings, ScenicMode } from '@/types';
 
+export interface NaturePOI {
+  name: string;
+  lat: number;
+  lng: number;
+  type: string;
+}
+
 interface AIRouteRequest {
   lat: number;
   lng: number;
@@ -7,6 +14,7 @@ interface AIRouteRequest {
   cityName: string;
   settings: AppSettings;
   scenicMode?: ScenicMode;
+  poiWaypoints?: NaturePOI[];
 }
 
 const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
@@ -38,9 +46,13 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - Each waypoint should showcase a DIFFERENT interesting place or viewpoint`,
 };
 
-function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string): string {
+function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string, poiWaypoints?: NaturePOI[]): string {
   const labelInstruction = scenicMode !== 'standard'
     ? `\n- Include a "label" field on each waypoint describing what is at that location (park name, landmark name, street name, etc.)`
+    : '';
+
+  const poiSection = poiWaypoints && poiWaypoints.length > 0
+    ? `\n\nNearby green spaces and nature areas (REAL coordinates from OpenStreetMap - use these as waypoints):\n${poiWaypoints.map(p => `- ${p.name} (${p.type}): ${p.lat}, ${p.lng}`).join('\n')}\n\nYou MUST route through at least ${Math.min(poiWaypoints.length, 3)} of these locations. Use their exact coordinates as waypoints.`
     : '';
 
   return `You are a running route planner. Generate a circular running route.
@@ -48,7 +60,7 @@ function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, dist
 Starting point: ${lat}, ${lng} (${cityName})
 Desired distance: ${distanceKm} km
 
-Consider the specific geography and notable places of ${cityName} when selecting waypoints.
+Consider the specific geography and notable places of ${cityName} when selecting waypoints.${poiSection}
 
 Requirements:
 - The route must START and END at the starting point coordinates
@@ -134,7 +146,7 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
     throw new Error('No API key configured. Go to Settings to add your Claude or Perplexity key.');
   }
 
-  const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName);
+  const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints);
 
   let response: string;
   if (settings.apiProvider === 'perplexity') {
