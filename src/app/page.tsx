@@ -163,6 +163,9 @@ export default function Home() {
   const [gpsErrorMessage, setGpsErrorMessage] = useState<string | null>(null);
   const [gpsRequesting, setGpsRequesting] = useState(false);
 
+  // Track if GPS permission was permanently denied (retrying won't help)
+  const [gpsPermissionDenied, setGpsPermissionDenied] = useState(false);
+
   // Request location on user gesture (iOS requires user interaction for geolocation)
   const requestLocation = useCallback(async () => {
     // Check if geolocation API is available at all
@@ -173,14 +176,15 @@ export default function Home() {
     }
 
     setGpsRequesting(true);
-    setGpsError(false);
     setGpsErrorMessage(null);
+    // Keep gpsError visible during retry so the banner stays (no flash)
     try {
       const pos = await getCurrentPosition();
       const loc: [number, number] = [pos.lng, pos.lat];
       setUserLocation(loc);
       setGpsError(false);
       setGpsErrorMessage(null);
+      setGpsPermissionDenied(false);
       centeringDispatch({ type: 'GPS_LOCK', position: loc });
 
       const city = await reverseGeocode(pos.lat, pos.lng);
@@ -204,9 +208,13 @@ export default function Home() {
     } catch (err: any) {
       setGpsError(true);
       if (err && typeof err.code === 'number') {
-        setGpsErrorMessage(geoErrorMessage(err as GeolocationPositionError));
+        const geoErr = err as GeolocationPositionError;
+        setGpsErrorMessage(geoErrorMessage(geoErr));
+        // PERMISSION_DENIED (code 1): retrying won't help, user must change browser settings
+        setGpsPermissionDenied(geoErr.code === 1);
       } else {
         setGpsErrorMessage('Kunde inte hämta din position. Försök igen.');
+        setGpsPermissionDenied(false);
       }
     } finally {
       setGpsRequesting(false);
@@ -506,17 +514,34 @@ export default function Home() {
           <div className="text-white/90 text-xs mb-3">
             {gpsErrorMessage || 'Tillåt platsåtkomst i telefonens inställningar för att använda din riktiga GPS-position, eller simulera en position för att testa appen.'}
           </div>
+          {gpsPermissionDenied && (
+            <div className="text-white/80 text-xs mb-3 bg-white/10 rounded-lg px-3 py-2">
+              Platsåtkomst har nekats. Öppna webbläsarens inställningar och tillåt platsåtkomst för den här sidan, eller använd simulerad position.
+            </div>
+          )}
           <div className="flex gap-2">
             <button
               onClick={requestLocation}
-              className="bg-white/20 px-3 py-1.5 rounded-lg text-xs font-medium active:bg-white/30"
+              disabled={gpsRequesting}
+              className="bg-white/20 px-3 py-1.5 rounded-lg text-xs font-medium active:bg-white/30 disabled:opacity-50 flex items-center gap-1.5"
             >
-              Försök igen
+              {gpsRequesting ? (
+                <>
+                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Söker...
+                </>
+              ) : (
+                'Försök igen'
+              )}
             </button>
             <button
               onClick={() => {
                 setGpsError(false);
                 setGpsErrorMessage(null);
+                setGpsPermissionDenied(false);
                 applyFakeGPS(FAKE_CITIES[0]);
               }}
               className="bg-white/20 px-3 py-1.5 rounded-lg text-xs font-medium active:bg-white/30"
@@ -527,10 +552,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* Hitta min position - prominent button when location is unknown */}
-      {!userLocation && !gpsError && !fakeGPSActive && (
-        <div className="absolute inset-0 z-25 flex flex-col items-center justify-center px-6">
-          <div className="bg-gray-900/90 backdrop-blur-md rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+      {/* Hitta min position - prominent button when location is unknown and no error shown */}
+      {!userLocation && !gpsError && !gpsRequesting && !fakeGPSActive && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 pointer-events-none">
+          <div className="bg-gray-900/90 backdrop-blur-md rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl pointer-events-auto">
             <div className="mb-4 flex justify-center">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-blue-400">
                 <circle cx="12" cy="12" r="10" />
@@ -821,7 +846,7 @@ export default function Home() {
               size="lg"
               onClick={() => { haptic('success'); unlockIOSAudio(); runSession.startRun(null); centeringDispatch({ type: 'START_NAVIGATION' }); setView('navigate'); }}
             >
-              Start Run
+              Starta löpning
             </Button>
           </div>
           {route.landmarks && route.landmarks.length > 0 && (

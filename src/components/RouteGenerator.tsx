@@ -51,7 +51,7 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
     <div className="absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-6 z-20 overflow-hidden">
       {/* City name */}
       <div className="text-gray-400 text-sm mb-1">
-        {userLocation ? cityName || 'Getting location...' : 'Waiting for GPS...'}
+        {userLocation ? cityName || 'Hämtar plats...' : 'Väntar på GPS...'}
       </div>
 
       {/* Scenic mode toggle - only for AI routes */}
@@ -132,12 +132,12 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            Generating route...
+            Genererar rutt...
           </span>
         ) : !userLocation ? (
-          'Waiting for GPS...'
+          'Väntar på GPS...'
         ) : (
-          `Generate ${distance} km route`
+          `Generera ${distance} km rutt`
         )}
       </Button>
 
@@ -150,7 +150,7 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
           onClick={handleSaveRoute}
           disabled={saved}
         >
-          {saved ? 'Saved!' : 'Save Route'}
+          {saved ? 'Sparad!' : 'Spara rutt'}
         </Button>
       )}
     </div>
