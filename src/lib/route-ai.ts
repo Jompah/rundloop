@@ -17,49 +17,42 @@ interface AIRouteRequest {
   poiWaypoints?: NaturePOI[];
 }
 
+// Shared rules applied to ALL scenic modes — anti-detour, waypoint placement, and loop quality
+const SHARED_ROUTE_RULES = `- ABSOLUTELY NO DETOURS: NEVER create dead-end detours. Every waypoint must be on the THROUGH-route, not a side trip. The runner must move FORWARD continuously, never doubling back on any street. If you place a waypoint on a side street, the runner goes in AND comes back — that is a detour and is FORBIDDEN.
+- Place waypoints ONLY on streets that naturally connect to the next waypoint without requiring the runner to retrace steps. Each waypoint must flow into the next in one direction.
+- WAYPOINT PLACEMENT: Place waypoints at TURNING POINTS only — where the route changes direction. Do NOT place waypoints along straight stretches. This ensures the router creates straight paths between turns, avoiding unnecessary detours through side streets.
+- PERIMETER LOOP DETECTION: For distances that match the perimeter of a local geographic feature (island, peninsula, lake, large park), create a PERIMETER LOOP following the outer edge. Example: 10km on Kungsholmen = run around the island's waterfront. 5km near a lake = loop around it.
+- Prefer CONTINUOUS paths (waterfront promenades, park trails, ring roads) over zig-zag patterns through city blocks.
+- It is MUCH better to be 10-15% shorter than the target distance than to add side-street detours to hit exact distance.
+- Round all coordinates to 4 decimal places (e.g. 59.3251, not 59.32517843)`;
+
 const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
-  standard: `- CRITICAL: Create a smooth loop with minimal backtracking. The runner should NOT run the same street twice.
-- If near water (ocean, lake, river, island), route ALONG the waterfront. On islands, create a perimeter loop.
-- Avoid zigzag patterns. Prefer long straight stretches connected by smooth turns.
-- Space waypoints evenly around the loop to create consistent pacing.
-- Detect geographic features: if the starting point is on an island, create a loop around the island's perimeter. If near a large park, route through it.
-- Include famous landmarks, tourist attractions, and popular sights near the route. Route PAST (not just near) iconic buildings, monuments, squares, and viewpoints.
+  standard: `${SHARED_ROUTE_RULES}
+- When the target distance roughly matches a natural loop (island perimeter, park circuit, waterfront path), generate waypoints that trace that natural loop. Use your geographic knowledge of the area.
+- Include famous landmarks, tourist attractions, and popular sights ALONG the loop. Route PAST (not just near) iconic buildings, monuments, squares, and viewpoints — but only if they are on the natural loop path, never as side trips.
 - Prefer parks, waterfront paths, pedestrian areas, and quiet residential streets
 - Avoid highways, industrial areas, and busy roads
 - Create an interesting loop, not an out-and-back route
 - Spread waypoints across different compass directions from the start (north, east, south, west) to create a varied loop`,
-  nature: `- CRITICAL: Create a smooth loop with minimal backtracking. The runner should NOT run the same street twice.
-- If near water (ocean, lake, river, island), route ALONG the waterfront. On islands, create a perimeter loop.
-- If on an island, follow the waterfront/shoreline path around the island perimeter.
-- Prefer paths with views - elevation, waterfront, open spaces.
-- Avoid zigzag patterns. Prefer long straight stretches connected by smooth turns.
-- Space waypoints evenly around the loop to create consistent pacing.
+  nature: `${SHARED_ROUTE_RULES}
+- Follow waterfront paths and park edges CONTINUOUSLY. Never leave the waterfront to go inland and come back — that is a detour.
+- If on an island, follow the waterfront/shoreline path around the island perimeter. Place waypoints at points where the shoreline changes direction.
+- Prefer paths with views - elevation, waterfront, open spaces
 - PRIORITIZE parks, nature reserves, waterfront paths, rivers, lakes, canals, and green corridors
-- Actively seek the BEST green spaces and water features near the starting point - name specific parks, trails, or waterfront areas you route through
-- In city centers: find hidden gardens, riverside paths, canal walks, and park connectors that most people overlook
+- Actively seek the BEST green spaces and water features near the starting point
 - Seek out tree-lined streets, botanical gardens, and urban forests
 - Avoid highways, industrial areas, busy roads, and commercial districts
 - Prefer unpaved trails and park paths when available
-- Create a loop through the greenest, most natural areas near the starting point
 - If a large park exists within range, route THROUGH it rather than around it
-- If near famous landmarks or scenic viewpoints, include them as waypoints even if slightly off the greenest path. Combine nature with notable sights.
-- Spread waypoints across different compass directions from the start to maximize green coverage
-- Each waypoint should be in a distinctly different area - avoid clustering waypoints in the same park or street`,
-  explore: `- CRITICAL: Create a smooth loop with minimal backtracking. The runner should NOT run the same street twice.
-- If near water (ocean, lake, river, island), route ALONG the waterfront. On islands, create a perimeter loop.
-- Connect landmarks in a logical loop, not zigzag pattern.
-- If on an island, combine perimeter waterfront with landmark detours.
-- Avoid zigzag patterns. Prefer long straight stretches connected by smooth turns.
-- Space waypoints evenly around the loop to create consistent pacing.
-- PRIORITIZE world-famous landmarks and tourist must-sees. In any major city, the runner should pass the top 3-5 most iconic sights. Think like a tourist guide creating the ultimate sightseeing run.
-- Include popular squares, famous bridges, cathedrals, palaces, stadiums, and cultural landmarks.
-- Actively seek the MOST interesting and notable places near the starting point - name specific landmarks, squares, or attractions you route past
-- In city centers: include famous streets, historic squares, iconic bridges, notable churches or cathedrals, and scenic viewpoints
+- Spread waypoints across different compass directions to maximize green coverage`,
+  explore: `${SHARED_ROUTE_RULES}
+- Connect landmarks in a logical loop, not zigzag pattern
+- If on an island, combine perimeter waterfront with landmarks that are ON the perimeter path
+- PRIORITIZE world-famous landmarks and tourist must-sees. The runner should pass the top 3-5 most iconic sights.
+- Include popular squares, famous bridges, cathedrals, palaces, stadiums, and cultural landmarks
 - Route past famous squares, cathedrals, museums, bridges, and tourist attractions
-- Seek scenic viewpoints and photo-worthy locations
 - Avoid highways and industrial areas but embrace lively pedestrian streets
 - Create a sightseeing loop that showcases the most interesting parts of the city
-- Prefer routes that pass through the historic city center or notable neighborhoods
 - Spread waypoints across different notable areas - avoid clustering around one landmark
 - Each waypoint should showcase a DIFFERENT interesting place or viewpoint`,
 };
@@ -84,14 +77,10 @@ Requirements:
 - The route must START and END at the starting point coordinates
 - The total distance should be approximately ${distanceKm} km
 ${SCENIC_INSTRUCTIONS[scenicMode]}
-- Include nearby famous landmarks and tourist attractions as waypoints when possible. The route should feel like a sightseeing run.
-- Generate 6-12 waypoints that define the route shape${labelInstruction}
+- Generate ${distanceKm < 10 ? '4-8' : '6-10'} waypoints that define the route shape (fewer waypoints = cleaner route)${labelInstruction}
 - Place waypoints ONLY at major intersections or along main roads, never on residential dead-end streets
-- NEVER generate waypoints on dead-end streets or cul-de-sacs. Every waypoint must be at a through-intersection with at least 2 different exit directions.
-- For dense historic urban areas like Gamla Stan, prefer the main walking streets and quays rather than narrow alleys.
-- Prefer smooth circular or figure-8 loops over routes with sharp turns into side streets
-- It is better to be 10-15% shorter than the target distance than to include short detour streets to hit exact distance
-- Round all coordinates to 4 decimal places (e.g. 59.3251, not 59.32517843)
+- NEVER generate waypoints on dead-end streets or cul-de-sacs. Every waypoint must be at a through-intersection.
+- For dense historic urban areas, prefer the main walking streets and quays rather than narrow alleys
 
 Return ONLY a JSON array of waypoints, no other text. Each waypoint has lat, lng, and optionally label:
 [{"lat": 59.3251, "lng": 18.0711, "label": "Kungstradgarden"}, {"lat": 59.3400, "lng": 18.0800}, ...]
