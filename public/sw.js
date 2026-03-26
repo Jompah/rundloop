@@ -1,5 +1,5 @@
-const CACHE_NAME = 'rundloop-v2';
-const TILE_CACHE_NAME = 'rundloop-tiles-v1';
+const CACHE_NAME = 'drift-v2';
+const TILE_CACHE_NAME = 'drift-tiles-v1';
 const MAX_TILE_ENTRIES = 50;
 
 self.addEventListener('install', (event) => {

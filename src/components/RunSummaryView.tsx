@@ -15,6 +15,7 @@ import { fetchElevations, computeGrades } from '@/lib/elevation';
 import { addGradientRoute, addStartFinishMarkers } from '@/lib/route-visuals';
 import DiscardConfirmDialog from './DiscardConfirmDialog';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n';
 
 interface RunSummaryViewProps {
   completedRun: CompletedRun;
@@ -29,6 +30,7 @@ export default function RunSummaryView({
   onSave,
   onDiscard,
 }: RunSummaryViewProps) {
+  const { t } = useTranslation();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const [visible, setVisible] = useState(false);
@@ -138,8 +140,8 @@ export default function RunSummaryView({
   const showCalorieNote = settings?.bodyWeightKg === undefined;
   const calorieNote =
     units === 'km'
-      ? 'Based on 70 kg -- update weight in Settings'
-      : 'Based on 154 lbs -- update weight in Settings';
+      ? t('summary.calorieNoteKm')
+      : t('summary.calorieNoteMi');
 
   return (
     <div
@@ -155,7 +157,7 @@ export default function RunSummaryView({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs uppercase tracking-wider text-gray-400">
-              Distance
+              {t('metrics.distance')}
             </p>
             <p className="text-3xl font-bold text-white">
               {formatMetricDistance(completedRun.distanceMeters, units)}
@@ -166,7 +168,7 @@ export default function RunSummaryView({
           </div>
           <div>
             <p className="text-xs uppercase tracking-wider text-gray-400">
-              Time
+              {t('metrics.time')}
             </p>
             <p className="text-3xl font-bold text-white">
               {formatElapsed(completedRun.elapsedMs)}
@@ -174,7 +176,7 @@ export default function RunSummaryView({
           </div>
           <div>
             <p className="text-xs uppercase tracking-wider text-gray-400">
-              Avg Pace
+              {t('metrics.avgPace')}
             </p>
             <p className="text-3xl font-bold text-green-400">
               {formatPace(avgPace, units)}
@@ -185,7 +187,7 @@ export default function RunSummaryView({
           </div>
           <div>
             <p className="text-xs uppercase tracking-wider text-gray-400">
-              Calories
+              {t('metrics.calories')}
             </p>
             <p className="text-3xl font-bold text-white">
               {calories}
@@ -206,8 +208,8 @@ export default function RunSummaryView({
 
       {/* Action buttons */}
       <div className="flex gap-3 mx-4 mt-auto pb-safe">
-        <Button variant="primary" fullWidth onClick={onSave}>Save Run</Button>
-        <Button variant="secondary" fullWidth onClick={() => setShowDiscardDialog(true)}>Discard</Button>
+        <Button variant="primary" fullWidth onClick={onSave}>{t('summary.saveRun')}</Button>
+        <Button variant="secondary" fullWidth onClick={() => setShowDiscardDialog(true)}>{t('summary.discard')}</Button>
       </div>
 
       {/* Discard confirmation dialog */}

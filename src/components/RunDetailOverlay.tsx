@@ -17,6 +17,7 @@ import {
 import { fetchElevations, computeGrades } from '@/lib/elevation';
 import { addGradientRoute, addStartFinishMarkers } from '@/lib/route-visuals';
 import DeleteRunDialog from './DeleteRunDialog';
+import { useTranslation } from '@/i18n';
 
 interface RunDetailOverlayProps {
   run: CompletedRun;
@@ -25,6 +26,7 @@ interface RunDetailOverlayProps {
 }
 
 export function RunDetailOverlay({ run, onClose, onDelete }: RunDetailOverlayProps) {
+  const { t } = useTranslation();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -169,27 +171,27 @@ export function RunDetailOverlay({ run, onClose, onDelete }: RunDetailOverlayPro
       <div className="bg-gray-800 rounded-2xl mx-4 p-6 -mt-6 relative z-10">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-400">Distance</p>
+            <p className="text-xs uppercase tracking-wider text-gray-400">{t('metrics.distance')}</p>
             <p className="text-3xl font-bold text-white">
               {formatMetricDistance(run.distanceMeters, units)}
               <span className="text-sm font-normal text-gray-400 ml-1">{units === 'miles' ? 'mi' : 'km'}</span>
             </p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-400">Time</p>
+            <p className="text-xs uppercase tracking-wider text-gray-400">{t('metrics.time')}</p>
             <p className="text-3xl font-bold text-white">
               {formatElapsed(run.elapsedMs)}
             </p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-400">Avg Pace</p>
+            <p className="text-xs uppercase tracking-wider text-gray-400">{t('metrics.avgPace')}</p>
             <p className="text-3xl font-bold text-green-400">
               {formatPace(avgPace, units)}
               <span className="text-sm font-normal text-gray-400 ml-1">/{units === 'miles' ? 'mi' : 'km'}</span>
             </p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wider text-gray-400">Calories</p>
+            <p className="text-xs uppercase tracking-wider text-gray-400">{t('metrics.calories')}</p>
             <p className="text-3xl font-bold text-white">
               {calories}
               <span className="text-sm font-normal text-gray-400 ml-1">kcal</span>
@@ -197,14 +199,14 @@ export function RunDetailOverlay({ run, onClose, onDelete }: RunDetailOverlayPro
           </div>
         </div>
         <p className="text-sm text-gray-400 mt-4">
-          {new Date(run.startTime).toLocaleDateString('en', {
+          {new Date(run.startTime).toLocaleDateString(undefined, {
             weekday: 'long',
             month: 'long',
             day: 'numeric',
             year: 'numeric',
           })}{' '}
-          at{' '}
-          {new Date(run.startTime).toLocaleTimeString('en', {
+          {t('history.at')}{' '}
+          {new Date(run.startTime).toLocaleTimeString(undefined, {
             hour: 'numeric',
             minute: '2-digit',
           })}
@@ -218,7 +220,7 @@ export function RunDetailOverlay({ run, onClose, onDelete }: RunDetailOverlayPro
         className="mx-4 mt-6 mb-8 py-3 rounded-xl font-semibold bg-red-500 text-white w-full text-center"
         style={{ width: 'calc(100% - 2rem)' }}
       >
-        Delete Run
+        {t('detail.deleteRun')}
       </button>
 
       {/* Delete confirmation dialog */}

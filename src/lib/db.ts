@@ -1,6 +1,6 @@
 import type { SavedRoute } from './storage';
 
-const DB_NAME = 'rundloop';
+const DB_NAME = 'drift';
 const DB_VERSION = 1;
 
 let dbInstance: IDBDatabase | null = null;

@@ -10,6 +10,7 @@ import { detectMilestone, formatMilestoneMessage } from '@/lib/milestones';
 import { distanceToRoute, findNearestSegmentIndex, getCompassDirection } from '@/lib/navigation';
 import RunMetricsOverlay from './RunMetricsOverlay';
 import OffRouteBanner from './OffRouteBanner';
+import { useTranslation } from '@/i18n';
 
 const LANDMARK_ICONS: Record<string, string> = {
   museum: '\uD83C\uDFDB\uFE0F',
@@ -77,6 +78,7 @@ function getDirectionIcon(type: TurnInstruction['type']): string {
 }
 
 export default function NavigationView({ route, userLocation, onStop, runStatus, elapsedMs, distanceMeters, trace, onPause, onResume, onEndRun, landmarks }: NavigationViewProps) {
+  const { t } = useTranslation();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [distanceToNext, setDistanceToNext] = useState<number | null>(null);
   const [totalCovered, setTotalCovered] = useState(0);
@@ -216,11 +218,11 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
       }
 
       // Voice announcement (respects NAV-04 mute toggle)
-      speak(`Off route. Head ${direction} to rejoin.`, settings.voiceEnabled);
+      speak(t('nav.offRouteVoice', { direction }), settings.voiceEnabled);
 
       // Repeat every 30 seconds
       offRouteRepeatRef.current = setInterval(() => {
-        speak(`Off route. Head ${direction} to rejoin.`, settings.voiceEnabled);
+        speak(t('nav.offRouteVoice', { direction }), settings.voiceEnabled);
       }, 30000);
     } else if (dist <= 50 && offRouteAnnouncedRef.current) {
       setOffRoute(false);
@@ -232,7 +234,7 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
       }
 
       // Back on route announcement (respects NAV-04 mute toggle)
-      speak('Back on route.', settings.voiceEnabled);
+      speak(t('nav.backOnRoute'), settings.voiceEnabled);
     }
 
     return () => {
@@ -303,7 +305,7 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
           </div>
           <div className="flex-1">
             <div className="text-white font-semibold text-lg">
-              {currentStep?.text || 'Starting...'}
+              {currentStep?.text || t('nav.starting')}
             </div>
             {distanceToNext !== null && (
               <div className="text-green-400 text-sm mt-1">
@@ -317,7 +319,7 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
         {nextStep && (
           <div className="mt-3 pt-3 border-t border-gray-800 flex items-center gap-3 text-gray-400 text-sm">
             <span>{getDirectionIcon(nextStep.type)}</span>
-            <span>Then: {nextStep.text}</span>
+            <span>{t('nav.then', { instruction: nextStep.text })}</span>
           </div>
         )}
       </div>
@@ -343,7 +345,7 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
           <button
             onClick={() => setNearbyLandmark(null)}
             className="text-white/60 hover:text-white flex-shrink-0"
-            aria-label="Dismiss"
+            aria-label={t('nav.dismiss')}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -387,7 +389,7 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
               }}
               className="bg-red-500 text-white px-6 py-2 rounded-lg font-semibold active:bg-red-600"
             >
-              Stop
+              {t('nav.stop')}
             </button>
           </div>
         </div>

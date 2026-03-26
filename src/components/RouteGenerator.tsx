@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { GeneratedRoute, RouteMode, ScenicMode } from '@/types';
 import { saveRoute, getSettings } from '@/lib/storage';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n';
 
 export interface RouteGeneratorProps {
   onGenerate: (distance: number) => void;
@@ -21,6 +22,7 @@ export interface RouteGeneratorProps {
 }
 
 export default function RouteGenerator({ onGenerate, isLoading, userLocation, cityName, route, nearbyRoutes, onDistanceChange, onLoadNearby, routeMode, onModeChange, scenicMode, onScenicModeChange }: RouteGeneratorProps) {
+  const { t } = useTranslation();
   const [distance, setDistance] = useState(5);
   const [saved, setSaved] = useState(false);
 
@@ -51,16 +53,16 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
     <div className="absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 bg-gray-900/95 backdrop-blur-sm rounded-t-2xl p-6 z-20 overflow-hidden">
       {/* City name */}
       <div className="text-gray-400 text-sm mb-1">
-        {userLocation ? cityName || 'Hämtar plats...' : 'Väntar på GPS...'}
+        {userLocation ? cityName || t('gps.fetchingLocation') : t('gps.waitingForGps')}
       </div>
 
       {/* Scenic mode toggle - only for AI routes */}
       {routeMode === 'ai' && (
         <div className="flex gap-1 mb-4 bg-gray-800 rounded-xl p-1">
           {([
-            { value: 'standard' as ScenicMode, label: 'Standard' },
-            { value: 'nature' as ScenicMode, label: 'Natur' },
-            { value: 'explore' as ScenicMode, label: 'Utforska' },
+            { value: 'standard' as ScenicMode, label: t('scenic.standard') },
+            { value: 'nature' as ScenicMode, label: t('scenic.nature') },
+            { value: 'explore' as ScenicMode, label: t('scenic.explore') },
           ]).map(({ value, label }) => (
             <button
               key={value}
@@ -132,12 +134,12 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            Genererar rutt...
+            {t('route.generating')}
           </span>
         ) : !userLocation ? (
-          'Väntar på GPS...'
+          t('gps.waitingForGps')
         ) : (
-          `Generera ${distance} km rutt`
+          t('route.generate', { distance })
         )}
       </Button>
 
@@ -150,7 +152,7 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
           onClick={handleSaveRoute}
           disabled={saved}
         >
-          {saved ? 'Sparad!' : 'Spara rutt'}
+          {saved ? t('route.saved') : t('route.save')}
         </Button>
       )}
     </div>

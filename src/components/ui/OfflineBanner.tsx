@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from '@/i18n';
 
 export function OfflineBanner() {
+  const { t } = useTranslation();
   const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function OfflineBanner() {
           exit={{ y: -40, opacity: 0 }}
           className="fixed top-0 left-0 right-0 z-50 bg-amber-600 text-white text-center text-sm py-2 font-medium safe-top"
         >
-          You are offline
+          {t('offline.message')}
         </motion.div>
       )}
     </AnimatePresence>

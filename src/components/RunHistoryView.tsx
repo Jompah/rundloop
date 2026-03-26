@@ -11,6 +11,7 @@ import {
   formatPace,
   computeAveragePace,
 } from '@/lib/metrics';
+import { useTranslation } from '@/i18n';
 
 interface RunHistoryViewProps {
   onSelectRun: (run: CompletedRun) => void;
@@ -18,6 +19,7 @@ interface RunHistoryViewProps {
 }
 
 export function RunHistoryView({ onSelectRun, refreshKey }: RunHistoryViewProps) {
+  const { t } = useTranslation();
   const [runs, setRuns] = useState<CompletedRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [units, setUnits] = useState<AppSettings['units']>('km');
@@ -46,12 +48,12 @@ export function RunHistoryView({ onSelectRun, refreshKey }: RunHistoryViewProps)
   return (
     <div className="flex flex-col h-full overflow-y-auto" style={{ paddingBottom: 'calc(3.5rem + env(safe-area-inset-bottom) + 1rem)' }}>
       <div className="px-4 pt-4 pb-2">
-        <h1 className="text-xl font-bold text-white">History</h1>
+        <h1 className="text-xl font-bold text-white">{t('history.title')}</h1>
       </div>
 
       {loading && (
         <div className="flex items-center justify-center flex-1">
-          <p className="text-gray-400">Loading...</p>
+          <p className="text-gray-400">{t('history.loading')}</p>
         </div>
       )}
 
@@ -72,10 +74,10 @@ export function RunHistoryView({ onSelectRun, refreshKey }: RunHistoryViewProps)
             <polyline points="12 6 12 12 16 14" />
           </svg>
           <h2 className="text-lg font-semibold text-gray-400 mt-4">
-            No runs yet
+            {t('history.noRuns')}
           </h2>
           <p className="text-sm text-gray-500 mt-2 text-center max-w-xs">
-            Complete your first run to see it here
+            {t('history.noRunsHint')}
           </p>
         </div>
       )}

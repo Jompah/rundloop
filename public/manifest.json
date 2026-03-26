@@ -1,7 +1,7 @@
 {
-  "name": "RundLoop",
-  "short_name": "RundLoop",
-  "description": "AI-powered running route generator",
+  "name": "Drift",
+  "short_name": "Drift",
+  "description": "Explore by running",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

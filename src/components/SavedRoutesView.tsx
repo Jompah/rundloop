@@ -7,6 +7,7 @@ import { dbPut } from '@/lib/db';
 import { RouteThumbnail } from './RouteThumbnail';
 import DeleteRouteDialog from './DeleteRouteDialog';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n';
 
 interface SavedRoutesViewProps {
   onRunRoute: (route: GeneratedRoute) => void;
@@ -20,6 +21,7 @@ function displayName(route: SavedRoute): string {
 }
 
 export function SavedRoutesView({ onRunRoute }: SavedRoutesViewProps) {
+  const { t } = useTranslation();
   const [routes, setRoutes] = useState<SavedRoute[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export function SavedRoutesView({ onRunRoute }: SavedRoutesViewProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <span className="text-gray-400">Loading...</span>
+        <span className="text-gray-400">{t('routes.loading')}</span>
       </div>
     );
   }
@@ -62,7 +64,7 @@ export function SavedRoutesView({ onRunRoute }: SavedRoutesViewProps) {
   return (
     <div className="flex flex-col h-full overflow-y-auto" style={{ paddingBottom: 'calc(3.5rem + env(safe-area-inset-bottom) + 1rem)' }}>
       <div className="px-4 pt-4 pb-2">
-        <h1 className="text-xl font-bold text-white">Routes</h1>
+        <h1 className="text-xl font-bold text-white">{t('routes.title')}</h1>
       </div>
 
       {routes.length === 0 ? (
@@ -82,9 +84,9 @@ export function SavedRoutesView({ onRunRoute }: SavedRoutesViewProps) {
             <circle cx="3" cy="17" r="1" />
             <circle cx="21" cy="15" r="1" />
           </svg>
-          <p className="text-lg font-semibold text-gray-400 mt-4">No saved routes</p>
+          <p className="text-lg font-semibold text-gray-400 mt-4">{t('routes.noSaved')}</p>
           <p className="text-sm text-gray-500 mt-2 text-center max-w-xs">
-            Generate a route and tap Save to add it here
+            {t('routes.noSavedHint')}
           </p>
         </div>
       ) : (
@@ -131,7 +133,7 @@ export function SavedRoutesView({ onRunRoute }: SavedRoutesViewProps) {
                   className="mt-1 px-0 bg-transparent text-red-400 active:bg-transparent"
                   onClick={() => setDeleteTarget(route)}
                 >
-                  Delete
+                  {t('routes.delete')}
                 </Button>
               </div>
               <Button
@@ -140,7 +142,7 @@ export function SavedRoutesView({ onRunRoute }: SavedRoutesViewProps) {
                 className="shrink-0"
                 onClick={() => onRunRoute(route.route)}
               >
-                Run
+                {t('routes.run')}
               </Button>
             </div>
           ))}

@@ -29,6 +29,8 @@ import { useMapCentering } from '@/hooks/useMapCentering';
 import { unlockIOSAudio, ensureSpeechReady } from '@/lib/voice';
 import { haptic } from '@/lib/haptics';
 import { Button } from '@/components/ui/Button';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from '@/i18n';
 import { findIncompleteRun, clearIncompleteRun } from '@/lib/crash-recovery';
 
 // Dynamic import MapView to avoid SSR issues with MapLibre
@@ -42,6 +44,7 @@ const FAKE_CITIES = [
 ];
 
 export default function Home() {
+  const { t } = useTranslation();
   const [view, setView] = useState<AppView>('generate');
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [cityName, setCityName] = useState('');
@@ -171,7 +174,7 @@ export default function Home() {
     // Check if geolocation API is available at all
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setGpsError(true);
-      setGpsErrorMessage('Din webbläsare stöder inte GPS');
+      setGpsErrorMessage(t('gps.browserNotSupported'));
       return;
     }
 
@@ -209,11 +212,11 @@ export default function Home() {
       setGpsError(true);
       if (err && typeof err.code === 'number') {
         const geoErr = err as GeolocationPositionError;
-        setGpsErrorMessage(geoErrorMessage(geoErr));
+        setGpsErrorMessage(geoErrorMessage(geoErr, t as (key: string, params?: Record<string, string | number>) => string));
         // PERMISSION_DENIED (code 1): retrying won't help, user must change browser settings
         setGpsPermissionDenied(geoErr.code === 1);
       } else {
-        setGpsErrorMessage('Kunde inte hämta din position. Försök igen.');
+        setGpsErrorMessage(t('gps.couldNotGet'));
         setGpsPermissionDenied(false);
       }
     } finally {
@@ -450,7 +453,7 @@ export default function Home() {
         setView('map');
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to generate route');
+      setError(err.message || t('route.generating'));
     } finally {
       setIsLoading(false);
     }
@@ -493,11 +496,11 @@ export default function Home() {
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
             <circle cx="12" cy="9" r="2.5" />
           </svg>
-          Simulerad GPS: {fakeGPSLabel}
+          {t('gps.simulatedGps', { label: fakeGPSLabel })}
           <button
             onClick={disableFakeGPS}
             className="ml-1 text-white/70 hover:text-white"
-            aria-label="Stang simulering"
+            aria-label={t('gps.closeSimulation')}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -510,13 +513,13 @@ export default function Home() {
       {/* GPS permission error banner */}
       {gpsError && !fakeGPSActive && (
         <div className="absolute top-16 left-4 right-4 z-30 bg-red-500/90 backdrop-blur-sm text-white px-4 py-3 rounded-xl text-sm shadow-lg">
-          <div className="font-medium mb-1">GPS-position saknas</div>
+          <div className="font-medium mb-1">{t('gps.positionMissing')}</div>
           <div className="text-white/90 text-xs mb-3">
-            {gpsErrorMessage || 'Tillåt platsåtkomst i telefonens inställningar för att använda din riktiga GPS-position, eller simulera en position för att testa appen.'}
+            {gpsErrorMessage || t('gps.defaultError')}
           </div>
           {gpsPermissionDenied && (
             <div className="text-white/80 text-xs mb-3 bg-white/10 rounded-lg px-3 py-2">
-              Platsåtkomst har nekats. Öppna webbläsarens inställningar och tillåt platsåtkomst för den här sidan, eller använd simulerad position.
+              {t('gps.permissionDeniedDetail')}
             </div>
           )}
           <div className="flex gap-2">
@@ -531,10 +534,10 @@ export default function Home() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Söker...
+                  {t('gps.searching')}
                 </>
               ) : (
-                'Försök igen'
+                t('gps.retry')
               )}
             </button>
             <button
@@ -546,7 +549,7 @@ export default function Home() {
               }}
               className="bg-white/20 px-3 py-1.5 rounded-lg text-xs font-medium active:bg-white/30"
             >
-              Simulera position
+              {t('gps.simulatePositionShort')}
             </button>
           </div>
         </div>
@@ -566,9 +569,9 @@ export default function Home() {
                 <line x1="19" y1="12" x2="22" y2="12" />
               </svg>
             </div>
-            <h2 className="text-white text-xl font-bold mb-2">Var är du?</h2>
+            <h2 className="text-white text-xl font-bold mb-2">{t('gps.whereAreYou')}</h2>
             <p className="text-gray-400 text-sm mb-6">
-              RundLoop behöver din position för att skapa löprutter i ditt område.
+              {t('gps.needPosition')}
             </p>
             <button
               onClick={requestLocation}
@@ -581,17 +584,17 @@ export default function Home() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Söker position...
+                  {t('gps.searchingPosition')}
                 </span>
               ) : (
-                'Hitta min position'
+                t('gps.findPosition')
               )}
             </button>
             <button
               onClick={() => setShowFakeMenu(true)}
               className="mt-3 w-full text-gray-400 hover:text-gray-300 text-sm py-2 transition-colors"
             >
-              Simulera position istället
+              {t('gps.simulatePosition')}
             </button>
           </div>
         </div>
@@ -703,7 +706,9 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Navigation bar */}
-      <nav className="absolute top-4 right-4 z-20 flex gap-2">
+      <nav className="absolute top-4 right-4 z-20 flex items-center gap-2">
+        {/* Language switcher */}
+        <LanguageSwitcher />
         {/* Fake GPS button */}
         <div className="relative">
           <button
@@ -719,7 +724,7 @@ export default function Home() {
               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
               <circle cx="12" cy="9" r="2.5" />
             </svg>
-            {fakeGPSActive ? fakeGPSLabel : 'Simulera position'}
+            {fakeGPSActive ? fakeGPSLabel : t('gps.simulatePositionShort')}
           </button>
           {showFakeMenu && (
             <div className="absolute right-0 top-full mt-1 bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden min-w-[160px]">
@@ -738,7 +743,7 @@ export default function Home() {
                 onClick={disableFakeGPS}
                 className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/10 border-t border-white/10 transition-colors"
               >
-                Avaktivera
+                {t('gps.deactivate')}
               </button>
             </div>
           )}
@@ -846,7 +851,7 @@ export default function Home() {
               size="lg"
               onClick={() => { haptic('success'); unlockIOSAudio(); runSession.startRun(null); centeringDispatch({ type: 'START_NAVIGATION' }); setView('navigate'); }}
             >
-              Starta löpning
+              {t('route.startRun')}
             </Button>
           </div>
           {route.landmarks && route.landmarks.length > 0 && (
@@ -867,7 +872,7 @@ export default function Home() {
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
-            Ny rutt
+            {t('route.newRoute')}
           </Button>
         </motion.div>
       )}

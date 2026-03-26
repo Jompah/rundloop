@@ -1,11 +1,14 @@
 'use client';
 
+import { useTranslation } from '@/i18n';
+
 interface OffRouteBannerProps {
   visible: boolean;
   direction: string;
 }
 
 export default function OffRouteBanner({ visible, direction }: OffRouteBannerProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={`overflow-hidden transition-all duration-200 ${
@@ -22,8 +25,8 @@ export default function OffRouteBanner({ visible, direction }: OffRouteBannerPro
             <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
           <div>
-            <div className="text-sm font-semibold text-white">Off route</div>
-            <div className="text-xs text-amber-200">Head {direction} to rejoin</div>
+            <div className="text-sm font-semibold text-white">{t('nav.offRoute')}</div>
+            <div className="text-xs text-amber-200">{t('nav.headToRejoin', { direction })}</div>
           </div>
         </div>
       </div>

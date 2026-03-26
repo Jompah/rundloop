@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n';
 
 interface DiscardConfirmDialogProps {
   onConfirm: () => void;
@@ -9,6 +10,8 @@ interface DiscardConfirmDialogProps {
 }
 
 export default function DiscardConfirmDialog({ onConfirm, onCancel }: DiscardConfirmDialogProps) {
+  const { t } = useTranslation();
+
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
@@ -24,11 +27,11 @@ export default function DiscardConfirmDialog({ onConfirm, onCancel }: DiscardCon
         exit={{ scale: 0.95, opacity: 0 }}
         transition={{ duration: 0.15 }}
       >
-        <h2 className="text-white text-xl font-bold">Discard Run?</h2>
-        <p className="text-gray-400 mt-2">This run will be permanently deleted.</p>
+        <h2 className="text-white text-xl font-bold">{t('dialog.discardRun.title')}</h2>
+        <p className="text-gray-400 mt-2">{t('dialog.discardRun.message')}</p>
         <div className="flex gap-3 mt-6">
-          <Button variant="secondary" fullWidth onClick={onCancel}>Keep It</Button>
-          <Button variant="destructive" fullWidth onClick={onConfirm}>Discard</Button>
+          <Button variant="secondary" fullWidth onClick={onCancel}>{t('dialog.discardRun.keep')}</Button>
+          <Button variant="destructive" fullWidth onClick={onConfirm}>{t('dialog.discardRun.confirm')}</Button>
         </div>
       </motion.div>
     </motion.div>

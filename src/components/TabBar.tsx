@@ -1,15 +1,18 @@
 'use client';
 
+import { useTranslation } from '@/i18n';
+
 interface TabBarProps {
   activeTab: 'generate' | 'history' | 'routes';
   onTabChange: (tab: 'generate' | 'history' | 'routes') => void;
 }
 
 export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
+  const { t } = useTranslation();
   const tabs: { value: 'generate' | 'history' | 'routes'; label: string; icon: React.ReactNode }[] = [
     {
       value: 'generate',
-      label: 'Map',
+      label: t('tab.map'),
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
@@ -19,7 +22,7 @@ export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
     },
     {
       value: 'history',
-      label: 'History',
+      label: t('tab.history'),
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
@@ -29,7 +32,7 @@ export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
     },
     {
       value: 'routes',
-      label: 'Routes',
+      label: t('tab.routes'),
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 3v12" />

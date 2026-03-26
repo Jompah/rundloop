@@ -104,7 +104,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
-      { headers: { 'User-Agent': 'RundLoop/1.0' } }
+      { headers: { 'User-Agent': 'Drift/1.0' } }
     );
     const data = await res.json();
     return data.address?.city || data.address?.town || data.address?.village || data.display_name?.split(',')[0] || 'Unknown';
@@ -114,18 +114,27 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
 }
 
 /**
- * Map GeolocationPositionError codes to user-facing Swedish messages.
+ * Map GeolocationPositionError codes to user-facing messages.
+ * Accepts an optional translation function for i18n support.
  */
-export function geoErrorMessage(error: GeolocationPositionError): string {
+export function geoErrorMessage(
+  error: GeolocationPositionError,
+  t?: (key: string, params?: Record<string, string | number>) => string
+): string {
+  if (t) {
+    switch (error.code) {
+      case 1: return t('gps.permissionDenied');
+      case 2: return t('gps.positionUnavailable');
+      case 3: return t('gps.timeout');
+      default: return t('gps.unknownError');
+    }
+  }
+  // Fallback English defaults (for non-React contexts)
   switch (error.code) {
-    case 1: // PERMISSION_DENIED
-      return 'Du behöver tillåta platsåtkomst i webbläsarens inställningar';
-    case 2: // POSITION_UNAVAILABLE
-      return 'Kunde inte hitta din position. Kontrollera att GPS är aktiverat.';
-    case 3: // TIMEOUT
-      return 'Det tog för lång tid att hitta din position. Försök igen.';
-    default:
-      return 'Ett okänt GPS-fel uppstod. Försök igen.';
+    case 1: return 'You need to allow location access in your browser settings';
+    case 2: return 'Could not find your position. Make sure GPS is enabled.';
+    case 3: return 'It took too long to find your position. Try again.';
+    default: return 'An unknown GPS error occurred. Try again.';
   }
 }
 

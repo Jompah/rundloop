@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n';
 import type { ActiveRunSnapshot } from '@/types';
 
 interface CrashRecoveryDialogProps {
@@ -42,6 +43,7 @@ function computeSnapshotDistance(trace: ActiveRunSnapshot['trace']): number {
 }
 
 export default function CrashRecoveryDialog({ snapshot, onResume, onDiscard }: CrashRecoveryDialogProps) {
+  const { t } = useTranslation();
   const distanceKm = (computeSnapshotDistance(snapshot.trace) / 1000).toFixed(1);
   const elapsed = formatElapsed(snapshot.elapsedMs);
   const started = new Date(snapshot.startTime).toLocaleString();
@@ -61,26 +63,26 @@ export default function CrashRecoveryDialog({ snapshot, onResume, onDiscard }: C
         exit={{ scale: 0.95, opacity: 0 }}
         transition={{ duration: 0.15 }}
       >
-        <h2 className="text-white text-xl font-bold">Unfinished Run Found</h2>
+        <h2 className="text-white text-xl font-bold">{t('dialog.crashRecovery.title')}</h2>
 
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
           <div>
             <div className="text-white font-bold text-lg">{distanceKm} km</div>
-            <div className="text-gray-500 text-xs">Distance</div>
+            <div className="text-gray-500 text-xs">{t('dialog.crashRecovery.distance')}</div>
           </div>
           <div>
             <div className="text-white font-bold text-lg">{elapsed}</div>
-            <div className="text-gray-500 text-xs">Time</div>
+            <div className="text-gray-500 text-xs">{t('dialog.crashRecovery.time')}</div>
           </div>
           <div>
             <div className="text-white font-bold text-sm leading-tight">{started}</div>
-            <div className="text-gray-500 text-xs">Started</div>
+            <div className="text-gray-500 text-xs">{t('dialog.crashRecovery.started')}</div>
           </div>
         </div>
 
         <div className="flex gap-3 mt-6">
-          <Button variant="secondary" fullWidth onClick={onDiscard}>Discard</Button>
-          <Button variant="primary" fullWidth onClick={onResume}>Resume Run</Button>
+          <Button variant="secondary" fullWidth onClick={onDiscard}>{t('dialog.crashRecovery.discard')}</Button>
+          <Button variant="primary" fullWidth onClick={onResume}>{t('dialog.crashRecovery.resume')}</Button>
         </div>
       </motion.div>
     </motion.div>

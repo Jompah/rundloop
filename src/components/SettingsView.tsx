@@ -4,12 +4,15 @@ import { useState, useEffect } from 'react';
 import { AppSettings } from '@/types';
 import { getSettings, saveSettings } from '@/lib/storage';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface SettingsViewProps {
   onClose: () => void;
 }
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5, paceSecondsPerKm: 360, scenicMode: 'standard' });
   useEffect(() => { getSettings().then(setSettings); }, []);
   const [saved, setSaved] = useState(false);
@@ -24,7 +27,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
     <div className="absolute inset-0 bg-gray-950 z-30 overflow-y-auto">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-800">
-        <h1 className="text-xl font-bold text-white">Settings</h1>
+        <h1 className="text-xl font-bold text-white">{t('settings.title')}</h1>
         <button
           onClick={onClose}
           className="text-gray-400 p-2 active:text-white"
@@ -45,8 +48,8 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-medium text-white">Claude via ditt abonnemang</p>
-              <p className="text-xs text-gray-400">Ingen API-nyckel behövs</p>
+              <p className="text-sm font-medium text-white">{t('settings.claudeSubscription')}</p>
+              <p className="text-xs text-gray-400">{t('settings.noApiKeyNeeded')}</p>
             </div>
           </div>
         </div>
@@ -54,8 +57,8 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         {/* Voice */}
         <div className="flex items-center justify-between">
           <div>
-            <label className="text-sm font-medium text-white block">Voice Navigation</label>
-            <p className="text-xs text-gray-500">Read turn instructions aloud</p>
+            <label className="text-sm font-medium text-white block">{t('settings.voiceNavigation')}</label>
+            <p className="text-xs text-gray-500">{t('settings.voiceNavigationHint')}</p>
           </div>
           <button
             onClick={() => setSettings({ ...settings, voiceEnabled: !settings.voiceEnabled })}
@@ -74,12 +77,12 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         {/* Voice Style */}
         {settings.voiceEnabled && (
           <div>
-            <label className="text-sm font-medium text-gray-400 block mb-2">Voice Style</label>
+            <label className="text-sm font-medium text-gray-400 block mb-2">{t('settings.voiceStyle')}</label>
             <div className="flex flex-col gap-2">
               {([
-                { value: 'concise' as const, label: 'Concise', example: '1 km completed' },
-                { value: 'with-pace' as const, label: 'With Pace', example: '1 km completed. Pace: 5:30/km' },
-                { value: 'motivational' as const, label: 'Motivational', example: 'Great work! 1 km done' },
+                { value: 'concise' as const, label: t('settings.voiceConcise'), example: t('settings.voiceConciseExample') },
+                { value: 'with-pace' as const, label: t('settings.voiceWithPace'), example: t('settings.voiceWithPaceExample') },
+                { value: 'motivational' as const, label: t('settings.voiceMotivational'), example: t('settings.voiceMotivationalExample') },
               ]).map((style) => (
                 <button
                   key={style.value}
@@ -102,7 +105,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
         {/* Units */}
         <div>
-          <label className="text-sm font-medium text-gray-400 block mb-2">Units</label>
+          <label className="text-sm font-medium text-gray-400 block mb-2">{t('settings.units')}</label>
           <div className="flex gap-2">
             {(['km', 'miles'] as const).map((unit) => (
               <button
@@ -114,7 +117,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
                     : 'bg-gray-800 text-gray-300 active:bg-gray-700'
                 }`}
               >
-                {unit === 'km' ? 'Kilometers' : 'Miles'}
+                {unit === 'km' ? t('settings.kilometers') : t('settings.miles')}
               </button>
             ))}
           </div>
@@ -123,7 +126,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         {/* Default Distance */}
         <div>
           <label className="text-sm font-medium text-gray-400 block mb-2">
-            Default Distance: {settings.defaultDistance} km
+            {t('settings.defaultDistance', { distance: settings.defaultDistance })}
           </label>
           <input
             type="range"
@@ -139,7 +142,7 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         {/* Running Pace */}
         <div>
           <label className="text-sm font-medium text-gray-400 block mb-2">
-            Running Pace
+            {t('settings.runningPace')}
           </label>
           <div className="flex gap-2 items-center">
             <div className="relative flex-1">
@@ -178,14 +181,14 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
             <span className="text-gray-400 text-sm whitespace-nowrap">/km</span>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Used for estimated run time. Default: 6:00/km
+            {t('settings.paceHint')}
           </p>
         </div>
 
         {/* Body Weight */}
         <div>
           <label className="text-sm font-medium text-gray-400 block mb-2">
-            Body Weight
+            {t('settings.bodyWeight')}
           </label>
           <div className="relative">
             <input
@@ -219,6 +222,12 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           </div>
         </div>
 
+        {/* Language */}
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-white">{t('settings.language')}</label>
+          <LanguageSwitcher />
+        </div>
+
         {/* Save button */}
         <Button
           variant="primary"
@@ -226,12 +235,12 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           fullWidth
           onClick={handleSave}
         >
-          {saved ? 'Saved!' : 'Save Settings'}
+          {saved ? t('settings.saved') : t('settings.save')}
         </Button>
 
         {/* App info */}
         <div className="text-center text-xs text-gray-600 pt-4">
-          RundLoop v0.1.0
+          Drift v0.1.0
         </div>
       </div>
     </div>

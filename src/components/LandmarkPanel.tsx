@@ -1,6 +1,7 @@
 'use client';
 
 import type { Landmark } from '@/lib/overpass';
+import { useTranslation } from '@/i18n';
 
 const LANDMARK_ICONS: Record<string, string> = {
   museum: '\uD83C\uDFDB\uFE0F',
@@ -22,12 +23,13 @@ interface Props {
 }
 
 export default function LandmarkPanel({ landmarks, onLandmarkClick }: Props) {
+  const { t } = useTranslation();
   if (!landmarks || landmarks.length === 0) return null;
 
   return (
     <div className="bg-gray-900/80 backdrop-blur rounded-xl p-3 mt-3">
       <h3 className="text-sm font-semibold text-gray-300 mb-2">
-        Landmarks along route ({landmarks.length})
+        {t('landmarks.title', { count: landmarks.length })}
       </h3>
       <div className="space-y-2 max-h-48 overflow-y-auto">
         {landmarks.map((lm) => (
@@ -45,7 +47,7 @@ export default function LandmarkPanel({ landmarks, onLandmarkClick }: Props) {
                 <p className="text-xs text-gray-400 line-clamp-2">{lm.description}</p>
               )}
               {lm.distance !== undefined && (
-                <p className="text-xs text-gray-500">{Math.round(lm.distance)}m from route</p>
+                <p className="text-xs text-gray-500">{t('landmarks.fromRoute', { distance: Math.round(lm.distance) })}</p>
               )}
             </div>
           </button>

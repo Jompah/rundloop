@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n';
 
 interface EndRunDialogProps {
   onConfirm: () => void;
@@ -9,6 +10,8 @@ interface EndRunDialogProps {
 }
 
 export default function EndRunDialog({ onConfirm, onCancel }: EndRunDialogProps) {
+  const { t } = useTranslation();
+
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
@@ -24,11 +27,11 @@ export default function EndRunDialog({ onConfirm, onCancel }: EndRunDialogProps)
         exit={{ scale: 0.95, opacity: 0 }}
         transition={{ duration: 0.15 }}
       >
-        <h2 className="text-white text-xl font-bold">End Run?</h2>
-        <p className="text-gray-400 mt-2">Your run will be saved to history.</p>
+        <h2 className="text-white text-xl font-bold">{t('dialog.endRun.title')}</h2>
+        <p className="text-gray-400 mt-2">{t('dialog.endRun.message')}</p>
         <div className="flex gap-3 mt-6">
-          <Button variant="secondary" fullWidth onClick={onCancel}>Keep Going</Button>
-          <Button variant="destructive" fullWidth onClick={onConfirm}>End Run</Button>
+          <Button variant="secondary" fullWidth onClick={onCancel}>{t('dialog.endRun.keepGoing')}</Button>
+          <Button variant="destructive" fullWidth onClick={onConfirm}>{t('dialog.endRun.confirm')}</Button>
         </div>
       </motion.div>
     </motion.div>

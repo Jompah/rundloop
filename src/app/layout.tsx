@@ -21,13 +21,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "RundLoop",
-  description: "AI-powered running route generator",
+  title: "Drift",
+  description: "Explore by running",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "RundLoop",
+    title: "Drift",
   },
   icons: {
     apple: "/icon-192.png",
