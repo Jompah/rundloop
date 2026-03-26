@@ -34,7 +34,12 @@ import { useTranslation } from '@/i18n';
 import { findIncompleteRun, clearIncompleteRun } from '@/lib/crash-recovery';
 
 // Dynamic import MapView to avoid SSR issues with MapLibre
-const MapView = dynamic(() => import('@/components/MapView'), { ssr: false });
+const MapView = dynamic(() => import('@/components/MapView'), {
+  ssr: false,
+  loading: () => (
+    <div className="absolute inset-0 bg-[#0a0a0a]" />
+  ),
+});
 
 const FAKE_CITIES = [
   { name: 'Stockholm (Gamla Stan)', lat: 59.3251, lng: 18.0711 },

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { GeneratedRoute } from '@/types';
 import { smoothHeading, bearingBetween } from '@/lib/navigation';
 import { fetchElevations, computeGrades, getSignificantTurns } from '@/lib/elevation';
@@ -263,8 +262,8 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
   }, [userLocation]);
 
   return (
-    <div className="absolute inset-0">
-      <div ref={mapContainer} className="w-full h-full" />
+    <div className="absolute inset-0 z-0">
+      <div ref={mapContainer} className="absolute inset-0" />
 
       {/* Re-center button: shown during navigation when auto-rotation is disabled */}
       {isNavigating && showRecenter && (
