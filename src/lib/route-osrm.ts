@@ -75,17 +75,34 @@ export async function routeViaOSRM(waypoints: RouteWaypoint[], paceSecondsPerKm:
     throw new Error('Need at least 2 waypoints for routing');
   }
 
-  // Build coordinates string for OSRM
+  // Build coordinates string for OSRM (lng,lat format)
   const coords = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
 
   const url = `${OSRM_BASE}/route/v1/foot/${coords}?overview=full&geometries=geojson&steps=true`;
 
-  const res = await fetch(url);
+  let res: Response;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+  } catch (fetchErr: any) {
+    if (fetchErr?.name === 'AbortError') {
+      throw new Error('Route server timed out. Check your internet connection and try again.');
+    }
+    throw new Error(`Could not reach route server: ${fetchErr?.message || 'network error'}. Check your internet connection.`);
+  }
+
   if (!res.ok) {
     throw new Error(`OSRM routing failed (${res.status})`);
   }
 
-  const data = await res.json();
+  let data: any;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Invalid response from route server');
+  }
 
   if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
     throw new Error(`OSRM could not find a route: ${data.code}`);

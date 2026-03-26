@@ -172,7 +172,7 @@ export function geoErrorMessage(
   }
   // Fallback English defaults (for non-React contexts)
   switch (error.code) {
-    case 1: return 'You need to allow location access in your browser settings';
+    case 1: return 'Location permission denied. Enable location access in your browser settings to use GPS.';
     case 2: return 'Could not find your position. Make sure GPS is enabled.';
     case 3: return 'It took too long to find your position. Try again.';
     default: return 'An unknown GPS error occurred. Try again.';

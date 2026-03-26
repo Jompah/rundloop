@@ -460,7 +460,13 @@ export default function Home() {
         setView('map');
       }
     } catch (err: any) {
-      setError(err.message || t('route.generationFailed'));
+      console.error('Route generation error:', err);
+      const msg = err?.message || '';
+      if (msg.includes('network') || msg.includes('fetch') || msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        setError(t('route.networkError'));
+      } else {
+        setError(msg || t('route.generationFailed'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -525,8 +531,15 @@ export default function Home() {
             {gpsErrorMessage || t('gps.defaultError')}
           </div>
           {gpsPermissionDenied && (
-            <div className="text-white/80 text-xs mb-3 bg-white/10 rounded-lg px-3 py-2">
-              {t('gps.permissionDeniedDetail')}
+            <div className="text-white/80 text-xs mb-3 bg-white/10 rounded-lg px-3 py-2 space-y-2">
+              <div className="font-medium">{t('gps.permissionDeniedDetail')}</div>
+              <ul className="list-disc list-inside space-y-1 text-white/70">
+                <li>{t('gps.permissionGuide.iosSafari')}</li>
+                <li>{t('gps.permissionGuide.iosChrome')}</li>
+                <li>{t('gps.permissionGuide.androidChrome')}</li>
+                <li>{t('gps.permissionGuide.desktopChrome')}</li>
+              </ul>
+              <div className="text-white/60 italic">{t('gps.permissionGuide.or')}</div>
             </div>
           )}
           <div className="flex gap-2">
