@@ -22,8 +22,8 @@ const en = {
   'gps.browserNotSupported': 'Your browser does not support GPS',
   'gps.couldNotGet': 'Could not get your position. Try again.',
   'gps.permissionDenied': 'You need to allow location access in your browser settings',
-  'gps.positionUnavailable': 'Could not find your position. Make sure GPS is enabled.',
-  'gps.timeout': 'It took too long to find your position. Try again.',
+  'gps.positionUnavailable': 'Could not find your position. Make sure Location Services are enabled in Settings.',
+  'gps.timeout': 'GPS timed out. Make sure Location Services are enabled and try again outdoors for best results.',
   'gps.unknownError': 'An unknown GPS error occurred. Try again.',
   'gps.deactivate': 'Deactivate',
 

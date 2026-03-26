@@ -24,8 +24,8 @@ const sv: Record<TranslationKey, string> = {
   'gps.browserNotSupported': 'Din webbläsare stöder inte GPS',
   'gps.couldNotGet': 'Kunde inte hämta din position. Försök igen.',
   'gps.permissionDenied': 'Du behöver tillåta platsåtkomst i webbläsarens inställningar',
-  'gps.positionUnavailable': 'Kunde inte hitta din position. Kontrollera att GPS är aktiverat.',
-  'gps.timeout': 'Det tog för lång tid att hitta din position. Försök igen.',
+  'gps.positionUnavailable': 'Kunde inte hitta din position. Kontrollera att Platstjanster ar aktiverat i Installningar.',
+  'gps.timeout': 'GPS tog for lang tid. Kontrollera att Platstjanster ar aktiverat och forsok igen utomhus.',
   'gps.unknownError': 'Ett okänt GPS-fel uppstod. Försök igen.',
   'gps.deactivate': 'Avaktivera',
 

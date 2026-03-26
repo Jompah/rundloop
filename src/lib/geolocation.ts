@@ -55,13 +55,13 @@ export function watchPosition(
       });
     },
     (err) => {
-      console.warn('GPS error:', err.code, err.message);
+      console.warn('GPS watch error:', err.code, err.message);
       onError(err);
     },
     {
       enableHighAccuracy: true,
-      maximumAge: 3000,
-      timeout: 10000,
+      maximumAge: 5000,
+      timeout: 30000,
     }
   );
 }
@@ -74,27 +74,68 @@ export function clearWatch(watchId: number): void {
   navigator.geolocation.clearWatch(watchId);
 }
 
+/**
+ * Two-phase GPS acquisition for reliable mobile positioning:
+ * 1. Try high accuracy (GPS hardware) with generous timeout (20s)
+ * 2. If that fails with timeout/unavailable, fall back to low accuracy
+ *    (WiFi/cell tower) which resolves much faster on mobile
+ *
+ * On iOS Safari, enableHighAccuracy:true can fail entirely if the GPS
+ * chip hasn't warmed up, while low-accuracy resolves in 1-2 seconds.
+ */
 export function getCurrentPosition(): Promise<GeoPosition> {
   if (fakePosition) {
     return Promise.resolve(buildFakeGeoPosition());
   }
+
+  function toGeoPosition(position: GeolocationPosition): GeoPosition {
+    return {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+      accuracy: position.coords.accuracy,
+      heading: position.coords.heading,
+      speed: position.coords.speed,
+      timestamp: position.timestamp,
+    };
+  }
+
   return new Promise((resolve, reject) => {
+    // Phase 1: High accuracy with generous timeout
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          heading: position.coords.heading,
-          speed: position.coords.speed,
-          timestamp: position.timestamp,
-        });
+      (position) => resolve(toGeoPosition(position)),
+      (highAccError) => {
+        // PERMISSION_DENIED (code 1): user blocked access, no point retrying
+        if (highAccError.code === 1) {
+          reject(highAccError);
+          return;
+        }
+        console.warn(
+          'GPS high-accuracy failed (code %d: %s), falling back to low accuracy',
+          highAccError.code,
+          highAccError.message
+        );
+        // Phase 2: Low accuracy fallback (WiFi/cell tower positioning)
+        navigator.geolocation.getCurrentPosition(
+          (position) => resolve(toGeoPosition(position)),
+          (lowAccError) => {
+            console.warn(
+              'GPS low-accuracy also failed (code %d: %s)',
+              lowAccError.code,
+              lowAccError.message
+            );
+            reject(lowAccError);
+          },
+          {
+            enableHighAccuracy: false,
+            maximumAge: 60000, // Accept a cached position up to 1 minute old
+            timeout: 15000,
+          }
+        );
       },
-      reject,
       {
         enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 10000,
+        maximumAge: 10000, // Accept a cached position up to 10 seconds old
+        timeout: 20000,    // 20 seconds for GPS hardware to get a fix
       }
     );
   });
