@@ -32,10 +32,13 @@ const sv: Record<TranslationKey, string> = {
   // Route
   'route.generate': 'Generera {distance} km rutt',
   'route.generating': 'Genererar rutt...',
+  'route.generationFailed': 'Kunde inte generera rutt. Forsok igen.',
   'route.save': 'Spara rutt',
   'route.saved': 'Sparad!',
   'route.newRoute': 'Ny rutt',
   'route.startRun': 'Starta löpning',
+  'route.showControls': 'Visa kontroller',
+  'route.hideControls': 'Dolj kontroller',
 
   // Scenic modes
   'scenic.standard': 'Standard',

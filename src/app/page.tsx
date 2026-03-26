@@ -453,11 +453,11 @@ export default function Home() {
         setView('map');
       }
     } catch (err: any) {
-      setError(err.message || t('route.generating'));
+      setError(err.message || t('route.generationFailed'));
     } finally {
       setIsLoading(false);
     }
-  }, [userLocation, cityName, routeMode, scenicMode]);
+  }, [userLocation, cityName, routeMode, scenicMode, t]);
 
   return (
     <main className="h-[100dvh] w-full relative overflow-hidden bg-gray-950">

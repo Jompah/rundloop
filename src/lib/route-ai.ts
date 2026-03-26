@@ -80,29 +80,24 @@ Return ONLY a JSON array of waypoints, no other text. Each waypoint has lat, lng
 The first and last waypoint must be the starting point.`;
 }
 
-async function callClaude(prompt: string, apiKey: string): Promise<string> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+/**
+ * Call the server-side API route which proxies to Anthropic.
+ * This keeps the API key server-side and avoids CORS/browser-access issues.
+ */
+async function callServerRoute(prompt: string): Promise<string> {
+  const res = await fetch('/api/generate-route', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
-    }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Claude API error (${res.status}): ${err}`);
+    const data = await res.json().catch(() => ({ error: `Server error (${res.status})` }));
+    throw new Error(data.error || `Route generation failed (${res.status})`);
   }
 
   const data = await res.json();
-  return data.content[0].text;
+  return data.text;
 }
 
 async function callPerplexity(prompt: string, apiKey: string): Promise<string> {
@@ -148,17 +143,14 @@ function parseWaypoints(response: string): RouteWaypoint[] {
 export async function generateRouteWaypoints(req: AIRouteRequest): Promise<RouteWaypoint[]> {
   const { lat, lng, distanceKm, cityName, settings } = req;
 
-  if (!settings.apiKey) {
-    throw new Error('No API key configured. Go to Settings to add your Claude or Perplexity key.');
-  }
-
   const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints);
 
   let response: string;
-  if (settings.apiProvider === 'perplexity') {
+  if (settings.apiProvider === 'perplexity' && settings.apiKey) {
     response = await callPerplexity(prompt, settings.apiKey);
   } else {
-    response = await callClaude(prompt, settings.apiKey);
+    // Use server-side API route (API key is kept server-side)
+    response = await callServerRoute(prompt);
   }
 
   const waypoints = parseWaypoints(response);

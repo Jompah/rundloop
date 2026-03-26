@@ -30,10 +30,13 @@ const en = {
   // Route
   'route.generate': 'Generate {distance} km route',
   'route.generating': 'Generating route...',
+  'route.generationFailed': 'Failed to generate route. Please try again.',
   'route.save': 'Save route',
   'route.saved': 'Saved!',
   'route.newRoute': 'New route',
   'route.startRun': 'Start run',
+  'route.showControls': 'Show controls',
+  'route.hideControls': 'Hide controls',
 
   // Scenic modes
   'scenic.standard': 'Standard',
