@@ -41,6 +41,13 @@ body {
   padding-right: max(1rem, env(safe-area-inset-right));
 }
 
+/* Override MapLibre's position: relative so the map fills its container */
+.maplibregl-map {
+  position: absolute !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
 /* Custom range input */
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;

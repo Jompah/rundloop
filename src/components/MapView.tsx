@@ -263,7 +263,7 @@ export default function MapView({ route, userLocation, heading, speed, isNavigat
 
   return (
     <div className="absolute inset-0 z-0">
-      <div ref={mapContainer} className="absolute inset-0" />
+      <div ref={mapContainer} className="absolute inset-0" style={{ position: 'absolute', width: '100%', height: '100%' }} />
 
       {/* Re-center button: shown during navigation when auto-rotation is disabled */}
       {isNavigating && showRecenter && (
