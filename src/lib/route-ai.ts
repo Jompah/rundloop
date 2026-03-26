@@ -18,13 +18,22 @@ interface AIRouteRequest {
 }
 
 const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
-  standard: `- Prefer parks, waterfront paths, pedestrian areas, and quiet residential streets
+  standard: `- CRITICAL: Create a smooth loop with minimal backtracking. The runner should NOT run the same street twice.
+- If near water (ocean, lake, river, island), route ALONG the waterfront. On islands, create a perimeter loop.
+- Avoid zigzag patterns. Prefer long straight stretches connected by smooth turns.
+- Space waypoints evenly around the loop to create consistent pacing.
+- Detect geographic features: if the starting point is on an island, create a loop around the island's perimeter. If near a large park, route through it.
+- Prefer parks, waterfront paths, pedestrian areas, and quiet residential streets
 - Avoid highways, industrial areas, and busy roads
 - Create an interesting loop, not an out-and-back route
-- Create a loop that visits different streets - avoid running the same street twice
-- Prefer routes through different neighborhoods rather than out-and-back patterns
 - Spread waypoints across different compass directions from the start (north, east, south, west) to create a varied loop`,
-  nature: `- PRIORITIZE parks, nature reserves, waterfront paths, rivers, lakes, canals, and green corridors
+  nature: `- CRITICAL: Create a smooth loop with minimal backtracking. The runner should NOT run the same street twice.
+- If near water (ocean, lake, river, island), route ALONG the waterfront. On islands, create a perimeter loop.
+- If on an island, follow the waterfront/shoreline path around the island perimeter.
+- Prefer paths with views - elevation, waterfront, open spaces.
+- Avoid zigzag patterns. Prefer long straight stretches connected by smooth turns.
+- Space waypoints evenly around the loop to create consistent pacing.
+- PRIORITIZE parks, nature reserves, waterfront paths, rivers, lakes, canals, and green corridors
 - Actively seek the BEST green spaces and water features near the starting point - name specific parks, trails, or waterfront areas you route through
 - In city centers: find hidden gardens, riverside paths, canal walks, and park connectors that most people overlook
 - Seek out tree-lined streets, botanical gardens, and urban forests
@@ -34,7 +43,13 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - If a large park exists within range, route THROUGH it rather than around it
 - Spread waypoints across different compass directions from the start to maximize green coverage
 - Each waypoint should be in a distinctly different area - avoid clustering waypoints in the same park or street`,
-  explore: `- PRIORITIZE landmarks, monuments, viewpoints, historic buildings, and cultural sites
+  explore: `- CRITICAL: Create a smooth loop with minimal backtracking. The runner should NOT run the same street twice.
+- If near water (ocean, lake, river, island), route ALONG the waterfront. On islands, create a perimeter loop.
+- Connect landmarks in a logical loop, not zigzag pattern.
+- If on an island, combine perimeter waterfront with landmark detours.
+- Avoid zigzag patterns. Prefer long straight stretches connected by smooth turns.
+- Space waypoints evenly around the loop to create consistent pacing.
+- PRIORITIZE landmarks, monuments, viewpoints, historic buildings, and cultural sites
 - Actively seek the MOST interesting and notable places near the starting point - name specific landmarks, squares, or attractions you route past
 - In city centers: include famous streets, historic squares, iconic bridges, notable churches or cathedrals, and scenic viewpoints
 - Route past famous squares, cathedrals, museums, bridges, and tourist attractions

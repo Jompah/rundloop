@@ -135,6 +135,26 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
             {userLocation ? cityName || t('gps.fetchingLocation') : t('gps.waitingForGps')}
           </div>
 
+          {/* Route mode toggle: Standard vs AI */}
+          <div className="flex gap-1 mb-4 bg-gray-800 rounded-xl p-1">
+            {([
+              { value: 'algorithmic' as RouteMode, label: t('routeMode.standard') },
+              { value: 'ai' as RouteMode, label: t('routeMode.ai') },
+            ]).map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => onModeChange?.(value)}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+                  routeMode === value
+                    ? 'bg-green-500 text-white'
+                    : 'text-gray-400 active:bg-gray-700'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Scenic mode toggle - only for AI routes */}
           {routeMode === 'ai' && (
             <div className="flex gap-1 mb-4 bg-gray-800 rounded-xl p-1">

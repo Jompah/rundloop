@@ -44,6 +44,10 @@ const en = {
   'route.showControls': 'Show controls',
   'route.hideControls': 'Hide controls',
 
+  // Route modes
+  'routeMode.standard': 'Standard',
+  'routeMode.ai': 'AI',
+
   // Scenic modes
   'scenic.standard': 'Standard',
   'scenic.nature': 'Nature',
@@ -92,8 +96,8 @@ const en = {
 
   // Settings
   'settings.title': 'Settings',
-  'settings.claudeSubscription': 'Claude via your subscription',
-  'settings.noApiKeyNeeded': 'No API key needed',
+  'settings.claudeSubscription': 'Claude Haiku API',
+  'settings.noApiKeyNeeded': 'Optimized for speed and low cost',
   'settings.voiceNavigation': 'Voice Navigation',
   'settings.voiceNavigationHint': 'Read turn instructions aloud',
   'settings.voiceStyle': 'Voice Style',

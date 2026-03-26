@@ -46,6 +46,10 @@ const sv: Record<TranslationKey, string> = {
   'route.showControls': 'Visa kontroller',
   'route.hideControls': 'Dolj kontroller',
 
+  // Route modes
+  'routeMode.standard': 'Standard',
+  'routeMode.ai': 'AI',
+
   // Scenic modes
   'scenic.standard': 'Standard',
   'scenic.nature': 'Natur',
@@ -94,8 +98,8 @@ const sv: Record<TranslationKey, string> = {
 
   // Settings
   'settings.title': 'Inställningar',
-  'settings.claudeSubscription': 'Claude via ditt abonnemang',
-  'settings.noApiKeyNeeded': 'Ingen API-nyckel behövs',
+  'settings.claudeSubscription': 'Claude Haiku API',
+  'settings.noApiKeyNeeded': 'Optimerad for hastighet och lag kostnad',
   'settings.voiceNavigation': 'Röstnavigering',
   'settings.voiceNavigationHint': 'Läs upp svänginstruktioner',
   'settings.voiceStyle': 'Röststil',
