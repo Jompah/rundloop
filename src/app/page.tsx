@@ -557,7 +557,7 @@ export default function Home() {
 
       {/* Hitta min position - prominent button when location is unknown and no error shown */}
       {!userLocation && !gpsError && !gpsRequesting && !fakeGPSActive && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 pointer-events-none">
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center px-6 pointer-events-none">
           <div className="bg-gray-900/90 backdrop-blur-md rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl pointer-events-auto">
             <div className="mb-4 flex justify-center">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-blue-400">

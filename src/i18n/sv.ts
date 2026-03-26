@@ -7,26 +7,26 @@ const sv: Record<TranslationKey, string> = {
 
   // GPS
   'gps.findPosition': 'Hitta min position',
-  'gps.searching': 'Soker...',
-  'gps.searchingPosition': 'Soker position...',
-  'gps.simulatePosition': 'Simulera position istallet',
+  'gps.searching': 'Söker...',
+  'gps.searchingPosition': 'Söker position...',
+  'gps.simulatePosition': 'Simulera position istället',
   'gps.simulatePositionShort': 'Simulera position',
   'gps.simulatedGps': 'Simulerad GPS: {label}',
-  'gps.closeSimulation': 'Stang simulering',
-  'gps.whereAreYou': 'Var ar du?',
-  'gps.needPosition': 'RundLoop behover din position for att skapa loprutter i ditt omrade.',
-  'gps.waitingForGps': 'Vantar pa GPS...',
-  'gps.fetchingLocation': 'Hamtar plats...',
+  'gps.closeSimulation': 'Stäng simulering',
+  'gps.whereAreYou': 'Var är du?',
+  'gps.needPosition': 'RundLoop behöver din position för att skapa löprutter i ditt område.',
+  'gps.waitingForGps': 'Väntar på GPS...',
+  'gps.fetchingLocation': 'Hämtar plats...',
   'gps.positionMissing': 'GPS-position saknas',
-  'gps.defaultError': 'Tillat platsatkomst i telefonens installningar for att anvanda din riktiga GPS-position, eller simulera en position for att testa appen.',
-  'gps.permissionDeniedDetail': 'Platsatkomst har nekats. Oppna webblasarens installningar och tillat platsatkomst for den har sidan, eller anvand simulerad position.',
-  'gps.retry': 'Forsok igen',
-  'gps.browserNotSupported': 'Din webblasare stoder inte GPS',
-  'gps.couldNotGet': 'Kunde inte hamta din position. Forsok igen.',
-  'gps.permissionDenied': 'Du behover tillata platsatkomst i webblasarens installningar',
-  'gps.positionUnavailable': 'Kunde inte hitta din position. Kontrollera att GPS ar aktiverat.',
-  'gps.timeout': 'Det tog for lang tid att hitta din position. Forsok igen.',
-  'gps.unknownError': 'Ett okant GPS-fel uppstod. Forsok igen.',
+  'gps.defaultError': 'Tillåt platsåtkomst i telefonens inställningar för att använda din riktiga GPS-position, eller simulera en position för att testa appen.',
+  'gps.permissionDeniedDetail': 'Platsåtkomst har nekats. Öppna webbläsarens inställningar och tillåt platsåtkomst för den här sidan, eller använd simulerad position.',
+  'gps.retry': 'Försök igen',
+  'gps.browserNotSupported': 'Din webbläsare stöder inte GPS',
+  'gps.couldNotGet': 'Kunde inte hämta din position. Försök igen.',
+  'gps.permissionDenied': 'Du behöver tillåta platsåtkomst i webbläsarens inställningar',
+  'gps.positionUnavailable': 'Kunde inte hitta din position. Kontrollera att GPS är aktiverat.',
+  'gps.timeout': 'Det tog för lång tid att hitta din position. Försök igen.',
+  'gps.unknownError': 'Ett okänt GPS-fel uppstod. Försök igen.',
   'gps.deactivate': 'Avaktivera',
 
   // Route
@@ -35,7 +35,7 @@ const sv: Record<TranslationKey, string> = {
   'route.save': 'Spara rutt',
   'route.saved': 'Sparad!',
   'route.newRoute': 'Ny rutt',
-  'route.startRun': 'Starta lopning',
+  'route.startRun': 'Starta löpning',
 
   // Scenic modes
   'scenic.standard': 'Standard',
@@ -45,16 +45,16 @@ const sv: Record<TranslationKey, string> = {
   // Navigation
   'nav.starting': 'Startar...',
   'nav.then': 'Sedan: {instruction}',
-  'nav.offRoute': 'Utanfor rutten',
-  'nav.headToRejoin': 'Ga {direction} for att aterga till rutten',
-  'nav.backOnRoute': 'Tillbaka pa rutten.',
-  'nav.offRouteVoice': 'Utanfor rutten. Ga {direction} for att aterga.',
+  'nav.offRoute': 'Utanför rutten',
+  'nav.headToRejoin': 'Gå {direction} för att återgå till rutten',
+  'nav.backOnRoute': 'Tillbaka på rutten.',
+  'nav.offRouteVoice': 'Utanför rutten. Gå {direction} för att återgå.',
   'nav.stop': 'Stopp',
   'nav.pause': 'Paus',
-  'nav.resume': 'Fortsatt',
+  'nav.resume': 'Fortsätt',
   'nav.end': 'Avsluta',
   'nav.paused': 'PAUSAD',
-  'nav.dismiss': 'Stang',
+  'nav.dismiss': 'Stäng',
 
   // Metrics
   'metrics.pace': 'Tempo',
@@ -65,31 +65,31 @@ const sv: Record<TranslationKey, string> = {
   'metrics.calories': 'Kalorier',
 
   // Landmarks
-  'landmarks.title': 'Landmarken langs rutten ({count})',
-  'landmarks.fromRoute': '{distance}m fran rutten',
+  'landmarks.title': 'Landmärken längs rutten ({count})',
+  'landmarks.fromRoute': '{distance}m från rutten',
 
   // Saved routes
   'routes.title': 'Rutter',
   'routes.noSaved': 'Inga sparade rutter',
-  'routes.noSavedHint': 'Generera en rutt och tryck Spara for att lagga till den har',
+  'routes.noSavedHint': 'Generera en rutt och tryck Spara för att lägga till den här',
   'routes.delete': 'Radera',
-  'routes.run': 'Kor',
+  'routes.run': 'Kör',
   'routes.loading': 'Laddar...',
 
   // History
   'history.title': 'Historik',
-  'history.noRuns': 'Inga lopningar annu',
-  'history.noRunsHint': 'Genomfor din forsta lopning for att se den har',
+  'history.noRuns': 'Inga löpningar ännu',
+  'history.noRunsHint': 'Genomför din första löpning för att se den här',
   'history.loading': 'Laddar...',
   'history.at': 'kl',
 
   // Settings
-  'settings.title': 'Installningar',
+  'settings.title': 'Inställningar',
   'settings.claudeSubscription': 'Claude via ditt abonnemang',
-  'settings.noApiKeyNeeded': 'Ingen API-nyckel behovs',
-  'settings.voiceNavigation': 'Rostnavigering',
-  'settings.voiceNavigationHint': 'Las upp svanginstruktioner',
-  'settings.voiceStyle': 'Roststil',
+  'settings.noApiKeyNeeded': 'Ingen API-nyckel behövs',
+  'settings.voiceNavigation': 'Röstnavigering',
+  'settings.voiceNavigationHint': 'Läs upp svänginstruktioner',
+  'settings.voiceStyle': 'Röststil',
   'settings.voiceConcise': 'Kortfattad',
   'settings.voiceConciseExample': '1 km avklarat',
   'settings.voiceWithPace': 'Med tempo',
@@ -100,49 +100,49 @@ const sv: Record<TranslationKey, string> = {
   'settings.kilometers': 'Kilometer',
   'settings.miles': 'Miles',
   'settings.defaultDistance': 'Standarddistans: {distance} km',
-  'settings.runningPace': 'Loptempo',
-  'settings.paceHint': 'Anvands for beraknad loptid. Standard: 6:00/km',
+  'settings.runningPace': 'Löptempo',
+  'settings.paceHint': 'Används för beräknad löptid. Standard: 6:00/km',
   'settings.bodyWeight': 'Kroppsvikt',
-  'settings.save': 'Spara installningar',
+  'settings.save': 'Spara inställningar',
   'settings.saved': 'Sparat!',
-  'settings.language': 'Sprak',
+  'settings.language': 'Språk',
 
   // Dialogs
-  'dialog.endRun.title': 'Avsluta lopning?',
-  'dialog.endRun.message': 'Din lopning sparas i historiken.',
-  'dialog.endRun.keepGoing': 'Fortsatt',
+  'dialog.endRun.title': 'Avsluta löpning?',
+  'dialog.endRun.message': 'Din löpning sparas i historiken.',
+  'dialog.endRun.keepGoing': 'Fortsätt',
   'dialog.endRun.confirm': 'Avsluta',
 
-  'dialog.crashRecovery.title': 'Oavslutad lopning hittad',
+  'dialog.crashRecovery.title': 'Oavslutad löpning hittad',
   'dialog.crashRecovery.distance': 'Distans',
   'dialog.crashRecovery.time': 'Tid',
   'dialog.crashRecovery.started': 'Startad',
   'dialog.crashRecovery.discard': 'Kasta',
-  'dialog.crashRecovery.resume': 'Ateruppta',
+  'dialog.crashRecovery.resume': 'Återuppta',
 
   'dialog.deleteRoute.title': 'Radera rutt?',
   'dialog.deleteRoute.message': 'Den sparade rutten tas bort permanent.',
-  'dialog.deleteRoute.keep': 'Behall',
+  'dialog.deleteRoute.keep': 'Behåll',
   'dialog.deleteRoute.confirm': 'Radera',
 
-  'dialog.deleteRun.title': 'Radera lopning?',
-  'dialog.deleteRun.message': 'Lopningen tas bort permanent fran din historik.',
-  'dialog.deleteRun.keep': 'Behall',
+  'dialog.deleteRun.title': 'Radera löpning?',
+  'dialog.deleteRun.message': 'Löpningen tas bort permanent från din historik.',
+  'dialog.deleteRun.keep': 'Behåll',
   'dialog.deleteRun.confirm': 'Radera',
 
-  'dialog.discardRun.title': 'Kasta lopning?',
-  'dialog.discardRun.message': 'Lopningen raderas permanent.',
-  'dialog.discardRun.keep': 'Behall',
+  'dialog.discardRun.title': 'Kasta löpning?',
+  'dialog.discardRun.message': 'Löpningen raderas permanent.',
+  'dialog.discardRun.keep': 'Behåll',
   'dialog.discardRun.confirm': 'Kasta',
 
   // Run summary
-  'summary.saveRun': 'Spara lopning',
+  'summary.saveRun': 'Spara löpning',
   'summary.discard': 'Kasta',
-  'summary.calorieNoteKm': 'Baserat pa 70 kg -- uppdatera vikt i Installningar',
-  'summary.calorieNoteMi': 'Baserat pa 154 lbs -- uppdatera vikt i Installningar',
+  'summary.calorieNoteKm': 'Baserat på 70 kg -- uppdatera vikt i Inställningar',
+  'summary.calorieNoteMi': 'Baserat på 154 lbs -- uppdatera vikt i Inställningar',
 
   // Run detail
-  'detail.deleteRun': 'Radera lopning',
+  'detail.deleteRun': 'Radera löpning',
 
   // Tab bar
   'tab.map': 'Karta',
@@ -150,7 +150,7 @@ const sv: Record<TranslationKey, string> = {
   'tab.routes': 'Rutter',
 
   // Offline
-  'offline.message': 'Du ar offline',
+  'offline.message': 'Du är offline',
 };
 
 export default sv;
