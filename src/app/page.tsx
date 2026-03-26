@@ -243,10 +243,10 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
 
-    const MAX_ITERATIONS = 4; // Fewer iterations = less aggressive scaling = cleaner geometry
+    const MAX_ITERATIONS = 3; // Fewer iterations = faster generation with tight initial bounds
     const TOLERANCE_UNDER = 0.15; // Accept routes up to 15% shorter than target
     const TOLERANCE_OVER = 0.05;  // Accept routes up to 5% longer (asymmetric -- slightly short > detour-heavy long)
-    const MAX_ATTEMPTS = 3; // Retry with different initial waypoints to handle OSRM non-monotonicity
+    const MAX_ATTEMPTS = 2; // Retry with different initial waypoints to handle OSRM non-monotonicity
     const startLat = userLocation[1]; // userLocation is [lng, lat]
     const startLng = userLocation[0];
 
@@ -325,15 +325,16 @@ export default function Home() {
 
         // If not already within tolerance, run binary search
         if (!isWithinTolerance(initialRatio)) {
-          // Determine initial bounds based on first measurement
+          // Determine initial bounds based on first measurement -- tight bounds from actual ratio
+          const targetRatio = distance / initialKm; // scale factor needed to hit target
           if (initialRatio > 1) {
-            // Route is too long, we need to shrink. Current scale (1.0) is too big.
-            highScale = 1.0;
-            lowScale = (distance / initialKm) * 0.3; // Wider lower bound for OSRM non-linearities
+            // Route is too long, we need to shrink. Search between 0.5 and just below current.
+            lowScale = 0.5;
+            highScale = targetRatio * 0.95;
           } else {
-            // Route is too short, we need to expand. Current scale (1.0) is too small.
-            lowScale = 1.0;
-            highScale = (distance / initialKm) * 3.0; // Wider upper bound for OSRM non-linearities
+            // Route is too short, we need to expand. Search from just above current to 2x needed.
+            lowScale = targetRatio * 1.05;
+            highScale = targetRatio * 2.0;
           }
 
           for (let i = 0; i < MAX_ITERATIONS; i++) {
@@ -387,6 +388,16 @@ export default function Home() {
         if (bestRoute && bestDiff < overallBestDiff) {
           overallBestDiff = bestDiff;
           overallBestRoute = bestRoute;
+        }
+
+        // Early exit: if first attempt produced a good route, skip remaining attempts
+        if (attempt === 0 && bestRoute) {
+          const earlyRatio = bestRoute.distance / 1000 / distance;
+          const earlyQuality = assessRouteQuality(bestRoute);
+          if (isWithinTolerance(earlyRatio) && earlyQuality > 60) {
+            console.log(`[Attempt 1] Early exit: within tolerance (${((earlyRatio - 1) * 100).toFixed(1)}%) and quality ${earlyQuality}/100 > 60`);
+            break;
+          }
         }
 
         // Post-processing: detect dead-end detours
