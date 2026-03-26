@@ -376,6 +376,14 @@ export default function Home() {
           }
         }
 
+        // Always track the best route from this attempt as a fallback,
+        // even if quality filters reject it. This prevents returning nothing
+        // when all attempts are rejected by quality filters.
+        if (bestRoute && bestDiff < overallBestDiff) {
+          overallBestDiff = bestDiff;
+          overallBestRoute = bestRoute;
+        }
+
         // Post-processing: detect dead-end detours
         if (bestRoute) {
           const detours = detectDeadEndDetours(bestRoute.instructions);
@@ -395,12 +403,6 @@ export default function Home() {
           }
         }
 
-        // Update overall best across all attempts
-        if (bestDiff < overallBestDiff) {
-          overallBestDiff = bestDiff;
-          overallBestRoute = bestRoute;
-        }
-
         // If within tolerance (using raw distance diff from overall best), no need for more attempts
         if (overallBestRoute) {
           const overallRatio = overallBestRoute.distance / 1000 / distance;
@@ -410,12 +412,17 @@ export default function Home() {
           }
         }
 
-        if (attempt < MAX_ATTEMPTS - 1) {
-          console.log(`[Attempt ${attempt + 1}] Best so far: ${(overallBestRoute!.distance / 1000).toFixed(1)}km (${(overallBestDiff * 100).toFixed(1)}% off), trying different waypoints...`);
+        if (attempt < MAX_ATTEMPTS - 1 && overallBestRoute) {
+          console.log(`[Attempt ${attempt + 1}] Best so far: ${(overallBestRoute.distance / 1000).toFixed(1)}km (${(overallBestDiff * 100).toFixed(1)}% off), trying different waypoints...`);
         }
       }
 
-      generatedRoute = overallBestRoute!;
+      generatedRoute = overallBestRoute ?? null;
+
+      if (!generatedRoute) {
+        setError(t('route.generationFailed'));
+        return;
+      }
 
       if (generatedRoute) {
         // Fetch nearby landmarks (non-blocking -- route works without them)
