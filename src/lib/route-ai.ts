@@ -23,6 +23,7 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - Avoid zigzag patterns. Prefer long straight stretches connected by smooth turns.
 - Space waypoints evenly around the loop to create consistent pacing.
 - Detect geographic features: if the starting point is on an island, create a loop around the island's perimeter. If near a large park, route through it.
+- Include famous landmarks, tourist attractions, and popular sights near the route. Route PAST (not just near) iconic buildings, monuments, squares, and viewpoints.
 - Prefer parks, waterfront paths, pedestrian areas, and quiet residential streets
 - Avoid highways, industrial areas, and busy roads
 - Create an interesting loop, not an out-and-back route
@@ -41,6 +42,7 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - Prefer unpaved trails and park paths when available
 - Create a loop through the greenest, most natural areas near the starting point
 - If a large park exists within range, route THROUGH it rather than around it
+- If near famous landmarks or scenic viewpoints, include them as waypoints even if slightly off the greenest path. Combine nature with notable sights.
 - Spread waypoints across different compass directions from the start to maximize green coverage
 - Each waypoint should be in a distinctly different area - avoid clustering waypoints in the same park or street`,
   explore: `- CRITICAL: Create a smooth loop with minimal backtracking. The runner should NOT run the same street twice.
@@ -49,7 +51,8 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - If on an island, combine perimeter waterfront with landmark detours.
 - Avoid zigzag patterns. Prefer long straight stretches connected by smooth turns.
 - Space waypoints evenly around the loop to create consistent pacing.
-- PRIORITIZE landmarks, monuments, viewpoints, historic buildings, and cultural sites
+- PRIORITIZE world-famous landmarks and tourist must-sees. In any major city, the runner should pass the top 3-5 most iconic sights. Think like a tourist guide creating the ultimate sightseeing run.
+- Include popular squares, famous bridges, cathedrals, palaces, stadiums, and cultural landmarks.
 - Actively seek the MOST interesting and notable places near the starting point - name specific landmarks, squares, or attractions you route past
 - In city centers: include famous streets, historic squares, iconic bridges, notable churches or cathedrals, and scenic viewpoints
 - Route past famous squares, cathedrals, museums, bridges, and tourist attractions
@@ -81,6 +84,7 @@ Requirements:
 - The route must START and END at the starting point coordinates
 - The total distance should be approximately ${distanceKm} km
 ${SCENIC_INSTRUCTIONS[scenicMode]}
+- Include nearby famous landmarks and tourist attractions as waypoints when possible. The route should feel like a sightseeing run.
 - Generate 6-12 waypoints that define the route shape${labelInstruction}
 - Place waypoints ONLY at major intersections or along main roads, never on residential dead-end streets
 - NEVER generate waypoints on dead-end streets or cul-de-sacs. Every waypoint must be at a through-intersection with at least 2 different exit directions.
