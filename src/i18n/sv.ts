@@ -2,7 +2,7 @@ import type { TranslationKey } from './en';
 
 const sv: Record<TranslationKey, string> = {
   // App
-  'app.title': 'RundLoop',
+  'app.title': 'Drift',
   'app.tagline': 'Utforska genom att springa',
 
   // GPS
@@ -14,7 +14,7 @@ const sv: Record<TranslationKey, string> = {
   'gps.simulatedGps': 'Simulerad GPS: {label}',
   'gps.closeSimulation': 'Stäng simulering',
   'gps.whereAreYou': 'Var är du?',
-  'gps.needPosition': 'RundLoop behöver din position för att skapa löprutter i ditt område.',
+  'gps.needPosition': 'Drift behöver din position för att skapa löprutter i ditt område.',
   'gps.waitingForGps': 'Väntar på GPS...',
   'gps.fetchingLocation': 'Hämtar plats...',
   'gps.positionMissing': 'GPS-position saknas',

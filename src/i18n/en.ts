@@ -1,6 +1,6 @@
 const en = {
   // App
-  'app.title': 'RundLoop',
+  'app.title': 'Drift',
   'app.tagline': 'Explore by running',
 
   // GPS
@@ -12,7 +12,7 @@ const en = {
   'gps.simulatedGps': 'Simulated GPS: {label}',
   'gps.closeSimulation': 'Close simulation',
   'gps.whereAreYou': 'Where are you?',
-  'gps.needPosition': 'RundLoop needs your position to create running routes in your area.',
+  'gps.needPosition': 'Drift needs your position to create running routes in your area.',
   'gps.waitingForGps': 'Waiting for GPS...',
   'gps.fetchingLocation': 'Fetching location...',
   'gps.positionMissing': 'GPS position missing',
