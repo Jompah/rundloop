@@ -21,8 +21,10 @@ interface AIRouteRequest {
 const SHARED_ROUTE_RULES = `- ABSOLUTELY NO DETOURS: NEVER create dead-end detours. Every waypoint must be on the THROUGH-route. The runner moves FORWARD continuously, never doubling back. If a waypoint forces the runner down a side street and back, it is FORBIDDEN.
 - Place waypoints ONLY on streets that naturally connect to the next waypoint without retracing. Each waypoint flows into the next in one direction.
 - WAYPOINT PLACEMENT: Place waypoints at TURNING POINTS only — where the route changes direction. Do NOT place waypoints along straight stretches.
+- ALWAYS CREATE A LOOP: The route must form a closed loop back to start. NEVER create out-and-back routes where the runner retraces the same path. A loop is always better than doubling back, even if it means a slightly different distance.
 - STARTING POINT IS FIXED: Build the best possible loop from the given start coordinates. NEVER suggest moving the start elsewhere.
 - GEOGRAPHIC FEATURE ASSESSMENT: If the start is near a geographic feature (island, lake, peninsula, river, large park), assess whether its perimeter is actually runnable — look for paved paths, promenades, or trails. Skip sections with highways along the shore, industrial waterfronts, or fenced-off areas. Only commit to a perimeter route when the feature is runnable AND the requested distance is within ~30% of the runnable perimeter length. For much shorter distances, use only the best nearby section. For much longer distances, incorporate the feature as part of a larger loop.
+- WATERFRONT PREFERENCE: When waterfront paths, coastal trails, or lakeside promenades exist near the start, incorporate them into the route. Runners strongly prefer water views over city blocks.
 - Prefer CONTINUOUS paths (waterfront promenades, park trails, ring roads) over zig-zag patterns through city blocks.
 - It is MUCH better to be 10-15% shorter than the target distance than to add side-street detours to hit exact distance.
 - Round all coordinates to 4 decimal places (e.g. 59.3251).`;
