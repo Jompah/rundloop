@@ -174,6 +174,11 @@ export default function Home() {
   // Track if GPS permission was permanently denied (retrying won't help)
   const [gpsPermissionDenied, setGpsPermissionDenied] = useState(false);
 
+  // Address input state (manual geocoding fallback)
+  const [addressInput, setAddressInput] = useState('');
+  const [addressSearching, setAddressSearching] = useState(false);
+  const [addressError, setAddressError] = useState<string | null>(null);
+
   // Request location on user gesture (iOS requires user interaction for geolocation)
   const requestLocation = useCallback(async () => {
     // Check if geolocation API is available at all
@@ -228,6 +233,44 @@ export default function Home() {
       setGpsRequesting(false);
     }
   }, [centeringDispatch]);
+
+  // Geocode an address via Nominatim and set as user location
+  const handleAddressSearch = useCallback(async () => {
+    const query = addressInput.trim();
+    if (!query) return;
+
+    setAddressSearching(true);
+    setAddressError(null);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+        { headers: { 'User-Agent': 'Drift/1.0' } }
+      );
+      const results = await res.json();
+      if (!results || results.length === 0) {
+        setAddressError(t('gps.addressNotFound'));
+        return;
+      }
+      const lat = parseFloat(results[0].lat);
+      const lon = parseFloat(results[0].lon);
+      setFakePosition(lat, lon);
+      setFakeGPSActive(true);
+      const displayName = results[0].display_name?.split(',').slice(0, 2).join(',') || query;
+      setFakeGPSLabel(displayName);
+      const loc: [number, number] = [lon, lat];
+      setUserLocation(loc);
+      setGpsError(false);
+      setGpsErrorMessage(null);
+      setGpsPermissionDenied(false);
+      const city = await reverseGeocode(lat, lon);
+      setCityName(city);
+      setAddressInput('');
+    } catch {
+      setAddressError(t('gps.addressNotFound'));
+    } finally {
+      setAddressSearching(false);
+    }
+  }, [addressInput, t]);
 
   // Cleanup GPS watch on unmount
   useEffect(() => {
@@ -295,91 +338,109 @@ export default function Home() {
           lng: Math.round(wp.lng * 10000) / 10000,
         }));
 
-        // --- Iterative distance calibration via binary search ---
-        // Binary search over a scale factor applied to the initial waypoints.
-        // This avoids oscillation from proportional scaling on non-linear OSRM routes.
-        let lowScale = 0.05;
-        let highScale = 3.0;
-        let bestRoute: GeneratedRoute | null = null;
-        let bestDiff = Infinity;
-
-        // First, route the initial waypoints to establish a baseline
-        const initialRoute = await routeViaOSRM(initialWaypoints, paceSecondsPerKm);
-        const initialKm = initialRoute.distance / 1000;
-        const initialRatio = initialKm / distance;
-
-        console.log(`[Attempt ${attempt + 1}/${MAX_ATTEMPTS}] baseline=${initialKm.toFixed(2)}km, target=${distance}km, ratio=${initialRatio.toFixed(2)}`);
-
-        // Track baseline as candidate (quality-adjusted diff)
-        const initialQuality = assessRouteQuality(initialRoute);
-        const initialSmooth = !hasExcessiveShortSegments(initialRoute.polyline);
-        // Penalize detour-heavy routes: add up to 0.30 to the diff for low-quality routes
-        bestDiff = Math.abs(initialRatio - 1) + (initialSmooth ? 0 : 0.30);
-        bestRoute = initialRoute;
-
-        console.log(`[Attempt ${attempt + 1}] Kvalitet: ${initialQuality}/100, smooth=${initialSmooth}`);
-
         // Check asymmetric tolerance: accept -15% to +10%
         const isWithinTolerance = (ratio: number) =>
           ratio >= (1 - TOLERANCE_UNDER) && ratio <= (1 + TOLERANCE_OVER);
 
-        // If not already within tolerance, run binary search
-        if (!isWithinTolerance(initialRatio)) {
-          // Determine initial bounds based on first measurement -- tight bounds from actual ratio
-          const targetRatio = distance / initialKm; // scale factor needed to hit target
-          if (initialRatio > 1) {
-            // Route is too long, we need to shrink. Search between 0.5 and just below current.
-            lowScale = 0.5;
-            highScale = targetRatio * 0.95;
-          } else {
-            // Route is too short, we need to expand. Search from just above current to 2x needed.
-            lowScale = targetRatio * 1.05;
-            highScale = targetRatio * 2.0;
-          }
+        let bestRoute: GeneratedRoute | null = null;
+        let bestDiff = Infinity;
 
-          for (let i = 0; i < MAX_ITERATIONS; i++) {
-            const midScale = (lowScale + highScale) / 2;
+        if (routeMode === 'algorithmic') {
+          // --- Iterative distance calibration via binary search (algorithmic only) ---
+          // Binary search over a scale factor applied to the initial waypoints.
+          // This avoids oscillation from proportional scaling on non-linear OSRM routes.
+          let lowScale = 0.05;
+          let highScale = 3.0;
 
-            // Scale waypoints relative to the INITIAL waypoints (never scale already-scaled ones)
-            const scaledWaypoints: RouteWaypoint[] = initialWaypoints.map((wp, idx) => {
-              if (idx === 0 || idx === initialWaypoints.length - 1) return wp;
-              return {
-                lat: Math.round((startLat + (wp.lat - startLat) * midScale) * 10000) / 10000,
-                lng: Math.round((startLng + (wp.lng - startLng) * midScale) * 10000) / 10000,
-                ...(wp.label ? { label: wp.label } : {}),
-              };
-            });
+          // First, route the initial waypoints to establish a baseline
+          const initialRoute = await routeViaOSRM(initialWaypoints, paceSecondsPerKm);
+          const initialKm = initialRoute.distance / 1000;
+          const initialRatio = initialKm / distance;
 
-            const candidate = await routeViaOSRM(scaledWaypoints, paceSecondsPerKm);
-            const actualKm = candidate.distance / 1000;
-            const ratio = actualKm / distance;
-            const rawDiff = Math.abs(ratio - 1);
+          console.log(`[Attempt ${attempt + 1}/${MAX_ATTEMPTS}] baseline=${initialKm.toFixed(2)}km, target=${distance}km, ratio=${initialRatio.toFixed(2)}`);
 
-            // Route smoothness check: penalize routes with excessive short segments
-            const isSmooth = !hasExcessiveShortSegments(candidate.polyline);
-            const qualityPenalty = isSmooth ? 0 : 0.30;
-            const adjustedDiff = rawDiff + qualityPenalty;
+          // Track baseline as candidate (quality-adjusted diff)
+          const initialQuality = assessRouteQuality(initialRoute);
+          const initialSmooth = !hasExcessiveShortSegments(initialRoute.polyline);
+          // Penalize detour-heavy routes: add up to 0.30 to the diff for low-quality routes
+          bestDiff = Math.abs(initialRatio - 1) + (initialSmooth ? 0 : 0.30);
+          bestRoute = initialRoute;
 
-            const quality = assessRouteQuality(candidate);
-            console.log(`[Attempt ${attempt + 1} iter ${i + 1}] scale=${midScale.toFixed(3)}, actual=${actualKm.toFixed(2)}km, target=${distance}km, kvalitet=${quality}/100, smooth=${isSmooth}`);
+          console.log(`[Attempt ${attempt + 1}] Kvalitet: ${initialQuality}/100, smooth=${initialSmooth}`);
 
-            if (adjustedDiff < bestDiff) {
-              bestDiff = adjustedDiff;
-              bestRoute = candidate;
-            }
-
-            // Within asymmetric tolerance? Done with this attempt!
-            if (isWithinTolerance(ratio) && isSmooth) {
-              break;
-            }
-
-            // Binary search: adjust bounds
-            if (actualKm > distance) {
-              highScale = midScale; // Too long, shrink upper bound
+          // If not already within tolerance, run binary search
+          if (!isWithinTolerance(initialRatio)) {
+            // Determine initial bounds based on first measurement -- tight bounds from actual ratio
+            const targetRatio = distance / initialKm; // scale factor needed to hit target
+            if (initialRatio > 1) {
+              // Route is too long, we need to shrink. Search between 0.5 and just below current.
+              lowScale = 0.5;
+              highScale = targetRatio * 0.95;
             } else {
-              lowScale = midScale; // Too short, expand lower bound
+              // Route is too short, we need to expand. Search from just above current to 2x needed.
+              lowScale = targetRatio * 1.05;
+              highScale = targetRatio * 2.0;
+            }
+
+            for (let i = 0; i < MAX_ITERATIONS; i++) {
+              const midScale = (lowScale + highScale) / 2;
+
+              // Scale waypoints relative to the INITIAL waypoints (never scale already-scaled ones)
+              const scaledWaypoints: RouteWaypoint[] = initialWaypoints.map((wp, idx) => {
+                if (idx === 0 || idx === initialWaypoints.length - 1) return wp;
+                return {
+                  lat: Math.round((startLat + (wp.lat - startLat) * midScale) * 10000) / 10000,
+                  lng: Math.round((startLng + (wp.lng - startLng) * midScale) * 10000) / 10000,
+                  ...(wp.label ? { label: wp.label } : {}),
+                };
+              });
+
+              const candidate = await routeViaOSRM(scaledWaypoints, paceSecondsPerKm);
+              const actualKm = candidate.distance / 1000;
+              const ratio = actualKm / distance;
+              const rawDiff = Math.abs(ratio - 1);
+
+              // Route smoothness check: penalize routes with excessive short segments
+              const isSmooth = !hasExcessiveShortSegments(candidate.polyline);
+              const qualityPenalty = isSmooth ? 0 : 0.30;
+              const adjustedDiff = rawDiff + qualityPenalty;
+
+              const quality = assessRouteQuality(candidate);
+              console.log(`[Attempt ${attempt + 1} iter ${i + 1}] scale=${midScale.toFixed(3)}, actual=${actualKm.toFixed(2)}km, target=${distance}km, kvalitet=${quality}/100, smooth=${isSmooth}`);
+
+              if (adjustedDiff < bestDiff) {
+                bestDiff = adjustedDiff;
+                bestRoute = candidate;
+              }
+
+              // Within asymmetric tolerance? Done with this attempt!
+              if (isWithinTolerance(ratio) && isSmooth) {
+                break;
+              }
+
+              // Binary search: adjust bounds
+              if (actualKm > distance) {
+                highScale = midScale; // Too long, shrink upper bound
+              } else {
+                lowScale = midScale; // Too short, expand lower bound
+              }
             }
           }
+        } else {
+          // --- AI mode: single OSRM call, no scaling ---
+          // AI already knows the target distance and places waypoints with geographic
+          // intelligence (perimeter loops, waterfront paths, etc.). Scaling toward
+          // the center would destroy these carefully placed routes.
+          const aiRoute = await routeViaOSRM(initialWaypoints, paceSecondsPerKm);
+          const aiKm = aiRoute.distance / 1000;
+          const aiRatio = aiKm / distance;
+          const aiQuality = assessRouteQuality(aiRoute);
+          const aiSmooth = !hasExcessiveShortSegments(aiRoute.polyline);
+
+          console.log(`[AI mode, attempt ${attempt + 1}] route=${aiKm.toFixed(2)}km, target=${distance}km, ratio=${aiRatio.toFixed(2)}, kvalitet=${aiQuality}/100, smooth=${aiSmooth}`);
+
+          bestRoute = aiRoute;
+          bestDiff = Math.abs(aiRatio - 1) + (aiSmooth ? 0 : 0.30);
         }
 
         // Always track the best route from this attempt as a fallback,
@@ -588,6 +649,32 @@ export default function Home() {
               {t('gps.simulatePositionShort')}
             </button>
           </div>
+          {/* Compact address input in error banner */}
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/10">
+            <span className="text-white/50 text-xs whitespace-nowrap">{t('gps.orEnterAddress')}:</span>
+            <form
+              onSubmit={(e) => { e.preventDefault(); handleAddressSearch(); }}
+              className="flex gap-1.5 flex-1"
+            >
+              <input
+                type="text"
+                value={addressInput}
+                onChange={(e) => { setAddressInput(e.target.value); setAddressError(null); }}
+                placeholder={t('gps.addressPlaceholder')}
+                className="flex-1 bg-white/10 text-white text-xs px-3 py-1.5 rounded-lg border border-white/10 focus:border-white/30 focus:outline-none placeholder-white/30 min-w-0"
+              />
+              <button
+                type="submit"
+                disabled={addressSearching || !addressInput.trim()}
+                className="bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:bg-green-600/50 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+              >
+                {addressSearching ? t('gps.addressSearching') : t('gps.addressGo')}
+              </button>
+            </form>
+          </div>
+          {addressError && (
+            <p className="text-red-300 text-xs mt-1.5">{addressError}</p>
+          )}
         </div>
       )}
 
@@ -632,6 +719,37 @@ export default function Home() {
             >
               {t('gps.simulatePosition')}
             </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 mt-4 mb-3">
+              <div className="flex-1 h-px bg-gray-700" />
+              <span className="text-gray-500 text-xs">{t('gps.orEnterAddress')}</span>
+              <div className="flex-1 h-px bg-gray-700" />
+            </div>
+
+            {/* Address input */}
+            <form
+              onSubmit={(e) => { e.preventDefault(); handleAddressSearch(); }}
+              className="flex gap-2"
+            >
+              <input
+                type="text"
+                value={addressInput}
+                onChange={(e) => { setAddressInput(e.target.value); setAddressError(null); }}
+                placeholder={t('gps.addressPlaceholder')}
+                className="flex-1 bg-gray-800 text-white text-sm px-4 py-3 rounded-xl border border-gray-700 focus:border-blue-500 focus:outline-none placeholder-gray-500"
+              />
+              <button
+                type="submit"
+                disabled={addressSearching || !addressInput.trim()}
+                className="bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:bg-green-600/50 text-white font-semibold px-5 py-3 rounded-xl transition-colors text-sm"
+              >
+                {addressSearching ? t('gps.addressSearching') : t('gps.addressGo')}
+              </button>
+            </form>
+            {addressError && (
+              <p className="text-red-400 text-xs mt-2">{addressError}</p>
+            )}
           </div>
         </div>
       )}
