@@ -18,43 +18,40 @@ interface AIRouteRequest {
 }
 
 // Shared rules applied to ALL scenic modes — anti-detour, waypoint placement, and loop quality
-const SHARED_ROUTE_RULES = `- ABSOLUTELY NO DETOURS: NEVER create dead-end detours. Every waypoint must be on the THROUGH-route, not a side trip. The runner must move FORWARD continuously, never doubling back on any street. If you place a waypoint on a side street, the runner goes in AND comes back — that is a detour and is FORBIDDEN.
-- Place waypoints ONLY on streets that naturally connect to the next waypoint without requiring the runner to retrace steps. Each waypoint must flow into the next in one direction.
-- WAYPOINT PLACEMENT: Place waypoints at TURNING POINTS only — where the route changes direction. Do NOT place waypoints along straight stretches. This ensures the router creates straight paths between turns, avoiding unnecessary detours through side streets.
-- PERIMETER LOOP DETECTION: For distances that match the perimeter of a local geographic feature (island, peninsula, lake, large park), create a PERIMETER LOOP following the outer edge. Example: 10km on Kungsholmen = run around the island's waterfront. 5km near a lake = loop around it.
+const SHARED_ROUTE_RULES = `- ABSOLUTELY NO DETOURS: NEVER create dead-end detours. Every waypoint must be on the THROUGH-route. The runner moves FORWARD continuously, never doubling back. If a waypoint forces the runner down a side street and back, it is FORBIDDEN.
+- Place waypoints ONLY on streets that naturally connect to the next waypoint without retracing. Each waypoint flows into the next in one direction.
+- WAYPOINT PLACEMENT: Place waypoints at TURNING POINTS only — where the route changes direction. Do NOT place waypoints along straight stretches.
+- STARTING POINT IS FIXED: Build the best possible loop from the given start coordinates. NEVER suggest moving the start elsewhere.
+- GEOGRAPHIC FEATURE ASSESSMENT: If the start is near a geographic feature (island, lake, peninsula, river, large park), assess whether its perimeter is actually runnable — look for paved paths, promenades, or trails. Skip sections with highways along the shore, industrial waterfronts, or fenced-off areas. Only commit to a perimeter route when the feature is runnable AND the requested distance is within ~30% of the runnable perimeter length. For much shorter distances, use only the best nearby section. For much longer distances, incorporate the feature as part of a larger loop.
 - Prefer CONTINUOUS paths (waterfront promenades, park trails, ring roads) over zig-zag patterns through city blocks.
 - It is MUCH better to be 10-15% shorter than the target distance than to add side-street detours to hit exact distance.
-- Round all coordinates to 4 decimal places (e.g. 59.3251, not 59.32517843)`;
+- Round all coordinates to 4 decimal places (e.g. 59.3251).`;
 
 const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
   standard: `${SHARED_ROUTE_RULES}
-- When the target distance roughly matches a natural loop (island perimeter, park circuit, waterfront path), generate waypoints that trace that natural loop. Use your geographic knowledge of the area.
-- Include famous landmarks, tourist attractions, and popular sights ALONG the loop. Route PAST (not just near) iconic buildings, monuments, squares, and viewpoints — but only if they are on the natural loop path, never as side trips.
-- Prefer parks, waterfront paths, pedestrian areas, and quiet residential streets
-- Avoid highways, industrial areas, and busy roads
-- Create an interesting loop, not an out-and-back route
-- Spread waypoints across different compass directions from the start (north, east, south, west) to create a varied loop`,
+- ROUTE STRATEGY: Create a balanced loop mixing waterfront, parks, and interesting streets. Use geographic features (shorelines, rivers, park edges) when nearby and runnable, but also route past notable landmarks and through pleasant neighborhoods.
+- When a natural loop exists near the start (park circuit, waterfront path, river bend) and roughly matches the distance, prefer it over a contrived city-block loop.
+- Include notable landmarks and popular sights that fall naturally along the route — never as side trips.
+- Prefer parks, waterfront paths, pedestrian areas, and quiet streets over busy roads.
+- Avoid highways, industrial areas, and roads without sidewalks.
+- Spread waypoints across different compass directions from the start to create a varied loop.`,
   nature: `${SHARED_ROUTE_RULES}
-- Follow waterfront paths and park edges CONTINUOUSLY. Never leave the waterfront to go inland and come back — that is a detour.
-- If on an island, follow the waterfront/shoreline path around the island perimeter. Place waypoints at points where the shoreline changes direction.
-- Prefer paths with views - elevation, waterfront, open spaces
-- PRIORITIZE parks, nature reserves, waterfront paths, rivers, lakes, canals, and green corridors
-- Actively seek the BEST green spaces and water features near the starting point
-- Seek out tree-lined streets, botanical gardens, and urban forests
-- Avoid highways, industrial areas, busy roads, and commercial districts
-- Prefer unpaved trails and park paths when available
-- If a large park exists within range, route THROUGH it rather than around it
-- Spread waypoints across different compass directions to maximize green coverage`,
+- ROUTE STRATEGY: Maximize time on green and blue paths. Prioritize waterfront promenades, park trails, river paths, canal towpaths, and tree-lined corridors. Only leave nature when no connected green/blue path exists.
+- TERRAIN ASSESSMENT: Before committing to a waterfront or shoreline route, consider whether that section has a runnable path (trail, promenade, boardwalk). Skip sections with highways along the shore, industrial waterfronts, or fenced-off areas — route through the nearest park or green corridor instead.
+- If a large park or nature reserve exists within range, route THROUGH it rather than around it.
+- Follow waterfront paths CONTINUOUSLY when runnable. Never leave the waterfront to cut inland and return — that is a detour.
+- For shorter distances than a full perimeter, pick the most scenic continuous shoreline or park section nearest the start.
+- Prefer unpaved trails and park paths when available.
+- Avoid highways, industrial areas, busy roads, and commercial districts.
+- Spread waypoints to maximize green and water coverage.`,
   explore: `${SHARED_ROUTE_RULES}
-- Connect landmarks in a logical loop, not zigzag pattern
-- If on an island, combine perimeter waterfront with landmarks that are ON the perimeter path
-- PRIORITIZE world-famous landmarks and tourist must-sees. The runner should pass the top 3-5 most iconic sights.
-- Include popular squares, famous bridges, cathedrals, palaces, stadiums, and cultural landmarks
-- Route past famous squares, cathedrals, museums, bridges, and tourist attractions
-- Avoid highways and industrial areas but embrace lively pedestrian streets
-- Create a sightseeing loop that showcases the most interesting parts of the city
-- Spread waypoints across different notable areas - avoid clustering around one landmark
-- Each waypoint should showcase a DIFFERENT interesting place or viewpoint`,
+- ROUTE STRATEGY: Create a sightseeing loop passing the top 3-5 most iconic landmarks and attractions near the start. Geographic features (waterfronts, bridges, viewpoints) are valuable when they connect landmarks, not as goals in themselves.
+- Connect landmarks in a logical geographic loop — not a zigzag. The route should feel like a guided city tour at running pace.
+- TERRAIN ASSESSMENT: Use waterfronts and park paths when they connect two landmarks efficiently. Avoid long stretches of featureless shoreline when a nearby street has more to see.
+- Include famous squares, bridges, cathedrals, palaces, museums, stadiums, and cultural landmarks.
+- Embrace lively pedestrian streets and historic quarters. Avoid highways and industrial areas.
+- Each waypoint should showcase a DIFFERENT notable place or viewpoint.
+- Spread waypoints across different notable areas — avoid clustering around one district.`,
 };
 
 function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string, poiWaypoints?: NaturePOI[]): string {
