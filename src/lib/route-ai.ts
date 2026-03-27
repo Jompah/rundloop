@@ -25,6 +25,7 @@ const SHARED_ROUTE_RULES = `- ABSOLUTELY NO DETOURS: NEVER create dead-end detou
 - STARTING POINT IS FIXED: Build the best possible loop from the given start coordinates. NEVER suggest moving the start elsewhere.
 - GEOGRAPHIC FEATURE ASSESSMENT: If the start is near a geographic feature (island, lake, peninsula, river, large park), assess whether its perimeter is actually runnable — look for paved paths, promenades, or trails. Skip sections with highways along the shore, industrial waterfronts, or fenced-off areas. Only commit to a perimeter route when the feature is runnable AND the requested distance is within ~30% of the runnable perimeter length. For much shorter distances, use only the best nearby section. For much longer distances, incorporate the feature as part of a larger loop.
 - WATERFRONT PREFERENCE: When waterfront paths, coastal trails, or lakeside promenades exist near the start, incorporate them into the route. Runners strongly prefer water views over city blocks.
+- DIRECTION: Default to counter-clockwise loops. This feels more natural for most runners.
 - Prefer CONTINUOUS paths (waterfront promenades, park trails, ring roads) over zig-zag patterns through city blocks.
 - It is MUCH better to be 10-15% shorter than the target distance than to add side-street detours to hit exact distance.
 - Round all coordinates to 4 decimal places (e.g. 59.3251).`;
