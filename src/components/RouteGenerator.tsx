@@ -135,6 +135,27 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
             {userLocation ? cityName || t('gps.fetchingLocation') : t('gps.waitingForGps')}
           </div>
 
+          {/* Scenic mode selector - always visible, first choice */}
+          <div className="flex gap-1 mb-4 bg-gray-800 rounded-xl p-1">
+            {([
+              { value: 'standard' as ScenicMode, label: t('scenic.standard') },
+              { value: 'nature' as ScenicMode, label: t('scenic.nature') },
+              { value: 'explore' as ScenicMode, label: t('scenic.explore') },
+            ]).map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => onScenicModeChange?.(value)}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+                  scenicMode === value
+                    ? 'bg-green-500 text-white'
+                    : 'text-gray-400 active:bg-gray-700'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Route mode toggle: Standard vs AI */}
           <div className="flex gap-1 mb-4 bg-gray-800 rounded-xl p-1">
             {([
@@ -154,29 +175,6 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
               </button>
             ))}
           </div>
-
-          {/* Scenic mode toggle - only for AI routes */}
-          {routeMode === 'ai' && (
-            <div className="flex gap-1 mb-4 bg-gray-800 rounded-xl p-1">
-              {([
-                { value: 'standard' as ScenicMode, label: t('scenic.standard') },
-                { value: 'nature' as ScenicMode, label: t('scenic.nature') },
-                { value: 'explore' as ScenicMode, label: t('scenic.explore') },
-              ]).map(({ value, label }) => (
-                <button
-                  key={value}
-                  onClick={() => onScenicModeChange?.(value)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
-                    scenicMode === value
-                      ? 'bg-green-500 text-white'
-                      : 'text-gray-400 active:bg-gray-700'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
 
           {/* Distance display */}
           <div className="text-center mb-4">

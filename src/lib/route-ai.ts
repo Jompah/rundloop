@@ -68,7 +68,7 @@ function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, dist
 Starting point: ${lat}, ${lng} (${cityName})
 Desired distance: ${distanceKm} km
 
-Consider the specific geography and notable places of ${cityName} when selecting waypoints.${poiSection}
+GEOGRAPHIC ANALYSIS: First, identify what specific geographic area these coordinates are on — are they on an island, peninsula, near a lake, river, or coast? Name the specific neighborhood or district. Then use that knowledge to plan the optimal route shape.${poiSection}
 
 Requirements:
 - The route must START and END at the starting point coordinates

@@ -144,11 +144,14 @@ export function getCurrentPosition(): Promise<GeoPosition> {
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`,
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=14`,
       { headers: { 'User-Agent': 'Drift/1.0' } }
     );
     const data = await res.json();
-    return data.address?.city || data.address?.town || data.address?.village || data.display_name?.split(',')[0] || 'Unknown';
+    const suburb = data.address?.suburb || data.address?.neighbourhood || '';
+    const city = data.address?.city || data.address?.town || data.address?.village || '';
+    if (suburb && city) return `${suburb}, ${city}`;
+    return city || suburb || data.display_name?.split(',')[0] || 'Unknown';
   } catch {
     return 'Unknown';
   }
