@@ -131,126 +131,123 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
       >
         <div className="px-6 pb-6">
           {/* City name */}
-          <div className="text-gray-400 text-sm mb-1">
+          <div className="text-gray-400 text-sm mb-3">
             {userLocation ? cityName || t('gps.fetchingLocation') : t('gps.waitingForGps')}
           </div>
 
-          {/* Scenic mode selector - always visible, first choice */}
-          <div className="flex gap-1 mb-4 bg-gray-800 rounded-xl p-1">
-            {([
-              { value: 'standard' as ScenicMode, label: t('scenic.standard') },
-              { value: 'nature' as ScenicMode, label: t('scenic.nature') },
-              { value: 'explore' as ScenicMode, label: t('scenic.explore') },
-            ]).map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => onScenicModeChange?.(value)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
-                  scenicMode === value
-                    ? 'bg-green-500 text-white'
-                    : 'text-gray-400 active:bg-gray-700'
-                }`}
+          {userLocation && (
+            <>
+              {/* Scenic mode selector */}
+              <div className="flex gap-1 mb-3 bg-gray-800 rounded-xl p-1">
+                {([
+                  { value: 'standard' as ScenicMode, label: t('scenic.standard') },
+                  { value: 'nature' as ScenicMode, label: t('scenic.nature') },
+                  { value: 'explore' as ScenicMode, label: t('scenic.explore') },
+                ]).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => onScenicModeChange?.(value)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+                      scenicMode === value
+                        ? 'bg-green-500 text-white'
+                        : 'text-gray-400 active:bg-gray-700'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Route mode toggle: Quick vs AI */}
+              <div className="flex gap-1 mb-3 bg-gray-800 rounded-xl p-1">
+                {([
+                  { value: 'algorithmic' as RouteMode, label: t('routeMode.standard') },
+                  { value: 'ai' as RouteMode, label: t('routeMode.ai') },
+                ]).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => onModeChange?.(value)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
+                      routeMode === value
+                        ? 'bg-green-500 text-white'
+                        : 'text-gray-400 active:bg-gray-700'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Distance: large number + preset buttons in one row */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="shrink-0">
+                  <span className="text-4xl font-bold text-white tabular-nums">{distance}</span>
+                  <span className="text-lg text-gray-400 ml-1">km</span>
+                </div>
+                <div className="flex gap-1.5 flex-wrap flex-1 justify-end">
+                  {presets.map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => setDistance(d)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors min-h-[36px] ${
+                        distance === d
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-800 text-gray-300 active:bg-gray-700'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Slider */}
+              <div className="mb-4 px-1">
+                <input
+                  type="range"
+                  min={1}
+                  max={30}
+                  step={0.5}
+                  value={distance}
+                  onChange={(e) => setDistance(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500"
+                />
+              </div>
+
+              {/* Generate button */}
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                onClick={() => handleGenerate(distance)}
+                disabled={isLoading}
               >
-                {label}
-              </button>
-            ))}
-          </div>
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    {t('route.generating')}
+                  </span>
+                ) : (
+                  t('route.generate', { distance })
+                )}
+              </Button>
 
-          {/* Route mode toggle: Standard vs AI */}
-          <div className="flex gap-1 mb-4 bg-gray-800 rounded-xl p-1">
-            {([
-              { value: 'algorithmic' as RouteMode, label: t('routeMode.standard') },
-              { value: 'ai' as RouteMode, label: t('routeMode.ai') },
-            ]).map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => onModeChange?.(value)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
-                  routeMode === value
-                    ? 'bg-green-500 text-white'
-                    : 'text-gray-400 active:bg-gray-700'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Distance display */}
-          <div className="text-center mb-4">
-            <span className="text-5xl font-bold text-white tabular-nums">{distance}</span>
-            <span className="text-xl text-gray-400 ml-2">km</span>
-          </div>
-
-          {/* Preset buttons */}
-          <div className="flex gap-2 mb-4 justify-center flex-wrap">
-            {presets.map((d) => (
-              <button
-                key={d}
-                onClick={() => setDistance(d)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors min-h-[44px] ${
-                  distance === d
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-800 text-gray-300 active:bg-gray-700'
-                }`}
-              >
-                {d} km
-              </button>
-            ))}
-          </div>
-
-          {/* Slider */}
-          <div className="mb-6 px-2">
-            <input
-              type="range"
-              min={1}
-              max={30}
-              step={0.5}
-              value={distance}
-              onChange={(e) => setDistance(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>1 km</span>
-              <span>30 km</span>
-            </div>
-          </div>
-
-          {/* Generate button */}
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            onClick={() => handleGenerate(distance)}
-            disabled={isLoading || !userLocation}
-            className={isLoading || !userLocation ? 'bg-gray-700 text-gray-400 cursor-not-allowed' : ''}
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                {t('route.generating')}
-              </span>
-            ) : !userLocation ? (
-              t('gps.waitingForGps')
-            ) : (
-              t('route.generate', { distance })
-            )}
-          </Button>
-
-          {/* Save Route button - shown after route generation */}
-          {route && !isLoading && (
-            <Button
-              variant={saved ? 'secondary' : 'primary'}
-              fullWidth
-              className={`mt-3 ${saved ? 'text-green-400 cursor-default' : ''}`}
-              onClick={handleSaveRoute}
-              disabled={saved}
-            >
-              {saved ? t('route.saved') : t('route.save')}
-            </Button>
+              {/* Save Route button */}
+              {route && !isLoading && (
+                <Button
+                  variant={saved ? 'secondary' : 'primary'}
+                  fullWidth
+                  className={`mt-3 ${saved ? 'text-green-400 cursor-default' : ''}`}
+                  onClick={handleSaveRoute}
+                  disabled={saved}
+                >
+                  {saved ? t('route.saved') : t('route.save')}
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>

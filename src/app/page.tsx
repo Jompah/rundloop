@@ -550,7 +550,7 @@ export default function Home() {
   }, [userLocation, cityName, routeMode, scenicMode, t]);
 
   return (
-    <main className="h-[100dvh] w-full relative overflow-hidden bg-gray-950">
+    <main className="h-[100dvh] w-full max-w-[480px] mx-auto relative overflow-hidden bg-gray-950">
       {/* Map fills entire screen */}
       <MapView
         route={route}

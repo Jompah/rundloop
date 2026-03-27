@@ -31,6 +31,11 @@ const en = {
   'gps.timeout': 'GPS timed out. Make sure Location Services are enabled and try again outdoors for best results.',
   'gps.unknownError': 'An unknown GPS error occurred. Try again.',
   'gps.deactivate': 'Deactivate',
+  'gps.orEnterAddress': 'Or enter address',
+  'gps.addressPlaceholder': 'Street address, city...',
+  'gps.addressGo': 'Go',
+  'gps.addressNotFound': 'Address not found',
+  'gps.addressSearching': 'Searching...',
 
   // Route
   'route.generate': 'Generate {distance} km route',
@@ -45,7 +50,7 @@ const en = {
   'route.hideControls': 'Hide controls',
 
   // Route modes
-  'routeMode.standard': 'Standard',
+  'routeMode.standard': 'Quick',
   'routeMode.ai': 'AI',
 
   // Scenic modes

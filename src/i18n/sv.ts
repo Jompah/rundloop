@@ -33,6 +33,11 @@ const sv: Record<TranslationKey, string> = {
   'gps.timeout': 'GPS tog for lang tid. Kontrollera att Platstjanster ar aktiverat och forsok igen utomhus.',
   'gps.unknownError': 'Ett okänt GPS-fel uppstod. Försök igen.',
   'gps.deactivate': 'Avaktivera',
+  'gps.orEnterAddress': 'Eller ange adress',
+  'gps.addressPlaceholder': 'Gatuadress, stad...',
+  'gps.addressGo': 'Sok',
+  'gps.addressNotFound': 'Adressen hittades inte',
+  'gps.addressSearching': 'Soker...',
 
   // Route
   'route.generate': 'Generera {distance} km rutt',
@@ -47,7 +52,7 @@ const sv: Record<TranslationKey, string> = {
   'route.hideControls': 'Dolj kontroller',
 
   // Route modes
-  'routeMode.standard': 'Standard',
+  'routeMode.standard': 'Snabb',
   'routeMode.ai': 'AI',
 
   // Scenic modes
