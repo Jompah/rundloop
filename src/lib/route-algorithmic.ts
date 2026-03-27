@@ -9,13 +9,18 @@ import { RouteWaypoint } from '@/types';
 type Pattern = 'circle' | 'figure8' | 'cloverleaf';
 
 /**
- * Road-routing correction factor.
- * OSRM routes on real roads which are significantly longer than the
- * straight-line geometry due to detours, one-way streets, and non-circular
- * street layouts. Empirical testing shows a factor of ~3.0 is needed
- * so that a 5 km requested distance actually produces ~5 km of road routing.
+ * Road-routing correction factor — scales with distance.
+ * Short routes (≤5km) in dense urban grids need a high factor (~3.0)
+ * because OSRM detours a lot through small streets.
+ * Longer routes (≥10km) need a lower factor (~1.8) because OSRM
+ * can follow more direct paths along main roads and waterfronts.
  */
-const ROAD_ROUTING_FACTOR = 3.0;
+function roadRoutingFactor(distanceKm: number): number {
+  if (distanceKm <= 5) return 3.0;
+  if (distanceKm >= 15) return 1.8;
+  // Linear interpolation between 5km and 15km
+  return 3.0 - (distanceKm - 5) * (1.2 / 10);
+}
 
 /** 1 degree of latitude in km */
 const KM_PER_DEG_LAT = 111.0;
@@ -35,10 +40,8 @@ function kmToDegLng(km: number, latDeg: number): number {
 }
 
 /** Pick pattern based on distance */
-function pickPattern(distanceKm: number): Pattern {
-  if (distanceKm <= 5) return 'circle';
-  if (distanceKm <= 12) return 'figure8';
-  return 'cloverleaf';
+function pickPattern(_distanceKm: number): Pattern {
+  return 'circle';
 }
 
 /** Add random jitter of +/-percent to a value */
@@ -59,7 +62,7 @@ function generateCircle(
   numPoints: number,
   rotationRad: number
 ): RouteWaypoint[] {
-  const radius = (distanceKm / ROAD_ROUTING_FACTOR) / (2 * Math.PI);
+  const radius = (distanceKm / roadRoutingFactor(distanceKm)) / (2 * Math.PI);
   const points: RouteWaypoint[] = [];
 
   for (let i = 0; i < numPoints; i++) {
@@ -88,7 +91,7 @@ function generateFigure8(
   rotationRad: number
 ): RouteWaypoint[] {
   // Each loop has perimeter ~ distanceKm / 2, corrected for road routing
-  const loopRadius = (distanceKm / ROAD_ROUTING_FACTOR) / (4 * Math.PI);
+  const loopRadius = (distanceKm / roadRoutingFactor(distanceKm)) / (4 * Math.PI);
   const points: RouteWaypoint[] = [];
   const halfPoints = Math.floor(numPoints / 2);
 
@@ -144,7 +147,7 @@ function generateCloverleaf(
 ): RouteWaypoint[] {
   const numPetals = distanceKm > 20 ? 4 : 3;
   // Each petal covers distance / numPetals of the total, corrected for road routing
-  const petalRadius = (distanceKm / ROAD_ROUTING_FACTOR) / (numPetals * 2 * Math.PI);
+  const petalRadius = (distanceKm / roadRoutingFactor(distanceKm)) / (numPetals * 2 * Math.PI);
   const offsetKm = petalRadius * 1.3;
   const pointsPerPetal = Math.floor(numPoints / numPetals);
   const points: RouteWaypoint[] = [];
@@ -195,10 +198,10 @@ export function generateAlgorithmicWaypoints(
   let numPoints: number;
   switch (pattern) {
     case 'circle':
-      numPoints = 8;
+      numPoints = distanceKm <= 5 ? 8 : distanceKm <= 12 ? 12 : 16;
       break;
     case 'figure8':
-      numPoints = 10;
+      numPoints = 14;
       break;
     case 'cloverleaf':
       numPoints = 12;

@@ -131,6 +131,50 @@ async function callPerplexity(prompt: string, apiKey: string): Promise<string> {
   return data.choices[0].message.content;
 }
 
+/**
+ * Haversine distance between two points in meters.
+ */
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Densify waypoints by interpolating extra points between consecutive waypoints
+ * that are more than `maxGapMeters` apart. This forces OSRM to follow the
+ * intended path more closely (e.g. along waterfronts instead of cutting inland).
+ */
+function densifyWaypoints(waypoints: RouteWaypoint[], maxGapMeters: number = 250): RouteWaypoint[] {
+  const result: RouteWaypoint[] = [waypoints[0]];
+
+  for (let i = 1; i < waypoints.length; i++) {
+    const prev = waypoints[i - 1];
+    const curr = waypoints[i];
+    const dist = haversineMeters(prev.lat, prev.lng, curr.lat, curr.lng);
+
+    if (dist > maxGapMeters) {
+      const segments = Math.ceil(dist / maxGapMeters);
+      for (let s = 1; s < segments; s++) {
+        const t = s / segments;
+        result.push({
+          lat: prev.lat + t * (curr.lat - prev.lat),
+          lng: prev.lng + t * (curr.lng - prev.lng),
+        });
+      }
+    }
+
+    result.push(curr);
+  }
+
+  return result;
+}
+
 function parseWaypoints(response: string): RouteWaypoint[] {
   // Try to extract JSON array from the response
   const jsonMatch = response.match(/\[[\s\S]*?\]/);
@@ -163,6 +207,11 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
 
   const waypoints = parseWaypoints(response);
 
+  // Log raw AI waypoints for debugging
+  console.log(`[route-ai] Raw AI waypoints (${waypoints.length} points):`,
+    waypoints.map((w, i) => `  ${i}: ${w.lat.toFixed(4)}, ${w.lng.toFixed(4)}${w.label ? ` (${w.label})` : ''}`).join('\n')
+  );
+
   // Ensure the route is closed (first and last point match start)
   const first = waypoints[0];
   const last = waypoints[waypoints.length - 1];
@@ -182,7 +231,12 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
     waypoints.unshift({ lat, lng });
   }
 
-  return waypoints;
+  // Densify: add intermediate points to keep OSRM on the intended path
+  const dense = densifyWaypoints(waypoints);
+
+  console.log(`[route-ai] After densification: ${dense.length} waypoints (was ${waypoints.length})`);
+
+  return dense;
 }
 
 export { generateAlgorithmicWaypoints as generateRouteAlgorithmic } from './route-algorithmic';
