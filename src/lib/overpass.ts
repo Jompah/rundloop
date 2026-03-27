@@ -92,7 +92,16 @@ export async function fetchLandmarksNearRoute(
     }
   }
 
-  return unique
+  // 7. Limit total markers to avoid cluttered map — prioritize major landmarks
+  const typePriority: Record<string, number> = {
+    castle: 1, museum: 2, monument: 3, viewpoint: 4, historic: 5,
+    church: 6, ruins: 7, park: 8, artwork: 9, fountain: 10, landmark: 11,
+  }
+  const prioritized = unique
+    .sort((a, b) => (typePriority[a.type] ?? 99) - (typePriority[b.type] ?? 99))
+    .slice(0, 6)
+
+  return prioritized
 }
 
 function classifyLandmark(tags: Record<string, string>): LandmarkType {
