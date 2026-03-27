@@ -861,50 +861,9 @@ export default function Home() {
 
       {/* Navigation bar */}
       <nav className="absolute top-4 right-4 z-20 flex items-center gap-2">
-        {/* Language switcher */}
-        <LanguageSwitcher />
-        {/* Fake GPS button */}
-        <div className="relative">
-          <button
-            onClick={() => setShowFakeMenu((v) => !v)}
-            className={`rounded-full px-3 py-2 shadow-lg text-xs font-medium flex items-center gap-1.5 transition-colors ${
-              fakeGPSActive
-                ? 'bg-amber-500 text-white active:bg-amber-600'
-                : 'bg-white/90 text-gray-700 active:bg-gray-100'
-            }`}
-            aria-label="Fake GPS"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-              <circle cx="12" cy="9" r="2.5" />
-            </svg>
-            {fakeGPSActive ? fakeGPSLabel : t('gps.simulatePositionShort')}
-          </button>
-          {showFakeMenu && (
-            <div className="absolute right-0 top-full mt-1 bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden min-w-[160px]">
-              {FAKE_CITIES.map((city) => (
-                <button
-                  key={city.name}
-                  onClick={() => applyFakeGPS(city)}
-                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-white/10 transition-colors ${
-                    fakeGPSLabel === city.name ? 'text-amber-400' : 'text-white'
-                  }`}
-                >
-                  {city.name}
-                </button>
-              ))}
-              <button
-                onClick={disableFakeGPS}
-                className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/10 border-t border-white/10 transition-colors"
-              >
-                {t('gps.deactivate')}
-              </button>
-            </div>
-          )}
-        </div>
         <button
           onClick={() => setView('settings')}
-          className="bg-white/90 rounded-full p-3 shadow-lg active:bg-gray-100"
+          className="bg-gray-800/80 backdrop-blur-sm rounded-full p-3 shadow-lg active:bg-gray-700 text-gray-300"
           aria-label="Settings"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

@@ -39,6 +39,12 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Language */}
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-white">{t('settings.language')}</label>
+          <LanguageSwitcher />
+        </div>
+
         {/* AI info */}
         <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
           <div className="flex items-center gap-3">
@@ -220,12 +226,6 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
               {settings.units === 'miles' ? 'lbs' : 'kg'}
             </span>
           </div>
-        </div>
-
-        {/* Language */}
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-white">{t('settings.language')}</label>
-          <LanguageSwitcher />
         </div>
 
         {/* Save button */}
