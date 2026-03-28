@@ -41,6 +41,7 @@ const en = {
   'route.generate': 'Generate {distance} km route',
   'route.generating': 'Generating route...',
   'route.generationFailed': 'Failed to generate route. Please try again.',
+  'route.aiFallback': 'AI route unavailable — using simple route instead.',
   'route.networkError': 'Could not connect to the route server. Check your internet connection and try again. Some in-app browsers (like Telegram) may block this -- try opening in Chrome or Safari instead.',
   'route.save': 'Save route',
   'route.saved': 'Saved!',
@@ -55,7 +56,6 @@ const en = {
 
   // Scenic modes
   'scenic.standard': 'Standard',
-  'scenic.nature': 'Nature',
   'scenic.explore': 'Explore',
 
   // Navigation

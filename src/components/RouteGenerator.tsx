@@ -141,7 +141,6 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
               <div className="flex gap-1 mb-3 bg-gray-800 rounded-xl p-1">
                 {([
                   { value: 'standard' as ScenicMode, label: t('scenic.standard') },
-                  { value: 'nature' as ScenicMode, label: t('scenic.nature') },
                   { value: 'explore' as ScenicMode, label: t('scenic.explore') },
                 ]).map(({ value, label }) => (
                   <button

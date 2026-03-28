@@ -40,7 +40,7 @@ export type AppView = 'map' | 'generate' | 'navigate' | 'settings' | 'history' |
 
 export type RouteMode = 'ai' | 'algorithmic';
 
-export type ScenicMode = 'standard' | 'nature' | 'explore';
+export type ScenicMode = 'standard' | 'explore';
 
 export interface FilteredPosition {
   lat: number;

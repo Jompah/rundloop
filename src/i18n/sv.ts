@@ -43,6 +43,7 @@ const sv: Record<TranslationKey, string> = {
   'route.generate': 'Generera {distance} km rutt',
   'route.generating': 'Genererar rutt...',
   'route.generationFailed': 'Kunde inte generera rutt. Forsok igen.',
+  'route.aiFallback': 'AI-rutt otillgänglig — använder enkel rutt istället.',
   'route.networkError': 'Kunde inte ansluta till ruttservern. Kontrollera din internetanslutning och forsok igen. Vissa appwebbläsare (som Telegram) kan blockera detta -- forsok oppna i Chrome eller Safari istallet.',
   'route.save': 'Spara rutt',
   'route.saved': 'Sparad!',
@@ -57,7 +58,6 @@ const sv: Record<TranslationKey, string> = {
 
   // Scenic modes
   'scenic.standard': 'Standard',
-  'scenic.nature': 'Natur',
   'scenic.explore': 'Utforska',
 
   // Navigation

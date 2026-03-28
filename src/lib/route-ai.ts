@@ -7,6 +7,12 @@ export interface NaturePOI {
   type: string;
 }
 
+export interface IslandData {
+  name: string;
+  perimeterKm: number;
+  outline: { lat: number; lng: number }[];
+}
+
 interface AIRouteRequest {
   lat: number;
   lng: number;
@@ -15,6 +21,7 @@ interface AIRouteRequest {
   settings: AppSettings;
   scenicMode?: ScenicMode;
   poiWaypoints?: NaturePOI[];
+  island?: IslandData | null;
 }
 
 // Shared rules applied to ALL scenic modes — anti-detour, waypoint placement, and loop quality
@@ -38,15 +45,6 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - Prefer parks, waterfront paths, pedestrian areas, and quiet streets over busy roads.
 - Avoid highways, industrial areas, and roads without sidewalks.
 - Keep waypoints close to the start — a compact, enjoyable route beats a spread-out one.`,
-  nature: `${SHARED_ROUTE_RULES}
-- ROUTE STRATEGY: Maximize time on green and blue paths. Prioritize waterfront promenades, park trails, river paths, canal towpaths, and tree-lined corridors. Only leave nature when no connected green/blue path exists.
-- TERRAIN ASSESSMENT: Before committing to a waterfront or shoreline route, consider whether that section has a runnable path (trail, promenade, boardwalk). Skip sections with highways along the shore, industrial waterfronts, or fenced-off areas — route through the nearest park or green corridor instead.
-- If a large park or nature reserve exists within range, route THROUGH it rather than around it.
-- Follow waterfront paths CONTINUOUSLY when runnable. Never leave the waterfront to cut inland and return — that is a detour.
-- For shorter distances than a full perimeter, pick the most scenic continuous shoreline or park section nearest the start.
-- Prefer unpaved trails and park paths when available.
-- Avoid highways, industrial areas, busy roads, and commercial districts.
-- Follow the best continuous green/blue path rather than hopping between scattered parks.`,
   explore: `${SHARED_ROUTE_RULES}
 - ROUTE STRATEGY: Create a sightseeing loop passing the top 3-5 most iconic landmarks and attractions near the start. Geographic features (waterfronts, bridges, viewpoints) are valuable when they connect landmarks, not as goals in themselves.
 - Connect landmarks in a logical geographic loop — not a zigzag. The route should feel like a guided city tour at running pace.
@@ -57,7 +55,7 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - Keep landmarks within a walkable area — a focused tour beats a scattered marathon.`,
 };
 
-function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string, poiWaypoints?: NaturePOI[]): string {
+function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string, poiWaypoints?: NaturePOI[], island?: IslandData | null): string {
   const labelInstruction = scenicMode !== 'standard'
     ? `\n- Include a "label" field on each waypoint describing what is at that location (park name, landmark name, street name, etc.)`
     : '';
@@ -71,7 +69,10 @@ function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, dist
 Starting point: ${lat}, ${lng} (${cityName})
 Desired distance: ${distanceKm} km
 
-GEOGRAPHIC ANALYSIS: First, identify what specific geographic area these coordinates are on — are they on an island, peninsula, near a lake, river, or coast? Name the specific neighborhood or district. Then use that knowledge to plan the optimal route shape.${poiSection}
+${island && island.perimeterKm > 0 ? `ISLAND DETECTED: You are on ${island.name} (perimeter: ${island.perimeterKm.toFixed(1)} km). Here are outline coordinates of the island shoreline — use these to place waypoints ALONG the actual shoreline:
+${island.outline.map((p, i) => `${i}: ${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`).join('\n')}
+
+${Math.abs(distanceKm - island.perimeterKm) / island.perimeterKm < 0.3 && scenicMode === 'standard' ? `The requested distance (${distanceKm}km) closely matches the island perimeter (${island.perimeterKm.toFixed(1)}km). STRONGLY RECOMMENDED: Create a route that follows the island shoreline all the way around. Place waypoints along the outline coordinates above. Go counter-clockwise.` : `The requested distance (${distanceKm}km) does NOT match the island perimeter (${island.perimeterKm.toFixed(1)}km). Use the shoreline for the most scenic sections but do not try to go all the way around.`}` : `GEOGRAPHIC ANALYSIS: Identify what geographic features exist at these coordinates — island, peninsula, lake, river, coast, or large park. Use that knowledge to plan the optimal route shape.`}${poiSection}
 
 Requirements:
 - The route must START and END at the starting point coordinates
@@ -195,7 +196,7 @@ function parseWaypoints(response: string): RouteWaypoint[] {
 export async function generateRouteWaypoints(req: AIRouteRequest): Promise<RouteWaypoint[]> {
   const { lat, lng, distanceKm, cityName, settings } = req;
 
-  const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints);
+  const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints, req.island);
 
   let response: string;
   if (settings.apiProvider === 'perplexity' && settings.apiKey) {

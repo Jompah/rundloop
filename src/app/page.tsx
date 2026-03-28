@@ -285,6 +285,7 @@ export default function Home() {
     if (!userLocation) return;
     setIsLoading(true);
     setError(null);
+    let usedFallback = false;
 
     const MAX_ITERATIONS = 3; // Fewer iterations = faster generation with tight initial bounds
     const TOLERANCE_UNDER = 0.15; // Accept routes up to 15% shorter than target
@@ -302,9 +303,9 @@ export default function Home() {
       const settings = await getSettings();
       const paceSecondsPerKm = settings.paceSecondsPerKm ?? 360;
 
-      // Fetch nature POIs for Nature mode (before route generation)
+      // Fetch nearby POIs for AI mode (before route generation)
       let naturePOIs: NaturePOI[] = [];
-      if (scenicMode === 'nature' && routeMode === 'ai') {
+      if (routeMode === 'ai') {
         try {
           const poiRes = await fetch(`/api/pois?lat=${startLat}&lng=${startLng}&radius=${Math.round(distance * 500)}`);
           if (poiRes.ok) {
@@ -316,8 +317,21 @@ export default function Home() {
         }
       }
 
-      if (scenicMode === 'nature' && routeMode === 'ai' && naturePOIs.length < 2) {
-        console.log('Fewer than 2 nature POIs found, using AI-only routing');
+      // Fetch island outline for geographic context
+      let islandData: { name: string; perimeterKm: number; outline: { lat: number; lng: number }[] } | null = null;
+      if (routeMode === 'ai') {
+        try {
+          const islandRes = await fetch(`/api/island-outline?lat=${startLat}&lng=${startLng}`);
+          if (islandRes.ok) {
+            const data = await islandRes.json();
+            islandData = data.island || null;
+            if (islandData) {
+              console.log(`[route] Island detected: ${islandData.name} (${islandData.perimeterKm.toFixed(1)}km perimeter)`);
+            }
+          }
+        } catch (e) {
+          console.warn('Island detection failed:', e);
+        }
       }
 
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -326,7 +340,13 @@ export default function Home() {
         if (routeMode === 'algorithmic') {
           initialWaypoints = await generateRouteAlgorithmic(startLat, startLng, distance);
         } else {
-          initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined });
+          try {
+            initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined, island: islandData });
+          } catch (aiError) {
+            console.warn('AI route generation failed, using algorithmic fallback:', aiError);
+            initialWaypoints = await generateRouteAlgorithmic(startLat, startLng, distance);
+            usedFallback = true;
+          }
         }
 
         // Snap waypoints to 4 decimal places (~11m precision).
@@ -534,6 +554,9 @@ export default function Home() {
         }
 
         setRoute(generatedRoute);
+        if (usedFallback) {
+          setError(t('route.aiFallback'));
+        }
         setView('map');
       }
     } catch (err: any) {
