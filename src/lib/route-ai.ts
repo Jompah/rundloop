@@ -18,17 +18,17 @@ interface AIRouteRequest {
 }
 
 // Shared rules applied to ALL scenic modes — anti-detour, waypoint placement, and loop quality
-const SHARED_ROUTE_RULES = `- ABSOLUTELY NO DETOURS: NEVER create dead-end detours. Every waypoint must be on the THROUGH-route. The runner moves FORWARD continuously, never doubling back. If a waypoint forces the runner down a side street and back, it is FORBIDDEN.
-- Place waypoints ONLY on streets that naturally connect to the next waypoint without retracing. Each waypoint flows into the next in one direction.
-- WAYPOINT PLACEMENT: Place waypoints at TURNING POINTS only — where the route changes direction. Do NOT place waypoints along straight stretches.
-- ALWAYS CREATE A LOOP: The route must form a closed loop back to start. NEVER create out-and-back routes where the runner retraces the same path. A loop is always better than doubling back, even if it means a slightly different distance.
-- STARTING POINT IS FIXED: Build the best possible loop from the given start coordinates. NEVER suggest moving the start elsewhere.
-- GEOGRAPHIC FEATURE ASSESSMENT: If the start is near a geographic feature (island, lake, peninsula, river, large park), assess whether its perimeter is actually runnable — look for paved paths, promenades, or trails. Skip sections with highways along the shore, industrial waterfronts, or fenced-off areas. Only commit to a perimeter route when the feature is runnable AND the requested distance is within ~30% of the runnable perimeter length. For much shorter distances, use only the best nearby section. For much longer distances, incorporate the feature as part of a larger loop.
-- WATERFRONT PREFERENCE: When waterfront paths, coastal trails, or lakeside promenades exist near the start, incorporate them into the route. Runners strongly prefer water views over city blocks.
-- DIRECTION: Default to counter-clockwise loops. This feels more natural for most runners.
+const SHARED_ROUTE_RULES = `- ABSOLUTELY NO DETOURS: NEVER create dead-end detours. Every waypoint must be on the THROUGH-route. The runner moves FORWARD continuously. If a waypoint forces the runner down a side street and back, it is FORBIDDEN.
+- ROUTE SHAPE BY DISTANCE: For short runs (under 7km), create an elongated oval or lollipop shape — follow one scenic path outward, then return via a parallel route. The farthest waypoint should be about 40% of the total distance from start. For longer runs (7km+), create a proper loop.
+- COMPACTNESS: Keep the route compact. For a 5km run, all waypoints should be within ~2km of start. For 10km, within ~3km. Do NOT spread waypoints across a wide area — this creates overly long routes when the road router connects them.
+- FEW WAYPOINTS, LONG STRETCHES: Place waypoints only at major turns. Runners follow continuous paths for long stretches — aim for roughly 1-2 direction changes per km. Let the route follow one path for 500m+ between turns.
+- STARTING POINT IS FIXED: Build the best possible route from the given start coordinates.
+- GEOGRAPHIC FEATURE ASSESSMENT: If the start is near a geographic feature (island, lake, peninsula, river, large park), assess whether its perimeter is actually runnable. Only commit to a perimeter route when the feature is runnable AND the requested distance is within ~30% of the perimeter length.
+- WATERFRONT PREFERENCE: When waterfront paths, coastal trails, or lakeside promenades exist near the start, incorporate them. Runners strongly prefer water views over city blocks.
+- DIRECTION: Default to counter-clockwise.
 - Prefer CONTINUOUS paths (waterfront promenades, park trails, ring roads) over zig-zag patterns through city blocks.
-- It is MUCH better to be 10-15% shorter than the target distance than to add side-street detours to hit exact distance.
-- Round all coordinates to 4 decimal places (e.g. 59.3251).`;
+- It is MUCH better to be 10-15% shorter than the target distance than to add detours to hit exact distance.
+- Round all coordinates to 4 decimal places.`;
 
 const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
   standard: `${SHARED_ROUTE_RULES}
@@ -37,7 +37,7 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - Include notable landmarks and popular sights that fall naturally along the route — never as side trips.
 - Prefer parks, waterfront paths, pedestrian areas, and quiet streets over busy roads.
 - Avoid highways, industrial areas, and roads without sidewalks.
-- Spread waypoints across different compass directions from the start to create a varied loop.`,
+- Keep waypoints close to the start — a compact, enjoyable route beats a spread-out one.`,
   nature: `${SHARED_ROUTE_RULES}
 - ROUTE STRATEGY: Maximize time on green and blue paths. Prioritize waterfront promenades, park trails, river paths, canal towpaths, and tree-lined corridors. Only leave nature when no connected green/blue path exists.
 - TERRAIN ASSESSMENT: Before committing to a waterfront or shoreline route, consider whether that section has a runnable path (trail, promenade, boardwalk). Skip sections with highways along the shore, industrial waterfronts, or fenced-off areas — route through the nearest park or green corridor instead.
@@ -46,7 +46,7 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - For shorter distances than a full perimeter, pick the most scenic continuous shoreline or park section nearest the start.
 - Prefer unpaved trails and park paths when available.
 - Avoid highways, industrial areas, busy roads, and commercial districts.
-- Spread waypoints to maximize green and water coverage.`,
+- Follow the best continuous green/blue path rather than hopping between scattered parks.`,
   explore: `${SHARED_ROUTE_RULES}
 - ROUTE STRATEGY: Create a sightseeing loop passing the top 3-5 most iconic landmarks and attractions near the start. Geographic features (waterfronts, bridges, viewpoints) are valuable when they connect landmarks, not as goals in themselves.
 - Connect landmarks in a logical geographic loop — not a zigzag. The route should feel like a guided city tour at running pace.
@@ -54,7 +54,7 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - Include famous squares, bridges, cathedrals, palaces, museums, stadiums, and cultural landmarks.
 - Embrace lively pedestrian streets and historic quarters. Avoid highways and industrial areas.
 - Each waypoint should showcase a DIFFERENT notable place or viewpoint.
-- Spread waypoints across different notable areas — avoid clustering around one district.`,
+- Keep landmarks within a walkable area — a focused tour beats a scattered marathon.`,
 };
 
 function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string, poiWaypoints?: NaturePOI[]): string {
@@ -77,7 +77,7 @@ Requirements:
 - The route must START and END at the starting point coordinates
 - The total distance should be approximately ${distanceKm} km
 ${SCENIC_INSTRUCTIONS[scenicMode]}
-- Generate ${distanceKm < 10 ? '4-8' : '6-10'} waypoints that define the route shape (fewer waypoints = cleaner route)${labelInstruction}
+- Generate ${distanceKm < 7 ? '3-5' : '5-8'} waypoints that define the route shape (fewer waypoints = cleaner route, aim for ~1-2 turns per km)${labelInstruction}
 - Place waypoints ONLY at major intersections or along main roads, never on residential dead-end streets
 - NEVER generate waypoints on dead-end streets or cul-de-sacs. Every waypoint must be at a through-intersection.
 - For dense historic urban areas, prefer the main walking streets and quays rather than narrow alleys
@@ -186,8 +186,8 @@ function parseWaypoints(response: string): RouteWaypoint[] {
   }
 
   return parsed.map((p: any) => ({
-    lat: parseFloat(p.lat),
-    lng: parseFloat(p.lng),
+    lat: parseFloat(p.lat ?? p.latitude),
+    lng: parseFloat(p.lng ?? p.lon ?? p.longitude),
     ...(p.label ? { label: String(p.label) } : {}),
   }));
 }

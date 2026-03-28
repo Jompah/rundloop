@@ -62,7 +62,7 @@ export default function Home() {
   const [fakeGPSLabel, setFakeGPSLabel] = useState('');
   const [showFakeMenu, setShowFakeMenu] = useState(false);
   const [selectedDistance, setSelectedDistance] = useState(5);
-  const [routeMode, setRouteMode] = useState<RouteMode>('algorithmic');
+  const [routeMode, setRouteMode] = useState<RouteMode>('ai');
   const [scenicMode, setScenicMode] = useState<ScenicMode>('standard');
   const [recoverySnapshot, setRecoverySnapshot] = useState<ActiveRunSnapshot | null>(null);
   const [showEndRunDialog, setShowEndRunDialog] = useState(false);

@@ -158,26 +158,6 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
                 ))}
               </div>
 
-              {/* Route mode toggle: Quick vs AI */}
-              <div className="flex gap-1 mb-3 bg-gray-800 rounded-xl p-1">
-                {([
-                  { value: 'algorithmic' as RouteMode, label: t('routeMode.standard') },
-                  { value: 'ai' as RouteMode, label: t('routeMode.ai') },
-                ]).map(({ value, label }) => (
-                  <button
-                    key={value}
-                    onClick={() => onModeChange?.(value)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
-                      routeMode === value
-                        ? 'bg-green-500 text-white'
-                        : 'text-gray-400 active:bg-gray-700'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
               {/* Distance: large number + preset buttons in one row */}
               <div className="flex items-center gap-3 mb-3">
                 <div className="shrink-0">
