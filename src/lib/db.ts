@@ -1,7 +1,7 @@
 import type { SavedRoute } from './storage';
 
 const DB_NAME = 'drift';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbInstance: IDBDatabase | null = null;
 
@@ -33,6 +33,11 @@ export function getDB(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains('settings')) {
         db.createObjectStore('settings', { keyPath: 'key' });
+      }
+
+      if (!db.objectStoreNames.contains('generation_logs')) {
+        const logStore = db.createObjectStore('generation_logs', { keyPath: 'id' });
+        logStore.createIndex('timestamp', 'timestamp', { unique: false });
       }
     };
 
