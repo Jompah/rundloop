@@ -212,8 +212,56 @@ function parseWaypoints(response: string): RouteWaypoint[] {
   }));
 }
 
+/**
+ * For island routes where the requested distance matches the perimeter,
+ * use the island outline points directly as waypoints instead of asking the AI.
+ * This gives much more accurate routes than Haiku can generate.
+ */
+function buildIslandLoopWaypoints(
+  lat: number, lng: number,
+  outline: { lat: number; lng: number }[],
+): RouteWaypoint[] {
+  if (outline.length < 4) return [];
+
+  // Find the outline point closest to the user's starting position
+  let closestIdx = 0;
+  let closestDist = Infinity;
+  for (let i = 0; i < outline.length; i++) {
+    const d = haversineMeters(lat, lng, outline[i].lat, outline[i].lng);
+    if (d < closestDist) {
+      closestDist = d;
+      closestIdx = i;
+    }
+  }
+
+  // Sample ~12 evenly spaced points from the outline, starting from closest
+  const numPoints = Math.min(12, outline.length);
+  const step = outline.length / numPoints;
+  const waypoints: RouteWaypoint[] = [{ lat, lng }]; // Start at user position
+
+  for (let i = 0; i < numPoints; i++) {
+    const idx = Math.round((closestIdx + i * step) % outline.length);
+    waypoints.push({ lat: outline[idx].lat, lng: outline[idx].lng });
+  }
+
+  waypoints.push({ lat, lng }); // Return to start
+  return waypoints;
+}
+
 export async function generateRouteWaypoints(req: AIRouteRequest): Promise<RouteWaypoint[]> {
   const { lat, lng, distanceKm, cityName, settings } = req;
+
+  // For island routes where distance matches perimeter, use outline directly
+  if (req.island && req.island.perimeterKm > 0 && req.island.outline.length >= 4) {
+    const ratio = Math.abs(distanceKm - req.island.perimeterKm) / req.island.perimeterKm;
+    if (ratio < 0.3 && (req.scenicMode ?? 'standard') === 'standard') {
+      console.log(`[route-ai] Using island outline directly (${req.island.name}, ${req.island.perimeterKm.toFixed(1)}km perimeter, requested ${distanceKm}km)`);
+      const islandWaypoints = buildIslandLoopWaypoints(lat, lng, req.island.outline);
+      if (islandWaypoints.length >= 4) {
+        return islandWaypoints;
+      }
+    }
+  }
 
   const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints, req.island);
 
@@ -251,12 +299,12 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
     waypoints.unshift({ lat, lng });
   }
 
-  // Densify: add intermediate points to keep OSRM on the intended path
-  const dense = densifyWaypoints(waypoints);
+  // Skip densification — it interpolates straight lines that can cross water
+  // or cut through buildings, causing OSRM to create detours. The AI waypoints
+  // at major turns are sufficient for OSRM to find good paths.
+  console.log(`[route-ai] Returning ${waypoints.length} waypoints (no densification)`);
 
-  console.log(`[route-ai] After densification: ${dense.length} waypoints (was ${waypoints.length})`);
-
-  return dense;
+  return waypoints;
 }
 
 export { generateAlgorithmicWaypoints as generateRouteAlgorithmic } from './route-algorithmic';
