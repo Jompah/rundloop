@@ -36,8 +36,6 @@ function getOrCreateRouter(name: ProviderName): RoutingEngine {
         throw new Error(`Google router not yet registered. Install the Google provider adapter.`);
       case 'mapbox':
         throw new Error(`Mapbox router not yet registered. Install the Mapbox provider adapter.`);
-      default:
-        instances.routers[name] = new OpenRouter();
     }
   }
   return instances.routers[name]!;
@@ -53,8 +51,6 @@ function getOrCreateGeocoder(name: ProviderName): Geocoder {
         throw new Error(`Google geocoder not yet registered. Install the Google provider adapter.`);
       case 'mapbox':
         throw new Error(`Mapbox geocoder not yet registered. Install the Mapbox provider adapter.`);
-      default:
-        instances.geocoders[name] = new OpenGeocoder();
     }
   }
   return instances.geocoders[name]!;
@@ -70,8 +66,6 @@ function getOrCreatePOI(name: ProviderName): POIProvider {
         throw new Error(`Google POI provider not yet registered. Install the Google provider adapter.`);
       case 'mapbox':
         throw new Error(`Mapbox POI provider not yet registered. Install the Mapbox provider adapter.`);
-      default:
-        instances.pois[name] = new OpenPOIProvider();
     }
   }
   return instances.pois[name]!;
