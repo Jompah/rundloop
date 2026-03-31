@@ -7,6 +7,7 @@ const defaultSettings: AppSettings = {
   units: 'km',
   defaultDistance: 5,
   paceSecondsPerKm: 360, // 6:00/km default running pace
+  providerBundle: 'open' as const,
   scenicMode: 'standard' as ScenicMode,
 };
 
