@@ -25,14 +25,15 @@ interface AIRouteRequest {
 }
 
 // Shared rules applied to ALL scenic modes — anti-detour, waypoint placement, and loop quality
-const SHARED_ROUTE_RULES = `- ABSOLUTELY NO DETOURS: NEVER create dead-end detours. Every waypoint must be on the THROUGH-route. The runner moves FORWARD continuously. If a waypoint forces the runner down a side street and back, it is FORBIDDEN.
+const SHARED_ROUTE_RULES = `- NO BACKTRACKING: The route must NEVER pass through the same street or path twice. Every segment must be unique. If a waypoint would force the runner to retrace their steps, it is FORBIDDEN. The route must form a clean loop with no overlapping sections.
+- ABSOLUTELY NO DETOURS: NEVER create dead-end detours. Every waypoint must be on the THROUGH-route. The runner moves FORWARD continuously. If a waypoint forces the runner down a side street and back, it is FORBIDDEN.
 - ROUTE SHAPE BY DISTANCE: For short runs (under 7km): if near a loopable waterfront or on an island, follow the waterfront for roughly half the distance then take a direct path back through parks or quiet streets. Otherwise create a compact loop. Never create lollipop or out-and-back shapes in standard mode when a half-loop is possible. For longer runs (7km+), create a proper full loop.
 - COMPACTNESS: Keep the route compact. For a 5km run, all waypoints should be within ~1.5km of start. For 10km, within ~3km. Exception: on islands where the perimeter matches the target distance, waypoints will naturally spread further. Do NOT spread waypoints across a wide area — this creates overly long routes when the road router connects them.
 - FEW WAYPOINTS, LONG STRETCHES: Place waypoints only at major turns. Runners follow continuous paths for long stretches — aim for roughly 1-2 direction changes per km. Let the route follow one path for 500m+ between turns.
 - STARTING POINT FLEXIBILITY: The first waypoint can be up to 100 meters from the given start coordinates to reach a better path (e.g., nearest waterfront promenade or park entrance). The runner will walk to the route start.
 - GEOGRAPHIC FEATURE ASSESSMENT: If the start is near a geographic feature (island, lake, peninsula, river, large park), assess whether its perimeter is actually runnable. Only commit to a perimeter route when the feature is runnable AND the requested distance is within ~30% of the perimeter length.
 - WATERFRONT PREFERENCE: When waterfront paths, coastal trails, or lakeside promenades exist near the start, incorporate them. Runners strongly prefer water views over city blocks.
-- DIRECTION: Default to counter-clockwise.
+- DIRECTION: Default to counter-clockwise. On an island, counter-clockwise means keeping the water on your LEFT side. From the south side of an island, this means going EAST first.
 - STRONGLY prefer CONTINUOUS running paths (waterfront promenades, park trails, canal paths, ring roads) over city blocks. A good running route follows established paths for long stretches — runners hate zig-zagging through residential streets. If a waterfront promenade or park trail exists, USE IT for as long as possible before turning.
 - It is MUCH better to be 5-10% shorter than the target distance than to add detours to hit exact distance. Never exceed the target by more than 10%.
 - Round all coordinates to 4 decimal places.`;
@@ -70,10 +71,27 @@ function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, dist
 Starting point: ${lat}, ${lng} (${cityName})
 Desired distance: ${distanceKm} km
 
-${island && island.perimeterKm > 0 ? (Math.abs(distanceKm - island.perimeterKm) / island.perimeterKm < 0.3 && scenicMode === 'standard' ? `ISLAND DETECTED: You are on ${island.name} (perimeter: ${island.perimeterKm.toFixed(1)} km). Here are outline coordinates of the island shoreline — use these to place waypoints ALONG the actual shoreline:
+${island && island.perimeterKm > 0 ? (() => {
+    const distMatch = Math.abs(distanceKm - island.perimeterKm) / island.perimeterKm < 0.3 && scenicMode === 'standard';
+    if (distMatch) {
+      return `ISLAND DETECTED: You are on ${island.name} (perimeter: ${island.perimeterKm.toFixed(1)} km). Here are outline coordinates of the island shoreline — use these to place waypoints ALONG the actual shoreline:
 ${island.outline.map((p, i) => `${i}: ${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`).join('\n')}
 
-The requested distance (${distanceKm}km) closely matches the island perimeter (${island.perimeterKm.toFixed(1)}km). STRONGLY RECOMMENDED: Create a route that follows the island shoreline all the way around. Place waypoints along the outline coordinates above. Go counter-clockwise.` : `You are on an island (${island.name}). Use the waterfront for scenic sections of the route, but keep the total distance close to ${distanceKm} km.`) : `GEOGRAPHIC ANALYSIS: Identify what geographic features exist at these coordinates — island, peninsula, lake, river, coast, or large park. Use that knowledge to plan the optimal route shape.`}${poiSection}
+The requested distance (${distanceKm}km) closely matches the island perimeter (${island.perimeterKm.toFixed(1)}km). STRONGLY RECOMMENDED: Create a route that follows the island shoreline all the way around. Place waypoints along the outline coordinates above. Go counter-clockwise.`;
+    } else {
+      // Sort outline points by distance from start, take nearest 10
+      const sorted = island.outline
+        .map(p => ({ ...p, dist: Math.sqrt(Math.pow(p.lat - lat, 2) + Math.pow(p.lng - lng, 2)) }))
+        .sort((a, b) => a.dist - b.dist)
+        .slice(0, 10);
+      return `ISLAND DETECTED: You are on ${island.name} (perimeter: ${island.perimeterKm.toFixed(1)} km). The requested distance (${distanceKm}km) is shorter than the full perimeter — do NOT try to go all the way around.
+
+Here are the nearest shoreline coordinates to your starting point — use these to place waypoints along the waterfront:
+${sorted.map((p, i) => `${i}: ${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`).join('\n')}
+
+STRATEGY: Follow the shoreline counter-clockwise for roughly ${(distanceKm * 0.6).toFixed(1)} km, then take a direct path back through parks or quiet streets. The route must be a clean loop with NO backtracking.`;
+    }
+  })() : `GEOGRAPHIC ANALYSIS: Identify what geographic features exist at these coordinates — island, peninsula, lake, river, coast, or large park. Use that knowledge to plan the optimal route shape.`}${poiSection}
 
 Requirements:
 - The route must START and END at the starting point coordinates
