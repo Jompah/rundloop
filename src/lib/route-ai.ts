@@ -69,10 +69,10 @@ function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, dist
 Starting point: ${lat}, ${lng} (${cityName})
 Desired distance: ${distanceKm} km
 
-${island && island.perimeterKm > 0 ? `ISLAND DETECTED: You are on ${island.name} (perimeter: ${island.perimeterKm.toFixed(1)} km). Here are outline coordinates of the island shoreline — use these to place waypoints ALONG the actual shoreline:
+${island && island.perimeterKm > 0 ? (Math.abs(distanceKm - island.perimeterKm) / island.perimeterKm < 0.3 && scenicMode === 'standard' ? `ISLAND DETECTED: You are on ${island.name} (perimeter: ${island.perimeterKm.toFixed(1)} km). Here are outline coordinates of the island shoreline — use these to place waypoints ALONG the actual shoreline:
 ${island.outline.map((p, i) => `${i}: ${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`).join('\n')}
 
-${Math.abs(distanceKm - island.perimeterKm) / island.perimeterKm < 0.3 && scenicMode === 'standard' ? `The requested distance (${distanceKm}km) closely matches the island perimeter (${island.perimeterKm.toFixed(1)}km). STRONGLY RECOMMENDED: Create a route that follows the island shoreline all the way around. Place waypoints along the outline coordinates above. Go counter-clockwise.` : `The requested distance (${distanceKm}km) does NOT match the island perimeter (${island.perimeterKm.toFixed(1)}km). Use the shoreline for the most scenic sections but do not try to go all the way around.`}` : `GEOGRAPHIC ANALYSIS: Identify what geographic features exist at these coordinates — island, peninsula, lake, river, coast, or large park. Use that knowledge to plan the optimal route shape.`}${poiSection}
+The requested distance (${distanceKm}km) closely matches the island perimeter (${island.perimeterKm.toFixed(1)}km). STRONGLY RECOMMENDED: Create a route that follows the island shoreline all the way around. Place waypoints along the outline coordinates above. Go counter-clockwise.` : `You are on an island (${island.name}). Use the waterfront for scenic sections of the route, but keep the total distance close to ${distanceKm} km.`) : `GEOGRAPHIC ANALYSIS: Identify what geographic features exist at these coordinates — island, peninsula, lake, river, coast, or large park. Use that knowledge to plan the optimal route shape.`}${poiSection}
 
 Requirements:
 - The route must START and END at the starting point coordinates
@@ -151,7 +151,7 @@ function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number)
  * that are more than `maxGapMeters` apart. This forces OSRM to follow the
  * intended path more closely (e.g. along waterfronts instead of cutting inland).
  */
-function densifyWaypoints(waypoints: RouteWaypoint[], maxGapMeters: number = 250): RouteWaypoint[] {
+function densifyWaypoints(waypoints: RouteWaypoint[], maxGapMeters: number = 600): RouteWaypoint[] {
   const result: RouteWaypoint[] = [waypoints[0]];
 
   for (let i = 1; i < waypoints.length; i++) {

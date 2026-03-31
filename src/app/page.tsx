@@ -308,7 +308,7 @@ export default function Home() {
       let naturePOIs: NaturePOI[] = [];
       if (routeMode === 'ai') {
         try {
-          const poiRes = await fetch(`/api/pois?lat=${startLat}&lng=${startLng}&radius=${Math.round(distance * 500)}`);
+          const poiRes = await fetch(`/api/pois?lat=${startLat}&lng=${startLng}&radius=${Math.round(distance * 250)}`);
           if (poiRes.ok) {
             const poiData = await poiRes.json();
             naturePOIs = (poiData.pois || []).slice(0, 8); // Max 8 POIs
@@ -459,6 +459,12 @@ export default function Home() {
           const aiSmooth = !hasExcessiveShortSegments(aiRoute.polyline);
 
           console.log(`[AI mode, attempt ${attempt + 1}] route=${aiKm.toFixed(2)}km, target=${distance}km, ratio=${aiRatio.toFixed(2)}, kvalitet=${aiQuality}/100, smooth=${aiSmooth}`);
+
+          // Distance validation: if way off target, retry with fresh waypoints
+          if ((aiKm > distance * 1.4 || aiKm < distance * 0.5) && attempt < MAX_ATTEMPTS - 1) {
+            console.warn(`[RouteGen] AI route ${aiKm.toFixed(1)}km too far from ${distance}km target, retrying...`);
+            continue;
+          }
 
           bestRoute = aiRoute;
           bestDiff = Math.abs(aiRatio - 1) + (aiSmooth ? 0 : 0.30);
