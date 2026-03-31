@@ -461,7 +461,7 @@ export default function Home() {
           console.log(`[AI mode, attempt ${attempt + 1}] route=${aiKm.toFixed(2)}km, target=${distance}km, ratio=${aiRatio.toFixed(2)}, kvalitet=${aiQuality}/100, smooth=${aiSmooth}`);
 
           // Distance validation: if way off target, retry with fresh waypoints
-          if ((aiKm > distance * 1.4 || aiKm < distance * 0.5) && attempt < MAX_ATTEMPTS - 1) {
+          if ((aiKm > distance * 1.1 || aiKm < distance * 0.85) && attempt < MAX_ATTEMPTS - 1) {
             console.warn(`[RouteGen] AI route ${aiKm.toFixed(1)}km too far from ${distance}km target, retrying...`);
             continue;
           }
