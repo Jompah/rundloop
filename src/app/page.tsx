@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/Button';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useTranslation } from '@/i18n';
 import { findIncompleteRun, clearIncompleteRun } from '@/lib/crash-recovery';
+import { initProviders } from '@/lib/providers/init';
 
 // Dynamic import MapView to avoid SSR issues with MapLibre
 const MapView = dynamic(() => import('@/components/MapView'), {
@@ -92,7 +93,7 @@ export default function Home() {
 
   // Initialize IndexedDB: migration + persistent storage
   useEffect(() => {
-    initDB();
+    initDB().then(() => initProviders());
   }, []);
 
   // Load persisted scenic mode preference

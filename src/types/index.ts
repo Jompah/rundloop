@@ -33,6 +33,14 @@ export interface AppSettings {
   defaultDistance: number; // km
   bodyWeightKg?: number;
   paceSecondsPerKm: number; // running pace in seconds per km (default 360 = 6:00/km)
+  providerBundle?: 'open' | 'google' | 'mapbox';
+  providerOverrides?: {
+    renderer?: 'open' | 'google' | 'mapbox';
+    router?: 'open' | 'google' | 'mapbox';
+    geocoder?: 'open' | 'google' | 'mapbox';
+    poi?: 'open' | 'google' | 'mapbox';
+  };
+  abTestEnabled?: boolean;
   scenicMode: ScenicMode;
 }
 
@@ -69,6 +77,9 @@ export interface CompletedRun {
   trace: FilteredPosition[];
   routeId: string | null;
   routePolyline?: [number, number][]; // [lng, lat] planned route at time of run
+  providerBundle?: string;
+  providerOverrides?: Record<string, string>;
+  generationLogId?: string;
 }
 
 export type Run = ActiveRunSnapshot | CompletedRun;

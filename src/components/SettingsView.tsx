@@ -228,6 +228,56 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           </div>
         </div>
 
+        {/* Map Provider */}
+        <div>
+          <label className="text-sm font-medium text-gray-400 block mb-2">Map Provider</label>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Provider bundle</label>
+              <select
+                value={settings.providerBundle ?? 'open'}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    providerBundle: e.target.value as 'open' | 'google' | 'mapbox',
+                  })
+                }
+                className="w-full bg-gray-800 text-white rounded-lg px-4 py-3 text-sm"
+              >
+                <option value="open">Open (OSM / MapLibre)</option>
+                <option value="google">Google Maps</option>
+                <option value="mapbox">Mapbox</option>
+              </select>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white">A/B test providers</p>
+                <p className="text-xs text-gray-500">Randomly pick an available provider each session</p>
+              </div>
+              <button
+                onClick={() =>
+                  setSettings({ ...settings, abTestEnabled: !settings.abTestEnabled })
+                }
+                className={`w-12 h-7 rounded-full transition-colors relative ${
+                  settings.abTestEnabled ? 'bg-green-500' : 'bg-gray-700'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+                    settings.abTestEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+            <div className="bg-gray-800/50 rounded-lg px-4 py-2 flex items-center justify-between">
+              <span className="text-xs text-gray-400">Active provider</span>
+              <span className="text-xs font-medium text-white">
+                {settings.abTestEnabled ? 'A/B (session-picked)' : (settings.providerBundle ?? 'open')}
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Save button */}
         <Button
           variant="primary"

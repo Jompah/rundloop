@@ -26,7 +26,7 @@ interface AIRouteRequest {
 
 // Shared rules applied to ALL scenic modes — anti-detour, waypoint placement, and loop quality
 const SHARED_ROUTE_RULES = `- ABSOLUTELY NO DETOURS: NEVER create dead-end detours. Every waypoint must be on the THROUGH-route. The runner moves FORWARD continuously. If a waypoint forces the runner down a side street and back, it is FORBIDDEN.
-- ROUTE SHAPE BY DISTANCE: For short runs (under 7km), create an elongated oval or lollipop shape — follow one scenic path outward, then return via a parallel route. The farthest waypoint should be about 40% of the total distance from start. For longer runs (7km+), create a proper loop.
+- ROUTE SHAPE BY DISTANCE: For short runs (under 7km): if near a loopable waterfront or on an island, follow the waterfront for roughly half the distance then take a direct path back through parks or quiet streets. Otherwise create a compact loop. Never create lollipop or out-and-back shapes in standard mode when a half-loop is possible. For longer runs (7km+), create a proper full loop.
 - COMPACTNESS: Keep the route compact. For a 5km run, all waypoints should be within ~2km of start. For 10km, within ~3km. Do NOT spread waypoints across a wide area — this creates overly long routes when the road router connects them.
 - FEW WAYPOINTS, LONG STRETCHES: Place waypoints only at major turns. Runners follow continuous paths for long stretches — aim for roughly 1-2 direction changes per km. Let the route follow one path for 500m+ between turns.
 - STARTING POINT IS FIXED: Build the best possible route from the given start coordinates.
