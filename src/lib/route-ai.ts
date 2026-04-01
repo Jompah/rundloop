@@ -270,6 +270,30 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
     waypoints.map((w, i) => `  ${i}: ${w.lat.toFixed(4)}, ${w.lng.toFixed(4)}${w.label ? ` (${w.label})` : ''}`).join('\n')
   );
 
+  // Snap waypoints to nearest island outline point (if island data available)
+  // This corrects AI-generated coordinates that may be in water or off-path
+  if (req.island && req.island.outline.length > 0) {
+    for (let i = 1; i < waypoints.length - 1; i++) { // Skip first/last (start point)
+      const wp = waypoints[i];
+      let nearestIdx = 0;
+      let nearestDist = Infinity;
+      for (let j = 0; j < req.island.outline.length; j++) {
+        const op = req.island.outline[j];
+        const d = haversineMeters(wp.lat, wp.lng, op.lat, op.lng);
+        if (d < nearestDist) {
+          nearestDist = d;
+          nearestIdx = j;
+        }
+      }
+      // Only snap if waypoint is within 500m of an outline point (on the island)
+      if (nearestDist < 500) {
+        const snapped = req.island.outline[nearestIdx];
+        console.log(`[route-ai] Snapped waypoint ${i} from ${wp.lat.toFixed(4)},${wp.lng.toFixed(4)} to ${snapped.lat.toFixed(4)},${snapped.lng.toFixed(4)} (${nearestDist.toFixed(0)}m)`);
+        waypoints[i] = { ...wp, lat: snapped.lat, lng: snapped.lng };
+      }
+    }
+  }
+
   // Ensure the route is closed (first and last point match start)
   const first = waypoints[0];
   const last = waypoints[waypoints.length - 1];
@@ -289,11 +313,48 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
     waypoints.unshift({ lat, lng });
   }
 
-  // Skip densification — it interpolates straight lines that can cross water
-  // or cut through buildings, causing OSRM to create detours. The AI waypoints
-  // at major turns are sufficient for OSRM to find good paths.
-  console.log(`[route-ai] Returning ${waypoints.length} waypoints (no densification)`);
+  // For island routes: insert additional outline points between consecutive waypoints
+  // to keep OSRM on the shoreline path instead of cutting through the island
+  if (req.island && req.island.outline.length > 0) {
+    const distMatch = Math.abs(distanceKm - req.island.perimeterKm) / req.island.perimeterKm < 0.3;
+    if (distMatch) {
+      const outline = req.island.outline;
+      const enriched: RouteWaypoint[] = [waypoints[0]];
 
+      for (let i = 1; i < waypoints.length; i++) {
+        const prev = waypoints[i - 1];
+        const curr = waypoints[i];
+        const gap = haversineMeters(prev.lat, prev.lng, curr.lat, curr.lng);
+
+        // If gap > 400m, insert outline points between them
+        if (gap > 400) {
+          // Find outline indices closest to prev and curr
+          const prevIdx = outline.reduce((best, p, idx) =>
+            haversineMeters(prev.lat, prev.lng, p.lat, p.lng) < haversineMeters(prev.lat, prev.lng, outline[best].lat, outline[best].lng) ? idx : best, 0);
+          const currIdx = outline.reduce((best, p, idx) =>
+            haversineMeters(curr.lat, curr.lng, p.lat, p.lng) < haversineMeters(curr.lat, curr.lng, outline[best].lat, outline[best].lng) ? idx : best, 0);
+
+          // Walk from prevIdx to currIdx along outline (shortest direction)
+          const len = outline.length;
+          const fwd = (currIdx - prevIdx + len) % len;
+          const bwd = (prevIdx - currIdx + len) % len;
+          const step = fwd <= bwd ? 1 : -1;
+          const count = Math.min(fwd, bwd);
+
+          for (let s = 1; s < count; s++) {
+            const idx = (prevIdx + s * step + len) % len;
+            enriched.push({ lat: outline[idx].lat, lng: outline[idx].lng });
+          }
+        }
+        enriched.push(curr);
+      }
+
+      console.log(`[route-ai] Enriched island route: ${enriched.length} waypoints (was ${waypoints.length})`);
+      return enriched;
+    }
+  }
+
+  console.log(`[route-ai] Returning ${waypoints.length} waypoints`);
   return waypoints;
 }
 
