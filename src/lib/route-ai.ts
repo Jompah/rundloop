@@ -270,30 +270,6 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
     waypoints.map((w, i) => `  ${i}: ${w.lat.toFixed(4)}, ${w.lng.toFixed(4)}${w.label ? ` (${w.label})` : ''}`).join('\n')
   );
 
-  // Snap waypoints to nearest island outline point (if island data available)
-  // This corrects AI-generated coordinates that may be in water or off-path
-  if (req.island && req.island.outline.length > 0) {
-    for (let i = 1; i < waypoints.length - 1; i++) { // Skip first/last (start point)
-      const wp = waypoints[i];
-      let nearestIdx = 0;
-      let nearestDist = Infinity;
-      for (let j = 0; j < req.island.outline.length; j++) {
-        const op = req.island.outline[j];
-        const d = haversineMeters(wp.lat, wp.lng, op.lat, op.lng);
-        if (d < nearestDist) {
-          nearestDist = d;
-          nearestIdx = j;
-        }
-      }
-      // Only snap if waypoint is within 500m of an outline point (on the island)
-      if (nearestDist < 500) {
-        const snapped = req.island.outline[nearestIdx];
-        console.log(`[route-ai] Snapped waypoint ${i} from ${wp.lat.toFixed(4)},${wp.lng.toFixed(4)} to ${snapped.lat.toFixed(4)},${snapped.lng.toFixed(4)} (${nearestDist.toFixed(0)}m)`);
-        waypoints[i] = { ...wp, lat: snapped.lat, lng: snapped.lng };
-      }
-    }
-  }
-
   // Ensure the route is closed (first and last point match start)
   const first = waypoints[0];
   const last = waypoints[waypoints.length - 1];
