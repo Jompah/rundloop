@@ -45,20 +45,6 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           <LanguageSwitcher />
         </div>
 
-        {/* AI info */}
-        <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(34 197 94)" strokeWidth="2.5">
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">{t('settings.claudeSubscription')}</p>
-              <p className="text-xs text-gray-400">{t('settings.noApiKeyNeeded')}</p>
-            </div>
-          </div>
-        </div>
 
         {/* Voice */}
         <div className="flex items-center justify-between">
