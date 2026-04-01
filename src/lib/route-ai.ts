@@ -73,22 +73,24 @@ Desired distance: ${distanceKm} km
 ${island && island.perimeterKm > 0 ? (() => {
     const distMatch = Math.abs(distanceKm - island.perimeterKm) / island.perimeterKm < 0.3 && scenicMode === 'standard';
     if (distMatch) {
-      return `ISLAND DETECTED: You are on ${island.name} (perimeter: ${island.perimeterKm.toFixed(1)} km). Here are outline coordinates of the island shoreline — use these to place waypoints ALONG the actual shoreline:
+      return `ISLAND DETECTED: You are on ${island.name} (perimeter: ${island.perimeterKm.toFixed(1)} km).
+
+IMPORTANT: Here are the EXACT shoreline coordinates. You MUST pick your waypoints from this list — do NOT invent coordinates. These are verified positions on runnable paths:
 ${island.outline.map((p, i) => `${i}: ${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`).join('\n')}
 
-The requested distance (${distanceKm}km) closely matches the island perimeter (${island.perimeterKm.toFixed(1)}km). STRONGLY RECOMMENDED: Create a route that follows the island shoreline all the way around. Place waypoints along the outline coordinates above. Go counter-clockwise.`;
+The requested distance (${distanceKm}km) closely matches the island perimeter (${island.perimeterKm.toFixed(1)}km). Create a route that follows the shoreline all the way around by selecting 6-8 evenly spaced points from the list above.`;
     } else {
       // Sort outline points by distance from start, take nearest 10
       const sorted = island.outline
         .map(p => ({ ...p, dist: Math.sqrt(Math.pow(p.lat - lat, 2) + Math.pow(p.lng - lng, 2)) }))
         .sort((a, b) => a.dist - b.dist)
         .slice(0, 10);
-      return `ISLAND DETECTED: You are on ${island.name} (perimeter: ${island.perimeterKm.toFixed(1)} km). The requested distance (${distanceKm}km) is shorter than the full perimeter — do NOT try to go all the way around.
+      return `ISLAND DETECTED: You are on ${island.name} (perimeter: ${island.perimeterKm.toFixed(1)} km). The requested distance (${distanceKm}km) is shorter than the full perimeter — do NOT go all the way around.
 
-Here are the nearest shoreline coordinates to your starting point — use these to place waypoints along the waterfront:
+IMPORTANT: Here are verified shoreline coordinates near your start. You MUST pick waterfront waypoints from this list — do NOT invent coordinates:
 ${sorted.map((p, i) => `${i}: ${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`).join('\n')}
 
-STRATEGY: Follow the shoreline counter-clockwise for roughly ${(distanceKm * 0.6).toFixed(1)} km, then take a direct path back through parks or quiet streets. The route must be a clean loop with NO backtracking.`;
+STRATEGY: Pick 2-3 consecutive shoreline points from the list above (following the waterfront for ~${(distanceKm * 0.6).toFixed(1)} km), then cut back inland through parks or quiet streets to return to start.`;
     }
   })() : `GEOGRAPHIC ANALYSIS: Identify what geographic features exist at these coordinates — island, peninsula, lake, river, coast, or large park. Use that knowledge to plan the optimal route shape.`}${poiSection}
 
