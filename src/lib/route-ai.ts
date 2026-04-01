@@ -25,7 +25,7 @@ interface AIRouteRequest {
 }
 
 // Shared rules applied to ALL scenic modes — anti-detour, waypoint placement, and loop quality
-const SHARED_ROUTE_RULES = `- NO BACKTRACKING: The route must NEVER pass through the same street or path twice. Every segment must be unique. If a waypoint would force the runner to retrace their steps, it is FORBIDDEN. The route must form a clean loop with no overlapping sections.
+const SHARED_ROUTE_RULES = `- MINIMIZE BACKTRACKING: Prefer routes that don't repeat the same street. However, out-and-back along a scenic path (e.g., a beach promenade or waterfront) is acceptable when it's the best option.
 - ABSOLUTELY NO DETOURS: NEVER create dead-end detours. Every waypoint must be on the THROUGH-route. The runner moves FORWARD continuously. If a waypoint forces the runner down a side street and back, it is FORBIDDEN.
 - ROUTE SHAPE BY DISTANCE: For short runs (under 7km): if near a loopable waterfront or on an island, follow the waterfront for roughly half the distance then take a direct path back through parks or quiet streets. Otherwise create a compact loop. Never create lollipop or out-and-back shapes in standard mode when a half-loop is possible. For longer runs (7km+), create a proper full loop.
 - COMPACTNESS: Keep the route compact. For a 5km run, all waypoints should be within ~1.5km of start. For 10km, within ~3km. Exception: on islands where the perimeter matches the target distance, waypoints will naturally spread further. Do NOT spread waypoints across a wide area — this creates overly long routes when the road router connects them.
@@ -33,7 +33,6 @@ const SHARED_ROUTE_RULES = `- NO BACKTRACKING: The route must NEVER pass through
 - STARTING POINT FLEXIBILITY: The first waypoint can be up to 100 meters from the given start coordinates to reach a better path (e.g., nearest waterfront promenade or park entrance). The runner will walk to the route start.
 - GEOGRAPHIC FEATURE ASSESSMENT: If the start is near a geographic feature (island, lake, peninsula, river, large park), assess whether its perimeter is actually runnable. Only commit to a perimeter route when the feature is runnable AND the requested distance is within ~30% of the perimeter length.
 - WATERFRONT PREFERENCE: When waterfront paths, coastal trails, or lakeside promenades exist near the start, incorporate them. Runners strongly prefer water views over city blocks.
-- DIRECTION: Default to counter-clockwise. On an island, counter-clockwise means keeping the water on your LEFT side. From the south side of an island, this means going EAST first.
 - STRONGLY prefer CONTINUOUS running paths (waterfront promenades, park trails, canal paths, ring roads) over city blocks. A good running route follows established paths for long stretches — runners hate zig-zagging through residential streets. If a waterfront promenade or park trail exists, USE IT for as long as possible before turning.
 - It is MUCH better to be 5-10% shorter than the target distance than to add detours to hit exact distance. Never exceed the target by more than 10%.
 - Round all coordinates to 4 decimal places.`;
@@ -96,6 +95,7 @@ STRATEGY: Follow the shoreline counter-clockwise for roughly ${(distanceKm * 0.6
 Requirements:
 - The route must START and END at the starting point coordinates
 - The total distance should be approximately ${distanceKm} km
+- DIRECTION: ${Math.random() < 0.8 ? 'Go counter-clockwise. On an island, this means keeping the water on your LEFT side.' : 'Go clockwise. On an island, this means keeping the water on your RIGHT side.'}
 ${SCENIC_INSTRUCTIONS[scenicMode]}
 - Generate ${distanceKm < 7 ? '3-5' : '5-8'} waypoints that define the route shape (fewer waypoints = cleaner route, aim for ~1-2 turns per km)${labelInstruction}
 - Place waypoints ONLY at major intersections or along main roads, never on residential dead-end streets
@@ -212,56 +212,8 @@ function parseWaypoints(response: string): RouteWaypoint[] {
   }));
 }
 
-/**
- * For island routes where the requested distance matches the perimeter,
- * use the island outline points directly as waypoints instead of asking the AI.
- * This gives much more accurate routes than Haiku can generate.
- */
-function buildIslandLoopWaypoints(
-  lat: number, lng: number,
-  outline: { lat: number; lng: number }[],
-): RouteWaypoint[] {
-  if (outline.length < 4) return [];
-
-  // Find the outline point closest to the user's starting position
-  let closestIdx = 0;
-  let closestDist = Infinity;
-  for (let i = 0; i < outline.length; i++) {
-    const d = haversineMeters(lat, lng, outline[i].lat, outline[i].lng);
-    if (d < closestDist) {
-      closestDist = d;
-      closestIdx = i;
-    }
-  }
-
-  // Sample ~12 evenly spaced points from the outline, starting from closest
-  const numPoints = Math.min(12, outline.length);
-  const step = outline.length / numPoints;
-  const waypoints: RouteWaypoint[] = [{ lat, lng }]; // Start at user position
-
-  for (let i = 0; i < numPoints; i++) {
-    const idx = Math.round((closestIdx + i * step) % outline.length);
-    waypoints.push({ lat: outline[idx].lat, lng: outline[idx].lng });
-  }
-
-  waypoints.push({ lat, lng }); // Return to start
-  return waypoints;
-}
-
 export async function generateRouteWaypoints(req: AIRouteRequest): Promise<RouteWaypoint[]> {
   const { lat, lng, distanceKm, cityName, settings } = req;
-
-  // For island routes where distance matches perimeter, use outline directly
-  if (req.island && req.island.perimeterKm > 0 && req.island.outline.length >= 4) {
-    const ratio = Math.abs(distanceKm - req.island.perimeterKm) / req.island.perimeterKm;
-    if (ratio < 0.3 && (req.scenicMode ?? 'standard') === 'standard') {
-      console.log(`[route-ai] Using island outline directly (${req.island.name}, ${req.island.perimeterKm.toFixed(1)}km perimeter, requested ${distanceKm}km)`);
-      const islandWaypoints = buildIslandLoopWaypoints(lat, lng, req.island.outline);
-      if (islandWaypoints.length >= 4) {
-        return islandWaypoints;
-      }
-    }
-  }
 
   const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints, req.island);
 

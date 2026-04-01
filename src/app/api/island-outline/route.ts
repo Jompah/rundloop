@@ -54,6 +54,20 @@ function centroid(points: LatLng[]): LatLng {
   return { lat: sum.lat / points.length, lng: sum.lng / points.length };
 }
 
+// Move points slightly inland to ensure they're on routable roads
+function moveInland(points: LatLng[], meters: number = 30): LatLng[] {
+  const cent = centroid(points);
+  return points.map(p => {
+    const dist = haversineDistance(p, cent);
+    if (dist < meters / 1000) return p; // Already near center (haversineDistance returns km)
+    const ratio = (meters / 1000) / dist;
+    return {
+      lat: p.lat + (cent.lat - p.lat) * ratio,
+      lng: p.lng + (cent.lng - p.lng) * ratio,
+    };
+  });
+}
+
 function samplePoints(points: LatLng[], maxPoints: number): LatLng[] {
   if (points.length <= maxPoints) return points;
   const step = points.length / maxPoints;
@@ -107,7 +121,7 @@ async function fetchIslands(lat: number, lng: number): Promise<IslandResult | nu
       const outline = samplePoints(geometry, 30);
       const name = el.tags?.name || 'Unknown island';
 
-      closest = { name, perimeterKm, outline };
+      closest = { name, perimeterKm, outline: moveInland(outline) };
     }
   }
 

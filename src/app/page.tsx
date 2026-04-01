@@ -287,10 +287,11 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     let usedFallback = false;
+    let aiErrorMessage = '';
 
     const MAX_ITERATIONS = 3; // Fewer iterations = faster generation with tight initial bounds
-    const TOLERANCE_UNDER = 0.15; // Accept routes up to 15% shorter than target
-    const TOLERANCE_OVER = 0.05;  // Accept routes up to 5% longer (asymmetric -- slightly short > detour-heavy long)
+    const TOLERANCE_UNDER = 0.10; // Accept routes up to 10% shorter than target
+    const TOLERANCE_OVER = 0.10;  // Accept routes up to 10% longer than target
     const MAX_ATTEMPTS = 2; // Retry with different initial waypoints to handle OSRM non-monotonicity
     const startLat = userLocation[1]; // userLocation is [lng, lat]
     const startLng = userLocation[0];
@@ -343,8 +344,9 @@ export default function Home() {
         } else {
           try {
             initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined, island: islandData });
-          } catch (aiError) {
+          } catch (aiError: any) {
             console.warn('AI route generation failed, using algorithmic fallback:', aiError);
+            aiErrorMessage = aiError?.message || 'unknown error';
             initialWaypoints = await generateRouteAlgorithmic(startLat, startLng, distance);
             usedFallback = true;
           }
@@ -461,7 +463,7 @@ export default function Home() {
           console.log(`[AI mode, attempt ${attempt + 1}] route=${aiKm.toFixed(2)}km, target=${distance}km, ratio=${aiRatio.toFixed(2)}, kvalitet=${aiQuality}/100, smooth=${aiSmooth}`);
 
           // Distance validation: if way off target, retry with fresh waypoints
-          if ((aiKm > distance * 1.1 || aiKm < distance * 0.85) && attempt < MAX_ATTEMPTS - 1) {
+          if ((aiKm > distance * 1.1 || aiKm < distance * 0.9) && attempt < MAX_ATTEMPTS - 1) {
             console.warn(`[RouteGen] AI route ${aiKm.toFixed(1)}km too far from ${distance}km target, retrying...`);
             continue;
           }
@@ -498,12 +500,11 @@ export default function Home() {
           }
         }
 
-        // Street deduplication quality check
+        // Street deduplication: log but don't reject (backtracking along scenic paths is acceptable)
         if (bestRoute) {
           const dupAnalysis = analyzeStreetDuplication(bestRoute.instructions)
           if (shouldRejectRoute(dupAnalysis)) {
-            console.log(`[Attempt ${attempt + 1}] ${(dupAnalysis.duplicationRate * 100).toFixed(0)}% duplicate streets (${dupAnalysis.nonConsecutiveDuplicates.join(', ')}), retrying...`)
-            continue // Skip to next attempt
+            console.log(`[Attempt ${attempt + 1}] ${(dupAnalysis.duplicationRate * 100).toFixed(0)}% duplicate streets (${dupAnalysis.nonConsecutiveDuplicates.join(', ')}), accepting anyway`)
           }
         }
 
@@ -562,7 +563,7 @@ export default function Home() {
 
         setRoute(generatedRoute);
         if (usedFallback) {
-          setError(t('route.aiFallback'));
+          setError(`AI route failed: ${aiErrorMessage || 'unknown error'}. Using simple route.`);
         }
         setView('map');
       }
