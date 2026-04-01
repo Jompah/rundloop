@@ -313,47 +313,8 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
     waypoints.unshift({ lat, lng });
   }
 
-  // For island routes: insert additional outline points between consecutive waypoints
-  // to keep OSRM on the shoreline path instead of cutting through the island
-  if (req.island && req.island.outline.length > 0) {
-    const distMatch = Math.abs(distanceKm - req.island.perimeterKm) / req.island.perimeterKm < 0.3;
-    if (distMatch) {
-      const outline = req.island.outline;
-      const enriched: RouteWaypoint[] = [waypoints[0]];
-
-      for (let i = 1; i < waypoints.length; i++) {
-        const prev = waypoints[i - 1];
-        const curr = waypoints[i];
-        const gap = haversineMeters(prev.lat, prev.lng, curr.lat, curr.lng);
-
-        // If gap > 400m, insert outline points between them
-        if (gap > 400) {
-          // Find outline indices closest to prev and curr
-          const prevIdx = outline.reduce((best, p, idx) =>
-            haversineMeters(prev.lat, prev.lng, p.lat, p.lng) < haversineMeters(prev.lat, prev.lng, outline[best].lat, outline[best].lng) ? idx : best, 0);
-          const currIdx = outline.reduce((best, p, idx) =>
-            haversineMeters(curr.lat, curr.lng, p.lat, p.lng) < haversineMeters(curr.lat, curr.lng, outline[best].lat, outline[best].lng) ? idx : best, 0);
-
-          // Walk from prevIdx to currIdx along outline (shortest direction)
-          const len = outline.length;
-          const fwd = (currIdx - prevIdx + len) % len;
-          const bwd = (prevIdx - currIdx + len) % len;
-          const step = fwd <= bwd ? 1 : -1;
-          const count = Math.min(fwd, bwd);
-
-          for (let s = 1; s < count; s++) {
-            const idx = (prevIdx + s * step + len) % len;
-            enriched.push({ lat: outline[idx].lat, lng: outline[idx].lng });
-          }
-        }
-        enriched.push(curr);
-      }
-
-      console.log(`[route-ai] Enriched island route: ${enriched.length} waypoints (was ${waypoints.length})`);
-      return enriched;
-    }
-  }
-
+  // No enrichment needed — Google Routes API follows waterfront paths correctly
+  // with just the AI waypoints. Extra waypoints cause detours.
   console.log(`[route-ai] Returning ${waypoints.length} waypoints`);
   return waypoints;
 }
