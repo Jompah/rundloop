@@ -228,6 +228,35 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
           </div>
         </div>
 
+        {/* AI Route Provider */}
+        <div>
+          <label className="text-sm font-medium text-gray-400 block mb-2">AI Route Provider</label>
+          <select
+            value={settings.apiProvider ?? 'claude'}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                apiProvider: e.target.value as AppSettings['apiProvider'],
+              })
+            }
+            className="w-full bg-gray-800 text-white rounded-lg px-4 py-3 text-sm"
+          >
+            <option value="claude">Claude Haiku (default)</option>
+            <option value="gemini">Google Gemini Flash</option>
+            <option value="minimax">Minimax 2.5</option>
+            <option value="perplexity">Perplexity (requires API key)</option>
+          </select>
+          {settings.apiProvider === 'perplexity' && (
+            <input
+              type="text"
+              placeholder="Perplexity API key"
+              value={settings.apiKey ?? ''}
+              onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })}
+              className="w-full bg-gray-800 text-white rounded-lg px-4 py-3 text-sm mt-2 placeholder-gray-500"
+            />
+          )}
+        </div>
+
         {/* Map Provider */}
         <div>
           <label className="text-sm font-medium text-gray-400 block mb-2">Map Provider</label>

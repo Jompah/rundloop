@@ -25,7 +25,7 @@ export interface TurnInstruction {
 }
 
 export interface AppSettings {
-  apiProvider?: 'claude' | 'perplexity';
+  apiProvider?: 'claude' | 'perplexity' | 'gemini' | 'minimax';
   apiKey?: string;
   voiceEnabled: boolean;
   voiceStyle: 'concise' | 'with-pace' | 'motivational';

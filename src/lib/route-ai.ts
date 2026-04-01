@@ -151,6 +151,38 @@ async function callPerplexity(prompt: string, apiKey: string): Promise<string> {
   return data.choices[0].message.content;
 }
 
+async function callGeminiRoute(prompt: string): Promise<string> {
+  const res = await fetch('/api/generate-route-gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: `Server error (${res.status})` }));
+    throw new Error(data.error || `Gemini route generation failed (${res.status})`);
+  }
+
+  const data = await res.json();
+  return data.text;
+}
+
+async function callMinimaxRoute(prompt: string): Promise<string> {
+  const res = await fetch('/api/generate-route-minimax', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: `Server error (${res.status})` }));
+    throw new Error(data.error || `Minimax route generation failed (${res.status})`);
+  }
+
+  const data = await res.json();
+  return data.text;
+}
+
 /**
  * Haversine distance between two points in meters.
  */
@@ -220,8 +252,12 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
   let response: string;
   if (settings.apiProvider === 'perplexity' && settings.apiKey) {
     response = await callPerplexity(prompt, settings.apiKey);
+  } else if (settings.apiProvider === 'gemini') {
+    response = await callGeminiRoute(prompt);
+  } else if (settings.apiProvider === 'minimax') {
+    response = await callMinimaxRoute(prompt);
   } else {
-    // Use server-side API route (API key is kept server-side)
+    // Default: Claude Haiku
     response = await callServerRoute(prompt);
   }
 
