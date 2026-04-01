@@ -21,6 +21,7 @@ import { fetchLandmarksNearRoute } from '@/lib/overpass';
 import { initDB, dbDelete, dbPut, dbGet } from '@/lib/db';
 import { generateRouteWaypoints, generateRouteAlgorithmic, NaturePOI } from '@/lib/route-ai';
 import { routeViaOSRM } from '@/lib/route-osrm';
+import { routeViaGoogle } from '@/lib/route-google';
 import { analyzeStreetDuplication, shouldRejectRoute } from '@/lib/street-dedup';
 import { assessRouteQuality, hasExcessiveShortSegments, detectDeadEndDetours } from '@/lib/route-quality';
 import { findNearbySavedRoutes, getSettings, saveSettings, haversineMeters } from '@/lib/storage';
@@ -376,7 +377,15 @@ export default function Home() {
           let highScale = 3.0;
 
           // First, route the initial waypoints to establish a baseline
-          const initialRoute = await routeViaOSRM(initialWaypoints, paceSecondsPerKm);
+          let initialRoute;
+          try {
+            initialRoute = await routeViaGoogle(initialWaypoints, paceSecondsPerKm);
+            console.log(`[RouteGen] Google Routes: ${(initialRoute.distance / 1000).toFixed(1)}km`);
+          } catch (googleErr) {
+            console.warn('[RouteGen] Google Routes failed, falling back to OSRM:', googleErr);
+            initialRoute = await routeViaOSRM(initialWaypoints, paceSecondsPerKm);
+            console.log(`[RouteGen] OSRM fallback: ${(initialRoute.distance / 1000).toFixed(1)}km`);
+          }
           const initialKm = initialRoute.distance / 1000;
           const initialRatio = initialKm / distance;
 
@@ -418,7 +427,15 @@ export default function Home() {
                 };
               });
 
-              const candidate = await routeViaOSRM(scaledWaypoints, paceSecondsPerKm);
+              let candidate;
+              try {
+                candidate = await routeViaGoogle(scaledWaypoints, paceSecondsPerKm);
+                console.log(`[RouteGen] Google Routes: ${(candidate.distance / 1000).toFixed(1)}km`);
+              } catch (googleErr) {
+                console.warn('[RouteGen] Google Routes failed, falling back to OSRM:', googleErr);
+                candidate = await routeViaOSRM(scaledWaypoints, paceSecondsPerKm);
+                console.log(`[RouteGen] OSRM fallback: ${(candidate.distance / 1000).toFixed(1)}km`);
+              }
               const actualKm = candidate.distance / 1000;
               const ratio = actualKm / distance;
               const rawDiff = Math.abs(ratio - 1);
@@ -454,7 +471,15 @@ export default function Home() {
           // AI already knows the target distance and places waypoints with geographic
           // intelligence (perimeter loops, waterfront paths, etc.). Scaling toward
           // the center would destroy these carefully placed routes.
-          const aiRoute = await routeViaOSRM(initialWaypoints, paceSecondsPerKm);
+          let aiRoute;
+          try {
+            aiRoute = await routeViaGoogle(initialWaypoints, paceSecondsPerKm);
+            console.log(`[RouteGen] Google Routes: ${(aiRoute.distance / 1000).toFixed(1)}km`);
+          } catch (googleErr) {
+            console.warn('[RouteGen] Google Routes failed, falling back to OSRM:', googleErr);
+            aiRoute = await routeViaOSRM(initialWaypoints, paceSecondsPerKm);
+            console.log(`[RouteGen] OSRM fallback: ${(aiRoute.distance / 1000).toFixed(1)}km`);
+          }
           const aiKm = aiRoute.distance / 1000;
           const aiRatio = aiKm / distance;
           const aiQuality = assessRouteQuality(aiRoute);
