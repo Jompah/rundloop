@@ -39,7 +39,15 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    const candidate = data.candidates?.[0];
+    const text = candidate?.content?.parts?.[0]?.text ?? '';
+    const finishReason = candidate?.finishReason;
+
+    if (finishReason && finishReason !== 'STOP') {
+      console.warn(`Gemini finish reason: ${finishReason} (response may be truncated)`);
+      return NextResponse.json({ error: `Gemini response truncated (${finishReason})` }, { status: 502 });
+    }
+
     return NextResponse.json({ text });
   } catch (error) {
     console.error('Gemini route generation error:', error);

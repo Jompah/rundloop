@@ -102,8 +102,8 @@ ${SCENIC_INSTRUCTIONS[scenicMode]}
 - NEVER generate waypoints on dead-end streets or cul-de-sacs. Every waypoint must be at a through-intersection.
 - For dense historic urban areas, prefer the main walking streets and quays rather than narrow alleys
 
-Return ONLY a JSON array of waypoints, no other text. Each waypoint has lat, lng, and optionally label:
-[{"lat": 59.3251, "lng": 18.0711, "label": "Kungstradgarden"}, {"lat": 59.3400, "lng": 18.0800}, ...]
+Return ONLY a raw JSON array of waypoints. No markdown, no code blocks, no backticks, no explanation. Just the JSON array directly:
+[{"lat": 59.3251, "lng": 18.0711}, {"lat": 59.3400, "lng": 18.0800}]
 
 The first and last waypoint must be the starting point.`;
 }
