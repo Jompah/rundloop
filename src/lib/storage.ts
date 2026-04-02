@@ -17,6 +17,10 @@ export interface SavedRoute {
   route: GeneratedRoute;
   city: string;
   createdAt: string;
+  verified?: boolean;
+  timesRun?: number;
+  avgAdherence?: number;
+  lastRunAt?: string;
 }
 
 export async function getSettings(): Promise<AppSettings> {
