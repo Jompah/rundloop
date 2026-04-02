@@ -189,8 +189,9 @@ export async function saveRunAnalysis(analysis: RunAnalysis): Promise<void> {
 export async function getAnalysesForRoute(
   routeId: string
 ): Promise<RunAnalysis[]> {
-  const { dbGetAllByIndex } = await import('./db');
-  return dbGetAllByIndex('run_analysis', 'by_routeId', routeId);
+  const { dbGetAll } = await import('./db');
+  const all: RunAnalysis[] = await dbGetAll('run_analysis');
+  return all.filter((a) => a.routeId === routeId);
 }
 
 /** Get all analyses near a point (scan + filter) */
