@@ -34,6 +34,8 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useTranslation } from '@/i18n';
 import { findIncompleteRun, clearIncompleteRun } from '@/lib/crash-recovery';
 import { initProviders } from '@/lib/providers/init';
+import { computeRunAnalysis, saveRunAnalysis } from '@/lib/run-analysis';
+import { updateRouteStats } from '@/lib/route-library';
 
 // Dynamic import MapView to avoid SSR issues with MapLibre
 const MapView = dynamic(() => import('@/components/MapView'), {
@@ -958,6 +960,25 @@ export default function Home() {
                 // Re-save with polyline attached
                 await dbPut('runs', completed);
               }
+
+              // Implicit feedback: analyze run quality
+              try {
+                const analysis = computeRunAnalysis(completed);
+                if (analysis) {
+                  await saveRunAnalysis(analysis);
+                  // Update CompletedRun with analysisId
+                  completed.analysisId = analysis.id;
+                  await dbPut('runs', completed);
+                  // Update route stats if route was used
+                  if (completed.routeId) {
+                    await updateRouteStats(completed.routeId, analysis);
+                  }
+                  console.log(`[Feedback] Run analyzed: ${analysis.adherence.toFixed(0)}% adherence, ${(analysis.completion * 100).toFixed(0)}% completion`);
+                }
+              } catch (err) {
+                console.warn('[Feedback] Analysis failed (non-blocking):', err);
+              }
+
               setCompletedRunData(completed);
               setShowEndRunDialog(false);
               centeringDispatch({ type: 'STOP_NAVIGATION' });
