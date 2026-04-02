@@ -22,6 +22,7 @@ interface AIRouteRequest {
   scenicMode?: ScenicMode;
   poiWaypoints?: NaturePOI[];
   island?: IslandData | null;
+  feedbackContext?: string;
 }
 
 // Shared rules applied to ALL scenic modes — anti-detour, waypoint placement, and loop quality
@@ -56,7 +57,7 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - Keep landmarks within a walkable area — a focused tour beats a scattered marathon.`,
 };
 
-function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string, poiWaypoints?: NaturePOI[], island?: IslandData | null): string {
+function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string, poiWaypoints?: NaturePOI[], island?: IslandData | null, feedbackContext?: string): string {
   const labelInstruction = scenicMode !== 'standard'
     ? `\n- Include a "label" field on each waypoint describing what is at that location (park name, landmark name, street name, etc.)`
     : '';
@@ -93,7 +94,7 @@ ${sorted.map((p, i) => `${i}: ${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`).join('\
 STRATEGY: Pick 2-3 consecutive shoreline points from the list above (following the waterfront for ~${(distanceKm * 0.6).toFixed(1)} km), then cut back inland through parks or quiet streets to return to start.`;
     }
   })() : `GEOGRAPHIC ANALYSIS: Identify what geographic features exist at these coordinates — island, peninsula, lake, river, coast, or large park. Use that knowledge to plan the optimal route shape.`}${poiSection}
-
+${feedbackContext ? `\n${feedbackContext}\n` : ''}
 Requirements:
 - The route must START and END at the starting point coordinates
 - The total distance should be approximately ${distanceKm} km
@@ -249,7 +250,7 @@ function parseWaypoints(response: string): RouteWaypoint[] {
 export async function generateRouteWaypoints(req: AIRouteRequest): Promise<RouteWaypoint[]> {
   const { lat, lng, distanceKm, cityName, settings } = req;
 
-  const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints, req.island);
+  const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints, req.island, req.feedbackContext);
 
   let response: string;
   if (settings.apiProvider === 'perplexity' && settings.apiKey) {
