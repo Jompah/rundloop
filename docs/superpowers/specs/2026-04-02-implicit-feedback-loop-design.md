@@ -22,11 +22,11 @@ After every completed run, the app computes a `RunAnalysis` object and persists 
 
 ### What is computed
 
-**Route adherence (0–100%)** — For each GPS trace point, compute the distance to the nearest point on the planned polyline (`CompletedRun.routePolyline`). Adherence = percentage of trace points within 50 m of the route. If `routePolyline` is absent (free run, no planned route), adherence is null and no analysis is created.
+**Route adherence (0–100%)** — For each GPS trace point, compute the distance to the nearest point on the planned polyline (`CompletedRun.routePolyline`). Use point-to-segment distance against each polyline segment (not point-to-nearest-vertex). If the trace has more than 200 points, downsample to every 5th point before computing (performance). Adherence = percentage of (downsampled) trace points within 50 m of the route. The 50 m threshold is hardcoded for now. If `routePolyline` is absent (free run, no planned route), adherence is null and no analysis is created.
 
-**Deviation zones** — Contiguous stretches where the runner was more than 50 m from the planned route for more than 100 m of distance. Each zone is recorded with start/end coordinates and the maximum deviation observed. These are the raw material for future prompt injection.
+**Deviation zones** — Contiguous stretches where the runner was more than 50 m from the planned route for more than 100 m of trace distance (not route distance). Each zone is recorded with start/end coordinates and the maximum deviation observed. A single trace point that falls within 50 m of the route breaks the current zone. Zones whose start/end coordinates are within 50 m of each other are merged into a single zone. These are the raw material for future prompt injection.
 
-**Completion** — `trace distance / route distance` as a 0–1 fraction. Below 0.8 is treated as an aborted run and the route is not promoted to verified (see Component 2).
+**Completion** — `trace distance / route distance` as a 0–1 fraction. Trace distance is the sum of haversine distances between consecutive GPS trace points. Route distance is `GeneratedRoute.distance` as returned by Google Routes or OSRM — it is not recomputed from the polyline. Below 0.8 is treated as an aborted run and the route is not promoted to verified (see Component 2).
 
 ### Data model
 
@@ -55,7 +55,9 @@ New IndexedDB store: `run_analysis`
 
 - `keyPath: 'id'`
 - Index on `runId` (unique)
-- Index on `routeId`
+- Index on `routeId` (not unique — multiple analyses can reference the same route)
+
+`DB_VERSION` is bumped from 2 to 3. The `run_analysis` store is created in the `onupgradeneeded` handler when upgrading from version 2 to 3.
 
 ### Existing types modified
 
@@ -139,7 +141,7 @@ When generating a new route (no library match), the AI prompt includes a short h
 
 **Deviation warnings** — Systematic deviations are zones that appear in multiple runs within 100 m of each other. If any exist within 1 km of the start point, the prompt includes: `Avoid area near [lat], [lng] (runners consistently deviate here)`.
 
-**Preferred segments** — Segments from nearby verified routes with high adherence (>=95%). Expressed as a coordinate pair with a short label: `Preferred path: [lat]→[lat] along waterfront (high adherence)`.
+**Preferred segments** — High-adherence segments from nearby verified routes. A "high-adherence segment" is a subsection of a verified route's polyline where ALL trace points were within 30 m of the route. Segments are extracted as `[startCoord, endCoord]` pairs along the polyline. Segments longer than 500 m are trimmed to the most relevant 500 m nearest the new run's start point. Expressed as a coordinate pair with a short label: `Preferred path: [lat]→[lat] along waterfront (high adherence)`.
 
 Cap at 3–5 feedback points total to avoid overloading the model.
 
@@ -193,6 +195,8 @@ CompletedRun persisted
   → update CompletedRun.analysisId
 ```
 
+`computeRunAnalysis()` returns the `RunAnalysis` object (or `null`). The caller — in `page.tsx` or `useRunSession` — is responsible for saving the analysis via `saveRunAnalysis()`, updating `CompletedRun.analysisId` via `dbPut`, and then calling `updateRouteStats()` from `route-library.ts`. This keeps the modules decoupled: `run-analysis.ts` does not import `route-library.ts`.
+
 ### Before route generation (in route generation flow)
 
 ```
@@ -203,6 +207,12 @@ User requests route
            prompt = basePrompt + feedback
            → call AI + Google Routes API as usual
 ```
+
+---
+
+## Error Handling
+
+All analysis is best-effort. If `computeRunAnalysis()` throws, or if any IndexedDB write fails, the error is caught and logged — the completed run is already persisted and must not be affected. IndexedDB errors are caught at the call site and logged to the console; they never surface to the user and never block the run-save flow. A missing or null `RunAnalysis` is a valid outcome that downstream components (Component 2 verification, Component 3 prompt injection) must handle gracefully.
 
 ---
 
