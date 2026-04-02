@@ -40,7 +40,7 @@ export function getDB(): Promise<IDBDatabase> {
         logStore.createIndex('timestamp', 'timestamp', { unique: false });
       }
 
-      if (oldVersion < 3) {
+      if (!db.objectStoreNames.contains('run_analysis')) {
         const analysisStore = db.createObjectStore('run_analysis', { keyPath: 'id' });
         analysisStore.createIndex('by_routeId', 'routeId', { unique: false });
         analysisStore.createIndex('by_runId', 'runId', { unique: false });
