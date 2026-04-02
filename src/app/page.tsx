@@ -34,6 +34,10 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useTranslation } from '@/i18n';
 import { findIncompleteRun, clearIncompleteRun } from '@/lib/crash-recovery';
 import { initProviders } from '@/lib/providers/init';
+import { computeRunAnalysis, saveRunAnalysis } from '@/lib/run-analysis';
+import { updateRouteStats } from '@/lib/route-library';
+import { checkRouteLibrary } from '@/lib/route-library';
+import { buildPromptFeedback } from '@/lib/prompt-feedback';
 
 // Dynamic import MapView to avoid SSR issues with MapLibre
 const MapView = dynamic(() => import('@/components/MapView'), {
@@ -337,6 +341,32 @@ export default function Home() {
         }
       }
 
+      // Check verified route library first
+      try {
+        const verifiedRoute = await checkRouteLibrary(startLat, startLng, distance);
+        if (verifiedRoute) {
+          console.log(`[RouteGen] Using verified route: ${verifiedRoute.name}`);
+          generatedRoute = verifiedRoute.route;
+          setRoute(generatedRoute);
+          setView('map');
+          setIsLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn('[RouteGen] Library check failed:', err);
+      }
+
+      // Build feedback context for AI
+      let feedbackContext = '';
+      try {
+        feedbackContext = await buildPromptFeedback(startLat, startLng);
+        if (feedbackContext) {
+          console.log('[RouteGen] Including historical feedback in prompt');
+        }
+      } catch (err) {
+        console.warn('[RouteGen] Feedback build failed:', err);
+      }
+
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         // Generate initial waypoints (different each time due to random rotation / AI variance)
         let initialWaypoints: RouteWaypoint[];
@@ -344,7 +374,7 @@ export default function Home() {
           initialWaypoints = await generateRouteAlgorithmic(startLat, startLng, distance);
         } else {
           try {
-            initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined, island: islandData });
+            initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined, island: islandData, feedbackContext });
           } catch (aiError: any) {
             console.warn('AI route generation failed, using algorithmic fallback:', aiError);
             aiErrorMessage = aiError?.message || 'unknown error';
@@ -958,6 +988,25 @@ export default function Home() {
                 // Re-save with polyline attached
                 await dbPut('runs', completed);
               }
+
+              // Implicit feedback: analyze run quality
+              try {
+                const analysis = computeRunAnalysis(completed);
+                if (analysis) {
+                  await saveRunAnalysis(analysis);
+                  // Update CompletedRun with analysisId
+                  completed.analysisId = analysis.id;
+                  await dbPut('runs', completed);
+                  // Update route stats if route was used
+                  if (completed.routeId) {
+                    await updateRouteStats(completed.routeId, analysis);
+                  }
+                  console.log(`[Feedback] Run analyzed: ${analysis.adherence.toFixed(0)}% adherence, ${(analysis.completion * 100).toFixed(0)}% completion`);
+                }
+              } catch (err) {
+                console.warn('[Feedback] Analysis failed (non-blocking):', err);
+              }
+
               setCompletedRunData(completed);
               setShowEndRunDialog(false);
               centeringDispatch({ type: 'STOP_NAVIGATION' });

@@ -80,6 +80,7 @@ export interface CompletedRun {
   providerBundle?: string;
   providerOverrides?: Record<string, string>;
   generationLogId?: string;
+  analysisId?: string;
 }
 
 export type Run = ActiveRunSnapshot | CompletedRun;
