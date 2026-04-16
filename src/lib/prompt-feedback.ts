@@ -1,5 +1,6 @@
 import { getAnalysesNear } from './run-analysis';
 import { getSavedRoutes, haversineMeters } from './storage';
+import type { SavedRoute } from './storage';
 import type { RunAnalysis, DeviationZone } from './run-analysis-types';
 
 /**
@@ -91,4 +92,62 @@ export async function buildPromptFeedback(
   if (lines.length === 0) return '';
 
   return `HISTORICAL FEEDBACK (from real runs near this start):\n${lines.join('\n')}`;
+}
+
+export function buildPastRoutesContext(pastRoutes: SavedRoute[]): string {
+  if (pastRoutes.length === 0) return '';
+
+  const formatRouteLine = (route: SavedRoute, index: number): string => {
+    const distanceKm = (route.route.distance / 1000).toFixed(1) + ' km';
+    const polyline = route.route.polyline;
+    const n = polyline.length;
+
+    let shape = 'point-to-point';
+    let direction = '';
+    if (n >= 2) {
+      const first = polyline[0];
+      const last = polyline[n - 1];
+      const endGap = haversineMeters(first[1], first[0], last[1], last[0]);
+      if (endGap <= 100) {
+        shape = 'loop';
+        let signedArea = 0;
+        for (let i = 0; i < n - 1; i++) {
+          const x1 = polyline[i][0];
+          const y1 = polyline[i][1];
+          const x2 = polyline[i + 1][0];
+          const y2 = polyline[i + 1][1];
+          signedArea += (x2 - x1) * (y2 + y1);
+        }
+        if (signedArea > 0) direction = ', CW direction';
+        else if (signedArea < 0) direction = ', CCW direction';
+      } else {
+        shape = 'out-and-back';
+      }
+    }
+
+    const times = route.timesRun ?? 1;
+    const timesStr = `ran ${times} time${times === 1 ? '' : 's'}`;
+
+    const waypointParts: string[] = [];
+    if (n >= 1) {
+      const rawIndices = [0, Math.floor(n / 2), n - 1];
+      const indices: number[] = [];
+      for (const idx of rawIndices) {
+        if (!indices.includes(idx)) indices.push(idx);
+      }
+      for (const idx of indices) {
+        const point = polyline[idx];
+        waypointParts.push(`(${point[1].toFixed(4)},${point[0].toFixed(4)})`);
+      }
+    }
+    const waypointStr = waypointParts.length > 0
+      ? ` Key waypoints (lat,lng): ${waypointParts.join(', ')}`
+      : '';
+
+    return `- Route ${index + 1}: ${distanceKm} ${shape}, ${timesStr}${direction}.${waypointStr}`;
+  };
+
+  const bullets = pastRoutes.map((r, i) => formatRouteLine(r, i)).join('\n');
+
+  return `The user has previously run these routes from this area:\n${bullets}\nGenerate a NEW route of the requested distance that matches the CHARACTER of these routes (direction if looped, general area coverage, preferred landmarks) but is not identical. Prefer streets and waypoints near those above so the runner feels at home.`;
 }

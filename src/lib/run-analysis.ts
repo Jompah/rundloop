@@ -1,5 +1,6 @@
 import type { DeviationZone, RunAnalysis } from './run-analysis-types';
 import type { CompletedRun, FilteredPosition } from '@/types';
+import { haversineMeters as haversineMetersLL } from './storage';
 
 /** Haversine distance in meters between two [lat, lng] points */
 function haversineMeters(
@@ -158,6 +159,7 @@ export function computeCompletion(
  */
 export function computeRunAnalysis(run: CompletedRun): RunAnalysis | null {
   if (!run.routePolyline || run.routePolyline.length < 2) return null;
+  if (run.trace.length < 1) return null;
 
   const { adherence, deviationZones } = computeAdherence(
     run.trace,
@@ -172,6 +174,7 @@ export function computeRunAnalysis(run: CompletedRun): RunAnalysis | null {
     id: `ra-${run.id}-${Date.now()}`,
     runId: run.id,
     routeId: run.routeId ?? null,
+    startCoord: [run.trace[0].lat, run.trace[0].lng],
     adherence,
     deviationZones,
     completion,
@@ -183,6 +186,7 @@ export function computeRunAnalysis(run: CompletedRun): RunAnalysis | null {
 export async function saveRunAnalysis(analysis: RunAnalysis): Promise<void> {
   const { dbPut } = await import('./db');
   await dbPut('run_analysis', analysis);
+  import('@/lib/supabase/sync').then(({ syncAnalysis }) => syncAnalysis(analysis)).catch(() => {});
 }
 
 /** Get all analyses for a specific route */
@@ -203,9 +207,7 @@ export async function getAnalysesNear(
   const { dbGetAll } = await import('./db');
   const all: RunAnalysis[] = await dbGetAll('run_analysis');
   return all.filter((a) => {
-    if (a.deviationZones.length === 0) return false;
-    // Use first deviation zone start as proxy for location
-    // TODO: store start coord on RunAnalysis for better spatial queries
-    return true; // For now return all — Task 4 refines this
+    if (!a.startCoord) return false;
+    return haversineMetersLL(lat, lng, a.startCoord[0], a.startCoord[1]) <= radiusM;
   });
 }

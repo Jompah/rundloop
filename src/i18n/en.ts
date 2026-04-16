@@ -167,6 +167,19 @@ const en = {
 
   // Offline
   'offline.message': 'You are offline',
+
+  // Auth
+  'auth.title': 'Sign in to Drift',
+  'auth.subtitle': 'Save your runs and routes across devices',
+  'auth.emailPlaceholder': 'Email address',
+  'auth.sendLink': 'Send magic link',
+  'auth.sending': 'Sending...',
+  'auth.checkEmail': 'Check your email!',
+  'auth.checkEmailHint': 'We sent a sign-in link to {email}',
+  'auth.tryAgain': 'Try another email',
+  'auth.error': 'Could not send the link. Try again.',
+  'auth.signOut': 'Sign out',
+  'auth.skipForNow': 'Skip for now',
 } as const;
 
 export type TranslationKey = keyof typeof en;

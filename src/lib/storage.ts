@@ -59,11 +59,13 @@ export async function saveRoute(route: GeneratedRoute, city: string, name?: stri
     createdAt: new Date().toISOString(),
   };
   await dbPut('routes', saved);
+  import('@/lib/supabase/sync').then(({ syncRoute }) => syncRoute(saved)).catch(() => {});
   return saved;
 }
 
 export async function deleteRoute(id: string): Promise<void> {
   await dbDelete('routes', id);
+  import('@/lib/supabase/sync').then(({ deleteRouteFromSupabase }) => deleteRouteFromSupabase(id)).catch(() => {});
 }
 
 /**

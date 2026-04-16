@@ -351,6 +351,7 @@ export function useRunSession(): UseRunSessionReturn {
     };
 
     await dbPut('runs', completedRun);
+    import('@/lib/supabase/sync').then(({ syncRun }) => syncRun(completedRun)).catch(() => {});
     return completedRun;
   }, [state.status]);
 

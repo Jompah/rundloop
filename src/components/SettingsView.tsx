@@ -5,6 +5,7 @@ import { AppSettings } from '@/types';
 import { getSettings, saveSettings } from '@/lib/storage';
 import { Button } from '@/components/ui/Button';
 import { useTranslation } from '@/i18n';
+import { useAuth } from '@/hooks/useAuth';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface SettingsViewProps {
@@ -13,6 +14,7 @@ interface SettingsViewProps {
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
   const { t } = useTranslation();
+  const { user, signOut } = useAuth();
   const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5, paceSecondsPerKm: 360, scenicMode: 'standard' });
   useEffect(() => { getSettings().then(setSettings); }, []);
   const [saved, setSaved] = useState(false);
@@ -252,6 +254,16 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
         >
           {saved ? t('settings.saved') : t('settings.save')}
         </Button>
+
+        {/* Account */}
+        {user && (
+          <div className="border-t border-gray-800 pt-6">
+            <p className="text-sm text-gray-400 mb-3">{user.email}</p>
+            <Button variant="secondary" fullWidth onClick={signOut}>
+              {t('auth.signOut')}
+            </Button>
+          </div>
+        )}
 
         {/* App info */}
         <div className="text-center text-xs text-gray-600 pt-4">

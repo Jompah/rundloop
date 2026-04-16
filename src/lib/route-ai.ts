@@ -1,4 +1,6 @@
 import { RouteWaypoint, AppSettings, ScenicMode } from '@/types';
+import { buildPastRoutesContext } from './prompt-feedback';
+import type { SavedRoute } from './storage';
 
 export interface NaturePOI {
   name: string;
@@ -23,6 +25,7 @@ interface AIRouteRequest {
   poiWaypoints?: NaturePOI[];
   island?: IslandData | null;
   feedbackContext?: string;
+  pastRoutes?: SavedRoute[];
 }
 
 // Shared rules applied to ALL scenic modes — anti-detour, waypoint placement, and loop quality
@@ -57,7 +60,7 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - Keep landmarks within a walkable area — a focused tour beats a scattered marathon.`,
 };
 
-function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string, poiWaypoints?: NaturePOI[], island?: IslandData | null, feedbackContext?: string): string {
+function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string, poiWaypoints?: NaturePOI[], island?: IslandData | null, feedbackContext?: string, pastRoutes?: SavedRoute[]): string {
   const labelInstruction = scenicMode !== 'standard'
     ? `\n- Include a "label" field on each waypoint describing what is at that location (park name, landmark name, street name, etc.)`
     : '';
@@ -66,11 +69,13 @@ function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, dist
     ? `\n\nNearby green spaces and nature areas (REAL coordinates from OpenStreetMap - use these as waypoints):\n${poiWaypoints.map(p => `- ${p.name} (${p.type}): ${p.lat}, ${p.lng}`).join('\n')}\n\nTry to route through 1-2 of these locations if they fall naturally along the route. Do NOT detour to reach them.`
     : '';
 
+  const pastRoutesSection = buildPastRoutesContext(pastRoutes ?? []);
+
   return `You are a running route planner. Generate a circular running route.
 
 Starting point: ${lat}, ${lng} (${cityName})
 Desired distance: ${distanceKm} km
-
+${pastRoutesSection ? `\n${pastRoutesSection}\n` : ''}
 ${island && island.perimeterKm > 0 ? (() => {
     const distMatch = Math.abs(distanceKm - island.perimeterKm) / island.perimeterKm < 0.3 && scenicMode === 'standard';
     if (distMatch) {
@@ -250,7 +255,7 @@ function parseWaypoints(response: string): RouteWaypoint[] {
 export async function generateRouteWaypoints(req: AIRouteRequest): Promise<RouteWaypoint[]> {
   const { lat, lng, distanceKm, cityName, settings } = req;
 
-  const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints, req.island, req.feedbackContext);
+  const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints, req.island, req.feedbackContext, req.pastRoutes);
 
   let response: string;
   if (settings.apiProvider === 'perplexity' && settings.apiKey) {

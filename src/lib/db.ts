@@ -1,3 +1,4 @@
+import { backfillFreeRunsToRoutes } from './backfill-free-runs';
 import type { SavedRoute } from './storage';
 
 const DB_NAME = 'drift';
@@ -215,5 +216,6 @@ export async function requestPersistentStorage(): Promise<boolean> {
 export async function initDB(): Promise<void> {
   await getDB();
   await migrateFromLocalStorage();
+  await backfillFreeRunsToRoutes();
   await requestPersistentStorage();
 }

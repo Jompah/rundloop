@@ -169,6 +169,19 @@ const sv: Record<TranslationKey, string> = {
 
   // Offline
   'offline.message': 'Du är offline',
+
+  // Auth
+  'auth.title': 'Logga in på Drift',
+  'auth.subtitle': 'Spara dina löpningar och rutter mellan enheter',
+  'auth.emailPlaceholder': 'E-postadress',
+  'auth.sendLink': 'Skicka inloggningslänk',
+  'auth.sending': 'Skickar...',
+  'auth.checkEmail': 'Kolla din e-post!',
+  'auth.checkEmailHint': 'Vi skickade en inloggningslänk till {email}',
+  'auth.tryAgain': 'Prova en annan e-post',
+  'auth.error': 'Kunde inte skicka länken. Försök igen.',
+  'auth.signOut': 'Logga ut',
+  'auth.skipForNow': 'Hoppa över',
 };
 
 export default sv;

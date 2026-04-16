@@ -35,9 +35,12 @@ import { useTranslation } from '@/i18n';
 import { findIncompleteRun, clearIncompleteRun } from '@/lib/crash-recovery';
 import { initProviders } from '@/lib/providers/init';
 import { computeRunAnalysis, saveRunAnalysis } from '@/lib/run-analysis';
-import { updateRouteStats } from '@/lib/route-library';
-import { checkRouteLibrary } from '@/lib/route-library';
+import { updateRouteStats, findCandidateRoutes, promoteRunToRoute } from '@/lib/route-library';
 import { buildPromptFeedback } from '@/lib/prompt-feedback';
+import { PreviousRoutesDialog } from '@/components/PreviousRoutesDialog';
+import AuthModal from '@/components/AuthModal';
+import { useAuth } from '@/hooks/useAuth';
+import type { SavedRoute } from '@/lib/storage';
 
 // Dynamic import MapView to avoid SSR issues with MapLibre
 const MapView = dynamic(() => import('@/components/MapView'), {
@@ -76,6 +79,14 @@ export default function Home() {
   const [selectedRun, setSelectedRun] = useState<CompletedRun | null>(null);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [gpsError, setGpsError] = useState(false);
+  const [previousRoutesDialog, setPreviousRoutesDialog] = useState<{
+    candidates: SavedRoute[];
+    targetKm: number;
+    proceedWithBias: () => Promise<void>;
+  } | null>(null);
+  const [authSkipped, setAuthSkipped] = useState(false);
+  const { user, loading: authLoading, signInWithEmail, signOut } = useAuth();
+  const showAuthModal = !authLoading && !user && !authSkipped;
   const runSession = useRunSession();
   const { state: centeringState, dispatch: centeringDispatch } = useMapCentering();
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
@@ -341,20 +352,15 @@ export default function Home() {
         }
       }
 
-      // Check verified route library first
+      // Check for candidate routes from library
+      let candidates: SavedRoute[] = [];
       try {
-        const verifiedRoute = await checkRouteLibrary(startLat, startLng, distance);
-        if (verifiedRoute) {
-          console.log(`[RouteGen] Using verified route: ${verifiedRoute.name}`);
-          generatedRoute = verifiedRoute.route;
-          setRoute(generatedRoute);
-          setView('map');
-          setIsLoading(false);
-          return;
-        }
+        candidates = await findCandidateRoutes(startLat, startLng, distance);
       } catch (err) {
-        console.warn('[RouteGen] Library check failed:', err);
+        console.warn('[RouteGen] Candidate search failed:', err);
       }
+
+      const runAiGeneration = async (pastRoutes: SavedRoute[]) => {
 
       // Build feedback context for AI
       let feedbackContext = '';
@@ -374,7 +380,7 @@ export default function Home() {
           initialWaypoints = await generateRouteAlgorithmic(startLat, startLng, distance);
         } else {
           try {
-            initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined, island: islandData, feedbackContext });
+            initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined, island: islandData, feedbackContext, pastRoutes });
           } catch (aiError: any) {
             console.warn('AI route generation failed, using algorithmic fallback:', aiError);
             aiErrorMessage = aiError?.message || 'unknown error';
@@ -622,6 +628,23 @@ export default function Home() {
         }
         setView('map');
       }
+      }; // end runAiGeneration
+
+      if (candidates.length === 0) {
+        await runAiGeneration([]);
+      } else {
+        setIsLoading(false);
+        setPreviousRoutesDialog({
+          candidates,
+          targetKm: distance,
+          proceedWithBias: async () => {
+            setPreviousRoutesDialog(null);
+            setIsLoading(true);
+            await runAiGeneration(candidates);
+          },
+        });
+        return;
+      }
     } catch (err: any) {
       console.error('Route generation error:', err);
       const msg = err?.message || '';
@@ -765,7 +788,7 @@ export default function Home() {
       )}
 
       {/* Hitta min position - prominent button when location is unknown and no error shown */}
-      {!userLocation && !gpsError && !gpsRequesting && !fakeGPSActive && (
+      {!userLocation && !gpsError && !gpsRequesting && !fakeGPSActive && view === 'generate' && (
         <div className="absolute inset-0 z-40 flex flex-col items-center justify-center px-6 pointer-events-none">
           <div className="bg-gray-900/90 backdrop-blur-md rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl pointer-events-auto">
             <div className="mb-4 flex justify-center">
@@ -885,6 +908,7 @@ export default function Home() {
         {view === 'history' && (
           <motion.div
             key="history"
+            className="absolute inset-0 z-10 bg-gray-950"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
@@ -901,6 +925,7 @@ export default function Home() {
         {view === 'routes' && (
           <motion.div
             key="routes"
+            className="absolute inset-0 z-10 bg-gray-950"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
@@ -982,6 +1007,16 @@ export default function Home() {
           <EndRunDialog
             onConfirm={async () => {
               const completed = await runSession.endRun();
+              // Promote free runs (no planned route) to saved routes
+              if (completed.routeId == null && completed.trace && completed.trace.length >= 10 && completed.distanceMeters >= 500) {
+                try {
+                  const promoted = await promoteRunToRoute(completed, cityName || 'Unknown');
+                  completed.routeId = promoted.id;
+                  completed.routePolyline = promoted.route.polyline;
+                } catch (err) {
+                  console.warn('[end-run] promoteRunToRoute failed', err);
+                }
+              }
               // Attach planned route polyline for history detail view
               if (route?.polyline) {
                 completed.routePolyline = route.polyline;
@@ -1034,6 +1069,28 @@ export default function Home() {
           />
         )}
       </AnimatePresence>
+
+      {previousRoutesDialog && (
+        <PreviousRoutesDialog
+          open={true}
+          candidates={previousRoutesDialog.candidates}
+          targetKm={previousRoutesDialog.targetKm}
+          onSelectRoute={(selected) => {
+            setPreviousRoutesDialog(null);
+            setRoute(selected.route);
+            setView('map');
+          }}
+          onGenerateSimilar={() => previousRoutesDialog.proceedWithBias()}
+          onClose={() => setPreviousRoutesDialog(null)}
+        />
+      )}
+
+      {showAuthModal && (
+        <AuthModal
+          onSignIn={signInWithEmail}
+          onSkip={() => setAuthSkipped(true)}
+        />
+      )}
 
       {/* Run detail overlay */}
       {selectedRun && (
