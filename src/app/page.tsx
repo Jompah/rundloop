@@ -39,6 +39,7 @@ import { updateRouteStats, findCandidateRoutes, promoteRunToRoute } from '@/lib/
 import { buildPromptFeedback } from '@/lib/prompt-feedback';
 import { PreviousRoutesDialog } from '@/components/PreviousRoutesDialog';
 import AuthModal from '@/components/AuthModal';
+import StatsView from '@/components/StatsView';
 import { useAuth } from '@/hooks/useAuth';
 import type { SavedRoute } from '@/lib/storage';
 
@@ -86,6 +87,7 @@ export default function Home() {
   } | null>(null);
   const [authSkipped, setAuthSkipped] = useState(false);
   const [authError, setAuthError] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const { user, loading: authLoading, signInWithEmail, signOut } = useAuth();
   const showAuthModal = !authLoading && !user && !authSkipped;
   const runSession = useRunSession();
@@ -983,6 +985,18 @@ export default function Home() {
 
       {/* Navigation bar */}
       <nav className="absolute top-4 right-4 z-20 flex items-center gap-2">
+        {view === 'history' && (
+          <button
+            onClick={() => setShowStats(true)}
+            className="bg-gray-800/80 backdrop-blur-sm rounded-full p-3 shadow-lg active:bg-gray-700 text-gray-300"
+            aria-label="Statistics"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 3v18h18" />
+              <path d="M7 16l4-8 4 4 5-9" />
+            </svg>
+          </button>
+        )}
         <button
           onClick={() => setView('settings')}
           className="bg-gray-800/80 backdrop-blur-sm rounded-full p-3 shadow-lg active:bg-gray-700 text-gray-300"
@@ -1095,6 +1109,8 @@ export default function Home() {
           onClose={() => setPreviousRoutesDialog(null)}
         />
       )}
+
+      {showStats && <StatsView onClose={() => setShowStats(false)} />}
 
       {(showAuthModal || authError) && (
         <AuthModal

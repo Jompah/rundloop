@@ -168,6 +168,23 @@ const en = {
   // Offline
   'offline.message': 'You are offline',
 
+  // Stats
+  'stats.title': 'Statistics',
+  'stats.totalDistance': 'Total Distance',
+  'stats.totalRuns': 'Runs',
+  'stats.avgPace': 'Avg Pace',
+  'stats.fastestPace': 'Fastest Pace',
+  'stats.longestRun': 'Longest Run',
+  'stats.totalTime': 'Total Time',
+  'stats.weeklyDistance': 'Weekly Distance',
+  'stats.paceTrend': 'Pace Trend',
+  'stats.streak': '{count} week streak',
+  'stats.bestStreak': 'Best: {count} weeks',
+  'stats.noData': 'Complete your first run to see stats',
+  'stats.personalRecords': 'Personal Records',
+  'stats.thisWeek': 'This week',
+  'stats.months.short': 'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec',
+
   // Auth
   'auth.title': 'Sign in to Drift',
   'auth.subtitle': 'Save your runs and routes across devices',

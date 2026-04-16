@@ -170,6 +170,23 @@ const sv: Record<TranslationKey, string> = {
   // Offline
   'offline.message': 'Du är offline',
 
+  // Stats
+  'stats.title': 'Statistik',
+  'stats.totalDistance': 'Total distans',
+  'stats.totalRuns': 'Rundor',
+  'stats.avgPace': 'Snittempo',
+  'stats.fastestPace': 'Snabbaste tempo',
+  'stats.longestRun': 'Längsta runda',
+  'stats.totalTime': 'Total tid',
+  'stats.weeklyDistance': 'Veckodistans',
+  'stats.paceTrend': 'Tempoutveckling',
+  'stats.streak': '{count} veckor i rad',
+  'stats.bestStreak': 'Bäst: {count} veckor',
+  'stats.noData': 'Genomför din första runda för att se statistik',
+  'stats.personalRecords': 'Personliga rekord',
+  'stats.thisWeek': 'Denna vecka',
+  'stats.months.short': 'Jan,Feb,Mar,Apr,Maj,Jun,Jul,Aug,Sep,Okt,Nov,Dec',
+
   // Auth
   'auth.title': 'Logga in på Drift',
   'auth.subtitle': 'Spara dina löpningar och rutter mellan enheter',

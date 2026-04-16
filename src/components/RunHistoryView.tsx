@@ -12,7 +12,6 @@ import {
   computeAveragePace,
 } from '@/lib/metrics';
 import { useTranslation } from '@/i18n';
-
 interface RunHistoryViewProps {
   onSelectRun: (run: CompletedRun) => void;
   refreshKey?: number;
