@@ -15,19 +15,20 @@ export default function AuthModal({ onSignIn, onSkip }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || sending) return;
     setSending(true);
-    setError(false);
+    setErrorMsg(null);
 
     const { error: err } = await onSignIn(email.trim());
     setSending(false);
 
     if (err) {
-      setError(true);
+      const msg = (err as { message?: string })?.message ?? t('auth.error');
+      setErrorMsg(msg.includes('rate limit') ? 'För många försök. Vänta en stund och försök igen.' : msg);
     } else {
       setSent(true);
     }
@@ -79,8 +80,8 @@ export default function AuthModal({ onSignIn, onSkip }: AuthModalProps) {
                 autoComplete="email"
                 className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 mb-3 outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
               />
-              {error && (
-                <p className="text-red-400 text-sm mb-3">{t('auth.error')}</p>
+              {errorMsg && (
+                <p className="text-red-400 text-sm mb-3">{errorMsg}</p>
               )}
               <Button
                 type="submit"
