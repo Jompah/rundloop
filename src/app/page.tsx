@@ -85,6 +85,7 @@ export default function Home() {
     proceedWithBias: () => Promise<void>;
   } | null>(null);
   const [authSkipped, setAuthSkipped] = useState(false);
+  const [authError, setAuthError] = useState(false);
   const { user, loading: authLoading, signInWithEmail, signOut } = useAuth();
   const showAuthModal = !authLoading && !user && !authSkipped;
   const runSession = useRunSession();
@@ -105,6 +106,16 @@ export default function Home() {
         setPositionLoaded(true);
       })
       .catch(() => setPositionLoaded(true));
+  }, []);
+
+  // Check for auth error in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('auth_error') === 'true') {
+      setAuthError(true);
+      setAuthSkipped(false);
+      window.history.replaceState({}, '', '/');
+    }
   }, []);
 
   // Initialize IndexedDB: migration + persistent storage
@@ -1085,10 +1096,11 @@ export default function Home() {
         />
       )}
 
-      {showAuthModal && (
+      {(showAuthModal || authError) && (
         <AuthModal
           onSignIn={signInWithEmail}
-          onSkip={() => setAuthSkipped(true)}
+          onSkip={() => { setAuthSkipped(true); setAuthError(false); }}
+          authError={authError}
         />
       )}
 

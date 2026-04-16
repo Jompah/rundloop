@@ -8,14 +8,15 @@ import { useTranslation } from '@/i18n';
 interface AuthModalProps {
   onSignIn: (email: string) => Promise<{ error: unknown }>;
   onSkip: () => void;
+  authError?: boolean;
 }
 
-export default function AuthModal({ onSignIn, onSkip }: AuthModalProps) {
+export default function AuthModal({ onSignIn, onSkip, authError }: AuthModalProps) {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(authError ? 'Inloggningslänken fungerade inte. Försök igen.' : null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
