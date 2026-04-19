@@ -1,4 +1,4 @@
-const CACHE_NAME = 'drift-v2';
+const CACHE_NAME = 'drift-v3';
 const TILE_CACHE_NAME = 'drift-tiles-v1';
 const MAX_TILE_ENTRIES = 50;
 
@@ -65,17 +65,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App shell: cache-first, on miss fetch and cache
+  // App shell: network-first with cache fallback
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
+    fetch(event.request)
+      .then((response) => {
         if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
-      });
-    })
+      })
+      .catch(() => caches.match(event.request))
   );
 });
