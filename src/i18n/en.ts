@@ -199,6 +199,13 @@ const en = {
   'auth.magicLinkError': 'Sign-in link did not work. Please try again.',
   'auth.signOut': 'Sign out',
   'auth.skipForNow': 'Skip for now',
+  'auth.sendCode': 'Send code',
+  'auth.codeSentTitle': 'Check your email',
+  'auth.codeSentDesc': "We sent a 6-digit code to {email}. Enter it below, or click the link in the email if you're on the same device.",
+  'auth.codePlaceholder': '6-digit code',
+  'auth.verifyCode': 'Verify',
+  'auth.changeEmail': 'Change email',
+  'auth.invalidCode': 'Invalid or expired code. Try again.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

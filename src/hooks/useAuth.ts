@@ -39,10 +39,19 @@ export function useAuth() {
     return { error };
   }, [supabase.auth]);
 
+  const verifyOtp = useCallback(async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
+    });
+    return { error };
+  }, [supabase.auth]);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
   }, [supabase.auth]);
 
-  return { user, loading, signInWithEmail, signOut };
+  return { user, loading, signInWithEmail, verifyOtp, signOut };
 }

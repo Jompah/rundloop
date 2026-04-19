@@ -201,6 +201,13 @@ const sv: Record<TranslationKey, string> = {
   'auth.magicLinkError': 'Inloggningslänken fungerade inte. Försök igen.',
   'auth.signOut': 'Logga ut',
   'auth.skipForNow': 'Hoppa över',
+  'auth.sendCode': 'Skicka kod',
+  'auth.codeSentTitle': 'Kolla din mail',
+  'auth.codeSentDesc': 'Vi skickade en 6-siffrig kod till {email}. Skriv in den nedan, eller klicka på länken i mailet om du är på samma enhet.',
+  'auth.codePlaceholder': '6-siffrig kod',
+  'auth.verifyCode': 'Verifiera',
+  'auth.changeEmail': 'Byt email',
+  'auth.invalidCode': 'Ogiltig eller utgången kod. Försök igen.',
 };
 
 export default sv;
