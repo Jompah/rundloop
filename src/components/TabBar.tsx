@@ -3,13 +3,13 @@
 import { useTranslation } from '@/i18n';
 
 interface TabBarProps {
-  activeTab: 'generate' | 'history' | 'routes';
-  onTabChange: (tab: 'generate' | 'history' | 'routes') => void;
+  activeTab: 'generate' | 'history' | 'routes' | 'stats';
+  onTabChange: (tab: 'generate' | 'history' | 'routes' | 'stats') => void;
 }
 
 export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
   const { t } = useTranslation();
-  const tabs: { value: 'generate' | 'history' | 'routes'; label: string; icon: React.ReactNode }[] = [
+  const tabs: { value: 'generate' | 'history' | 'routes' | 'stats'; label: string; icon: React.ReactNode }[] = [
     {
       value: 'generate',
       label: t('tab.map'),
@@ -27,6 +27,16 @@ export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
           <polyline points="12 6 12 12 16 14" />
+        </svg>
+      ),
+    },
+    {
+      value: 'stats',
+      label: t('tab.stats'),
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 3v18h18" />
+          <path d="M7 16l4-8 4 4 5-9" />
         </svg>
       ),
     },

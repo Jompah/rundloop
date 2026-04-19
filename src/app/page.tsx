@@ -87,7 +87,6 @@ export default function Home() {
   } | null>(null);
   const [authSkipped, setAuthSkipped] = useState(false);
   const [authError, setAuthError] = useState(false);
-  const [showStats, setShowStats] = useState(false);
   const { user, loading: authLoading, signInWithEmail, signOut } = useAuth();
   const showAuthModal = !authLoading && !user && !authSkipped;
   const runSession = useRunSession();
@@ -248,9 +247,9 @@ export default function Home() {
         (_pos, _reason) => { /* rejected, ignore for location display */ },
         (err) => console.warn('GPS error:', err.message)
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       setGpsError(true);
-      if (err && typeof err.code === 'number') {
+      if (err && typeof (err as { code?: unknown }).code === 'number') {
         const geoErr = err as GeolocationPositionError;
         setGpsErrorMessage(geoErrorMessage(geoErr, t as (key: string, params?: Record<string, string | number>) => string));
         // PERMISSION_DENIED (code 1): retrying won't help, user must change browser settings
@@ -394,9 +393,9 @@ export default function Home() {
         } else {
           try {
             initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined, island: islandData, feedbackContext, pastRoutes });
-          } catch (aiError: any) {
+          } catch (aiError: unknown) {
             console.warn('AI route generation failed, using algorithmic fallback:', aiError);
-            aiErrorMessage = aiError?.message || 'unknown error';
+            aiErrorMessage = aiError instanceof Error ? aiError.message : 'unknown error';
             initialWaypoints = await generateRouteAlgorithmic(startLat, startLng, distance);
             usedFallback = true;
           }
@@ -414,6 +413,14 @@ export default function Home() {
         // Check asymmetric tolerance: accept -15% to +10%
         const isWithinTolerance = (ratio: number) =>
           ratio >= (1 - TOLERANCE_UNDER) && ratio <= (1 + TOLERANCE_OVER);
+
+        const scoreRoute = (ratio: number, smooth: boolean): number => {
+          const absDiff = Math.abs(ratio - 1);
+          const withinTolerance = ratio >= 0.85 && ratio <= 1.10;
+          const distanceCost = withinTolerance ? absDiff : absDiff * absDiff * 4;
+          const smoothnessTiebreaker = smooth ? 0 : 0.05;
+          return distanceCost + smoothnessTiebreaker;
+        };
 
         let bestRoute: GeneratedRoute | null = null;
         let bestDiff = Infinity;
@@ -443,8 +450,7 @@ export default function Home() {
           // Track baseline as candidate (quality-adjusted diff)
           const initialQuality = assessRouteQuality(initialRoute);
           const initialSmooth = !hasExcessiveShortSegments(initialRoute.polyline);
-          // Penalize detour-heavy routes: add up to 0.30 to the diff for low-quality routes
-          bestDiff = Math.abs(initialRatio - 1) + (initialSmooth ? 0 : 0.30);
+          bestDiff = scoreRoute(initialRatio, initialSmooth);
           bestRoute = initialRoute;
 
           console.log(`[Attempt ${attempt + 1}] Kvalitet: ${initialQuality}/100, smooth=${initialSmooth}`);
@@ -487,12 +493,10 @@ export default function Home() {
               }
               const actualKm = candidate.distance / 1000;
               const ratio = actualKm / distance;
-              const rawDiff = Math.abs(ratio - 1);
 
               // Route smoothness check: penalize routes with excessive short segments
               const isSmooth = !hasExcessiveShortSegments(candidate.polyline);
-              const qualityPenalty = isSmooth ? 0 : 0.30;
-              const adjustedDiff = rawDiff + qualityPenalty;
+              const adjustedDiff = scoreRoute(ratio, isSmooth);
 
               const quality = assessRouteQuality(candidate);
               console.log(`[Attempt ${attempt + 1} iter ${i + 1}] scale=${midScale.toFixed(3)}, actual=${actualKm.toFixed(2)}km, target=${distance}km, kvalitet=${quality}/100, smooth=${isSmooth}`);
@@ -543,7 +547,7 @@ export default function Home() {
           }
 
           bestRoute = aiRoute;
-          bestDiff = Math.abs(aiRatio - 1) + (aiSmooth ? 0 : 0.30);
+          bestDiff = scoreRoute(aiRatio, aiSmooth);
         }
 
         // Always track the best route from this attempt as a fallback,
@@ -658,9 +662,9 @@ export default function Home() {
         });
         return;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Route generation error:', err);
-      const msg = err?.message || '';
+      const msg = err instanceof Error ? err.message : '';
       if (msg.includes('network') || msg.includes('fetch') || msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
         setError(t('route.networkError'));
       } else {
@@ -953,6 +957,20 @@ export default function Home() {
           </motion.div>
         )}
 
+        {/* Stats view */}
+        {view === 'stats' && (
+          <motion.div
+            key="stats"
+            className="absolute inset-0 z-10 bg-gray-950"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+          >
+            <StatsView onClose={() => setView('history')} />
+          </motion.div>
+        )}
+
         {/* Summary view */}
         {view === 'summary' && completedRunData && (
           <motion.div
@@ -985,18 +1003,6 @@ export default function Home() {
 
       {/* Navigation bar */}
       <nav className="absolute top-4 right-4 z-20 flex items-center gap-2">
-        {view === 'history' && (
-          <button
-            onClick={() => setShowStats(true)}
-            className="bg-gray-800/80 backdrop-blur-sm rounded-full p-3 shadow-lg active:bg-gray-700 text-gray-300"
-            aria-label="Statistics"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 3v18h18" />
-              <path d="M7 16l4-8 4 4 5-9" />
-            </svg>
-          </button>
-        )}
         <button
           onClick={() => setView('settings')}
           className="bg-gray-800/80 backdrop-blur-sm rounded-full p-3 shadow-lg active:bg-gray-700 text-gray-300"
@@ -1110,8 +1116,6 @@ export default function Home() {
         />
       )}
 
-      {showStats && <StatsView onClose={() => setShowStats(false)} />}
-
       {(showAuthModal || authError) && (
         <AuthModal
           onSignIn={signInWithEmail}
@@ -1180,11 +1184,11 @@ export default function Home() {
         </motion.div>
       )}
 
-      {/* Tab bar - visible on generate, history, routes, map */}
-      {(view === 'generate' || view === 'history' || view === 'routes' || view === 'map') && (
+      {/* Tab bar - visible on generate, history, routes, stats, map */}
+      {(view === 'generate' || view === 'history' || view === 'routes' || view === 'stats' || view === 'map') && (
         <TabBar
-          activeTab={view === 'map' ? 'generate' : (view as 'generate' | 'history' | 'routes')}
-          onTabChange={(tab: 'generate' | 'history' | 'routes') => setView(tab)}
+          activeTab={view === 'map' ? 'generate' : (view as 'generate' | 'history' | 'routes' | 'stats')}
+          onTabChange={(tab: 'generate' | 'history' | 'routes' | 'stats') => setView(tab)}
         />
       )}
     </main>

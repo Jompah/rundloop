@@ -44,7 +44,7 @@ export interface AppSettings {
   scenicMode: ScenicMode;
 }
 
-export type AppView = 'map' | 'generate' | 'navigate' | 'settings' | 'history' | 'routes' | 'summary';
+export type AppView = 'map' | 'generate' | 'navigate' | 'settings' | 'history' | 'routes' | 'summary' | 'stats';
 
 export type RouteMode = 'ai' | 'algorithmic';
 

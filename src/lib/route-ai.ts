@@ -101,19 +101,30 @@ STRATEGY: Pick 2-3 consecutive shoreline points from the list above (following t
   })() : `GEOGRAPHIC ANALYSIS: Identify what geographic features exist at these coordinates — island, peninsula, lake, river, coast, or large park. Use that knowledge to plan the optimal route shape.`}${poiSection}
 ${feedbackContext ? `\n${feedbackContext}\n` : ''}
 Requirements:
+- CRITICAL SCALE RULE: Your waypoints must form a loop where the Google-Routes walking path is approximately ${distanceKm} km. A circular loop of ${distanceKm} km has radius ≈ ${(distanceKm / 6.28).toFixed(2)} km from center. NO waypoint should be more than ${(distanceKm / 4).toFixed(2)} km (straight-line distance) from the starting point. This is a HARD constraint — violate other rules if needed to respect it.
 - The route must START and END at the starting point coordinates
 - The total distance should be approximately ${distanceKm} km
-- DIRECTION: ${Math.random() < 0.8 ? 'Go counter-clockwise. On an island, this means keeping the water on your LEFT side.' : 'Go clockwise. On an island, this means keeping the water on your RIGHT side.'}
+- MANDATORY GEOGRAPHIC ANALYSIS (before waypoints): Describe, in 3-6 short lines, the geography within 1 km of the start: where is water (ocean, lake, river, canal), where are coasts/shorelines, is the start on an island or peninsula and on which edge (north/south/east/west), are there nearby bridges, and which compass direction gives the longest continuous shoreline contact before you are forced inland. After naming the landmass, state where the starting point is relative to it (e.g., "south edge of the island", "north waterfront", "inland center"). Use the starting coordinate, not the landmass centroid. This analysis is REQUIRED and must appear BEFORE the waypoints, in the comment block described below.
+- DIRECTION RULE: Counter-clockwise is preferred for island loops.
 ${SCENIC_INSTRUCTIONS[scenicMode]}
 - Generate ${distanceKm < 7 ? '3-5' : '5-8'} waypoints that define the route shape (fewer waypoints = cleaner route, aim for ~1-2 turns per km)${labelInstruction}
 - Place waypoints ONLY at major intersections or along main roads, never on residential dead-end streets
 - NEVER generate waypoints on dead-end streets or cul-de-sacs. Every waypoint must be at a through-intersection.
 - For dense historic urban areas, prefer the main walking streets and quays rather than narrow alleys
 
-Return ONLY a raw JSON array of waypoints. No markdown, no code blocks, no backticks, no explanation. Just the JSON array directly:
+OUTPUT FORMAT (STRICT):
+First, write the geographic analysis as plain text lines starting with "# " (one per line). Then, on its own line, write the exact marker:
+---WAYPOINTS_JSON---
+Then, on the following lines, output ONLY a raw JSON array of waypoints. No markdown, no code blocks, no backticks, no extra text after the array. Example:
+
+# Start is on the south edge of Kungsholmen island, ~100m from the south canal.
+# Water lies immediately south and east; the south quay runs unbroken east toward Stadshuset (~1.2km) before any inland detour.
+# Heading east first gives longer shoreline contact than heading west.
+# Direction: counter-clockwise (water on left when heading east along south shore).
+---WAYPOINTS_JSON---
 [{"lat": 59.3251, "lng": 18.0711}, {"lat": 59.3400, "lng": 18.0800}]
 
-The first and last waypoint must be the starting point.`;
+The first and last waypoint in the JSON array must be the starting point.`;
 }
 
 /**
@@ -192,6 +203,44 @@ async function callMinimaxRoute(prompt: string): Promise<string> {
 }
 
 /**
+ * Clamp waypoints (excluding first/last anchor points) to be within maxRadiusKm
+ * straight-line distance from the start. Waypoints outside the radius are scaled
+ * back toward the start along the same bearing. This enforces the SCALE RULE in
+ * code rather than relying on the AI to obey it.
+ */
+function clampWaypointsToRadius(
+  waypoints: { lat: number; lng: number; label?: string }[],
+  startLat: number,
+  startLng: number,
+  maxRadiusKm: number,
+): { lat: number; lng: number; label?: string }[] {
+  const toRadians = (deg: number) => (deg * Math.PI) / 180;
+  const haversine = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+    const R = 6371;
+    const dLat = toRadians(lat2 - lat1);
+    const dLng = toRadians(lng2 - lng1);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
+  return waypoints.map((wp, idx) => {
+    // Never clamp start or end (they're the anchor)
+    if (idx === 0 || idx === waypoints.length - 1) return wp;
+    const dist = haversine(startLat, startLng, wp.lat, wp.lng);
+    if (dist <= maxRadiusKm) return wp;
+    // Scale back toward start by the ratio of maxRadius / dist
+    const scale = maxRadiusKm / dist;
+    return {
+      ...wp,
+      lat: startLat + (wp.lat - startLat) * scale,
+      lng: startLng + (wp.lng - startLng) * scale,
+    };
+  });
+}
+
+/**
  * Haversine distance between two points in meters.
  */
 function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -236,8 +285,25 @@ function densifyWaypoints(waypoints: RouteWaypoint[], maxGapMeters: number = 600
 }
 
 function parseWaypoints(response: string): RouteWaypoint[] {
-  // Try to extract JSON array from the response
-  const jsonMatch = response.match(/\[[\s\S]*?\]/);
+  // Prefer the section after the ---WAYPOINTS_JSON--- marker if present.
+  // This lets the AI emit a geographic-analysis comment block before the JSON
+  // without tripping up the fallback regex (comment lines may contain brackets).
+  const markerIdx = response.indexOf('---WAYPOINTS_JSON---');
+  const searchRegion = markerIdx >= 0
+    ? response.slice(markerIdx + '---WAYPOINTS_JSON---'.length)
+    : response;
+
+  // Log the geographic-analysis comment block (if any) for debugging.
+  if (markerIdx >= 0) {
+    const preamble = response.slice(0, markerIdx).trim();
+    if (preamble) {
+      console.log('[route-ai] AI geographic analysis:\n' + preamble);
+    }
+  }
+
+  // Match the first bracketed JSON array. Use a greedy [\s\S]*\] anchored to
+  // the last closing bracket in the region so nested/multi-line arrays parse.
+  const jsonMatch = searchRegion.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error('No waypoints found in AI response');
 
   const parsed = JSON.parse(jsonMatch[0]);
@@ -245,9 +311,17 @@ function parseWaypoints(response: string): RouteWaypoint[] {
     throw new Error('Invalid waypoints: need at least 3 points');
   }
 
-  return parsed.map((p: any) => ({
-    lat: parseFloat(p.lat ?? p.latitude),
-    lng: parseFloat(p.lng ?? p.lon ?? p.longitude),
+  type RawWaypoint = {
+    lat?: unknown;
+    latitude?: unknown;
+    lng?: unknown;
+    lon?: unknown;
+    longitude?: unknown;
+    label?: unknown;
+  };
+  return (parsed as RawWaypoint[]).map((p) => ({
+    lat: parseFloat(String(p.lat ?? p.latitude)),
+    lng: parseFloat(String(p.lng ?? p.lon ?? p.longitude)),
     ...(p.label ? { label: String(p.label) } : {}),
   }));
 }
@@ -269,7 +343,19 @@ export async function generateRouteWaypoints(req: AIRouteRequest): Promise<Route
     response = await callServerRoute(prompt);
   }
 
-  const waypoints = parseWaypoints(response);
+  const parsedWaypoints = parseWaypoints(response);
+
+  // Enforce SCALE RULE in code: clamp any waypoint farther than distanceKm/4 km
+  // (straight-line) from the start back onto the radius boundary. This prevents
+  // the AI (especially Haiku) from spreading waypoints wide when it prioritizes
+  // descriptive rules over the hard scale constraint.
+  const originalWaypoints = [...parsedWaypoints];
+  const clampedWaypoints = clampWaypointsToRadius(parsedWaypoints, lat, lng, distanceKm / 4);
+  const numClamped = clampedWaypoints.filter((wp, i) => wp.lat !== originalWaypoints[i].lat || wp.lng !== originalWaypoints[i].lng).length;
+  if (numClamped > 0) {
+    console.log(`[route-ai] Clamped ${numClamped} waypoint(s) to max radius ${(distanceKm / 4).toFixed(2)}km`);
+  }
+  const waypoints: RouteWaypoint[] = clampedWaypoints;
 
   // Log raw AI waypoints for debugging
   console.log(`[route-ai] Raw AI waypoints (${waypoints.length} points):`,

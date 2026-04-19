@@ -16,7 +16,7 @@ export default function AuthModal({ onSignIn, onSkip, authError }: AuthModalProp
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(authError ? 'Inloggningslänken fungerade inte. Försök igen.' : null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(authError ? t('auth.magicLinkError') : null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

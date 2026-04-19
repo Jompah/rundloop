@@ -10,6 +10,72 @@ export interface Landmark {
 
 export type LandmarkType = 'museum' | 'monument' | 'viewpoint' | 'park' | 'church' | 'historic' | 'artwork' | 'fountain' | 'ruins' | 'castle' | 'landmark'
 
+// In-memory cache for Overpass responses keyed by rounded bbox.
+// TTL 30 min, max 50 entries (simple FIFO-ish eviction on oldest inserted).
+interface CacheEntry {
+  landmarks: Landmark[]
+  timestamp: number
+}
+const CACHE_TTL_MS = 30 * 60 * 1000
+const CACHE_MAX_ENTRIES = 50
+const overpassCache = new Map<string, CacheEntry>()
+
+function cacheKey(bbox: { south: number; west: number; north: number; east: number }): string {
+  const r = (n: number) => n.toFixed(3)
+  return `${r(bbox.south)},${r(bbox.west)},${r(bbox.north)},${r(bbox.east)}`
+}
+
+function cacheGet(key: string): { entry: CacheEntry; fresh: boolean } | null {
+  const entry = overpassCache.get(key)
+  if (!entry) return null
+  return { entry, fresh: Date.now() - entry.timestamp < CACHE_TTL_MS }
+}
+
+function cacheSet(key: string, landmarks: Landmark[]): void {
+  if (overpassCache.size >= CACHE_MAX_ENTRIES && !overpassCache.has(key)) {
+    const oldestKey = overpassCache.keys().next().value
+    if (oldestKey !== undefined) overpassCache.delete(oldestKey)
+  }
+  overpassCache.delete(key) // re-insert to refresh insertion order
+  overpassCache.set(key, { landmarks, timestamp: Date.now() })
+}
+
+const RETRY_DELAYS_MS = [0, 1500, 4500]
+const RETRYABLE_STATUSES = new Set([429, 502, 503, 504])
+
+async function fetchOverpassWithRetry(query: string): Promise<Response | null> {
+  let lastError: unknown = null
+  for (let attempt = 0; attempt < RETRY_DELAYS_MS.length; attempt++) {
+    const delay = RETRY_DELAYS_MS[attempt]
+    if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay))
+    try {
+      const response = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        body: `data=${encodeURIComponent(query)}`,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      })
+      if (response.ok) return response
+      if (RETRYABLE_STATUSES.has(response.status)) {
+        lastError = new Error(`Overpass HTTP ${response.status}`)
+        console.warn(`Overpass API HTTP ${response.status} (attempt ${attempt + 1}/${RETRY_DELAYS_MS.length})`)
+        continue
+      }
+      // Non-retryable (e.g. 400, 404): return as-is for caller to handle.
+      console.warn('Overpass API non-retryable failure:', response.status)
+      return response
+    } catch (err) {
+      lastError = err
+      if (err instanceof TypeError) {
+        console.warn(`Overpass network error (attempt ${attempt + 1}/${RETRY_DELAYS_MS.length}):`, err.message)
+        continue
+      }
+      throw err
+    }
+  }
+  console.warn('Overpass API all retries exhausted:', lastError)
+  return null
+}
+
 /**
  * Fetch landmarks near a polyline from Overpass API.
  * Uses a bounding box around the route + buffer, then filters by proximity.
@@ -29,9 +95,15 @@ export async function fetchLandmarksNearRoute(
     east: Math.max(...lngs) + bufferDeg,
   }
 
+  const key = cacheKey(bbox)
+  const cached = cacheGet(key)
+  if (cached && cached.fresh) {
+    return cached.entry.landmarks
+  }
+
   // 2. Build Overpass QL query for tourism, historic, and leisure POIs
   const query = `
-    [out:json][timeout:10];
+    [out:json][timeout:25];
     (
       node["tourism"~"museum|artwork|viewpoint|attraction|gallery"](${bbox.south},${bbox.west},${bbox.north},${bbox.east});
       node["historic"~"monument|memorial|castle|ruins|archaeological_site|building"](${bbox.south},${bbox.west},${bbox.north},${bbox.east});
@@ -42,15 +114,15 @@ export async function fetchLandmarksNearRoute(
     out center body;
   `
 
-  // 3. Call Overpass API
-  const response = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    body: `data=${encodeURIComponent(query)}`,
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  })
+  // 3. Call Overpass API with retry/backoff
+  const response = await fetchOverpassWithRetry(query)
 
-  if (!response.ok) {
-    console.warn('Overpass API failed:', response.status)
+  if (!response || !response.ok) {
+    console.warn('Overpass API failed:', response?.status ?? 'no response')
+    if (cached) {
+      console.warn('Overpass API returning stale cache entry')
+      return cached.entry.landmarks
+    }
     return []
   }
 
@@ -85,9 +157,9 @@ export async function fetchLandmarksNearRoute(
   const seen = new Set<string>()
   const unique: Landmark[] = []
   for (const lm of nearbyLandmarks) {
-    const key = lm.name.toLowerCase()
-    if (!seen.has(key)) {
-      seen.add(key)
+    const nameKey = lm.name.toLowerCase()
+    if (!seen.has(nameKey)) {
+      seen.add(nameKey)
       unique.push(lm)
     }
   }
@@ -101,6 +173,7 @@ export async function fetchLandmarksNearRoute(
     .sort((a, b) => (typePriority[a.type] ?? 99) - (typePriority[b.type] ?? 99))
     .slice(0, 6)
 
+  cacheSet(key, prioritized)
   return prioritized
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { GeneratedRoute, RouteMode, ScenicMode } from '@/types';
-import { saveRoute, getSettings } from '@/lib/storage';
+import { getSettings } from '@/lib/storage';
 import { Button } from '@/components/ui/Button';
 import { useTranslation } from '@/i18n';
 
@@ -26,7 +26,6 @@ export interface RouteGeneratorProps {
 export default function RouteGenerator({ onGenerate, isLoading, userLocation, cityName, route, nearbyRoutes, onDistanceChange, onLoadNearby, routeMode, onModeChange, scenicMode, onScenicModeChange }: RouteGeneratorProps) {
   const { t } = useTranslation();
   const [distance, setDistance] = useState(5);
-  const [saved, setSaved] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -60,16 +59,7 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
     });
   }, []);
 
-  const handleSaveRoute = useCallback(async () => {
-    if (!route || saved) return;
-    await saveRoute(route, cityName);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }, [route, cityName, saved]);
-
-  // Reset saved state when a new route is generated
   const handleGenerate = useCallback((d: number) => {
-    setSaved(false);
     onGenerate(d);
   }, [onGenerate]);
 
@@ -214,18 +204,6 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
                 )}
               </Button>
 
-              {/* Save Route button */}
-              {route && !isLoading && (
-                <Button
-                  variant={saved ? 'secondary' : 'primary'}
-                  fullWidth
-                  className={`mt-3 ${saved ? 'text-green-400 cursor-default' : ''}`}
-                  onClick={handleSaveRoute}
-                  disabled={saved}
-                >
-                  {saved ? t('route.saved') : t('route.save')}
-                </Button>
-              )}
             </>
           )}
         </div>

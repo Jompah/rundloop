@@ -38,7 +38,15 @@ export async function routeViaGoogle(
     location: { latLng: { latitude: w.lat, longitude: w.lng } }
   }));
 
-  const body: any = {
+  type LatLngLocation = { location: { latLng: { latitude: number; longitude: number } } };
+  interface GoogleRoutesBody {
+    origin: LatLngLocation;
+    destination: LatLngLocation;
+    travelMode: 'WALK' | 'DRIVE' | 'BICYCLE' | 'TWO_WHEELER' | 'TRANSIT';
+    intermediates?: LatLngLocation[];
+  }
+
+  const body: GoogleRoutesBody = {
     origin,
     destination,
     travelMode: 'WALK',

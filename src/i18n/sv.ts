@@ -166,6 +166,7 @@ const sv: Record<TranslationKey, string> = {
   'tab.map': 'Karta',
   'tab.history': 'Historik',
   'tab.routes': 'Rutter',
+  'tab.stats': 'Statistik',
 
   // Offline
   'offline.message': 'Du är offline',
@@ -197,6 +198,7 @@ const sv: Record<TranslationKey, string> = {
   'auth.checkEmailHint': 'Vi skickade en inloggningslänk till {email}',
   'auth.tryAgain': 'Prova en annan e-post',
   'auth.error': 'Kunde inte skicka länken. Försök igen.',
+  'auth.magicLinkError': 'Inloggningslänken fungerade inte. Försök igen.',
   'auth.signOut': 'Logga ut',
   'auth.skipForNow': 'Hoppa över',
 };

@@ -164,6 +164,7 @@ const en = {
   'tab.map': 'Map',
   'tab.history': 'History',
   'tab.routes': 'Routes',
+  'tab.stats': 'Stats',
 
   // Offline
   'offline.message': 'You are offline',
@@ -195,6 +196,7 @@ const en = {
   'auth.checkEmailHint': 'We sent a sign-in link to {email}',
   'auth.tryAgain': 'Try another email',
   'auth.error': 'Could not send the link. Try again.',
+  'auth.magicLinkError': 'Sign-in link did not work. Please try again.',
   'auth.signOut': 'Sign out',
   'auth.skipForNow': 'Skip for now',
 } as const;

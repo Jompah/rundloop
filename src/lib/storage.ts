@@ -7,7 +7,9 @@ const defaultSettings: AppSettings = {
   units: 'km',
   defaultDistance: 5,
   paceSecondsPerKm: 360, // 6:00/km default running pace
-  providerBundle: 'open' as const,
+  // providerBundle intentionally omitted: initProviders() picks 'google'
+  // when GOOGLE_MAPS_API_KEY is available, else falls back to 'open'.
+  // Respects the user's explicit choice if they have one saved.
   scenicMode: 'standard' as ScenicMode,
 };
 

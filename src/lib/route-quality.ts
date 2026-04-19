@@ -71,6 +71,48 @@ export interface DeadEndDetour {
 }
 
 /**
+ * Names that appear in Google Routes instructions but are NOT actual street names.
+ * These are routing hints/artifacts (tolls, stairs, generic references) that
+ * should not be treated as street identifiers when detecting detours.
+ */
+const IGNORE_STREET_NAMES = new Set([
+  'the path', 'vägtullar', 'vägtull', 'ta trappan', 'trappan',
+  'the bridge', 'bron', 'the tunnel', 'tunneln', 'stairs',
+  // Google Maps routing artifacts that aren't street names
+  'sväng lätt höger', 'sväng lätt vänster',
+  'sväng höger', 'sväng vänster',
+  'fortsätt rakt fram', 'continue straight',
+  'ta avfarten', 'take the exit',
+  'slight right', 'slight left',
+  'turn right', 'turn left',
+]);
+
+/**
+ * Prefixes that indicate the extracted text is a routing hint/artifact rather
+ * than a street name (e.g. "destinationen kommer att vara på vänster sida"
+ * from a "Kör vidare along X, destinationen kommer..." instruction).
+ */
+const IGNORE_NAME_PREFIXES = [
+  'destinationen kommer',
+  'destinationen finns',
+  'destination will',
+];
+
+/** True if the extracted name is actually a routing artifact/hint. */
+function isRoutingArtifact(name: string): boolean {
+  if (IGNORE_STREET_NAMES.has(name)) return true;
+  for (const prefix of IGNORE_NAME_PREFIXES) {
+    if (name.startsWith(prefix)) return true;
+  }
+  return false;
+}
+
+/** True if the name has at least one alphabetic char (a-z / å ä ö). */
+function hasLetter(name: string): boolean {
+  return /[a-zåäö]/i.test(name);
+}
+
+/**
  * Detect dead-end detour patterns in route instructions.
  * These are short side-trips where OSRM routes onto a street and quickly exits
  * the same way, adding distance without meaningful progress.
@@ -91,7 +133,8 @@ export function detectDeadEndDetours(instructions: TurnInstruction[]): DeadEndDe
     const match = inst.text.match(/(?:onto|on|along)\s+(.+?)(?:\s*$)/i);
     if (match) {
       const name = match[1].trim().toLowerCase();
-      if (name === 'the path') continue; // Skip unnamed segments
+      if (isRoutingArtifact(name)) continue; // Skip routing hints/artifacts
+      if (!hasLetter(name)) continue; // Require at least one letter — skip numeric/punct-only
       streetEntries.push({ name, index: i, distance: inst.distance, location: inst.location });
     }
   }
@@ -102,6 +145,9 @@ export function detectDeadEndDetours(instructions: TurnInstruction[]): DeadEndDe
     streetCounts.set(entry.name, (streetCounts.get(entry.name) || 0) + 1);
   }
   for (const entry of streetEntries) {
+    // Skip synthetic unnamed-segment keys and ignored routing-hint names
+    if (entry.name.startsWith('_unnamed_')) continue;
+    if (isRoutingArtifact(entry.name)) continue;
     if (streetCounts.get(entry.name) === 1 && entry.distance < 200) {
       if (!seenStreets.has(entry.name)) {
         detours.push({ streetName: entry.name, distance: entry.distance });
@@ -134,9 +180,21 @@ export function detectDeadEndDetours(instructions: TurnInstruction[]): DeadEndDe
       inst.location[1], inst.location[0],
       next.location[1], next.location[0]
     );
-    if (dist < 80 && inst.distance < 150) {
-      const match = inst.text.match(/(?:onto|on|along)\s+(.+?)(?:\s*$)/i);
-      const streetName = match ? match[1].trim().toLowerCase() : `segment-${i}`;
+    const match = inst.text.match(/(?:onto|on|along)\s+(.+?)(?:\s*$)/i);
+    const rawName = match ? match[1].trim().toLowerCase() : null;
+    const hasRealName =
+      rawName !== null && hasLetter(rawName) && !isRoutingArtifact(rawName);
+
+    // Named segments: original threshold. Unnamed: require BOTH steps to be short
+    // (deterministic location-based key so repeated unnamed segments dedupe).
+    const named = hasRealName && dist < 80 && inst.distance < 150;
+    const unnamed =
+      !hasRealName && dist < 80 && inst.distance < 150 && next.distance < 150;
+
+    if (named || unnamed) {
+      const streetName = hasRealName
+        ? rawName!
+        : `_unnamed_${Math.round(inst.location[0] * 1000)}_${Math.round(inst.location[1] * 1000)}`;
       if (!seenStreets.has(streetName)) {
         detours.push({ streetName, distance: inst.distance });
         seenStreets.add(streetName);

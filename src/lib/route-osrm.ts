@@ -86,20 +86,26 @@ export async function routeViaOSRM(waypoints: RouteWaypoint[], paceSecondsPerKm:
     const timeout = setTimeout(() => controller.abort(), 15000);
     res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeout);
-  } catch (fetchErr: any) {
-    if (fetchErr?.name === 'AbortError') {
+  } catch (fetchErr: unknown) {
+    const err = fetchErr as { name?: string; message?: string } | null;
+    if (err?.name === 'AbortError') {
       throw new Error('Route server timed out. Check your internet connection and try again.');
     }
-    throw new Error(`Could not reach route server: ${fetchErr?.message || 'network error'}. Check your internet connection.`);
+    throw new Error(`Could not reach route server: ${err?.message || 'network error'}. Check your internet connection.`);
   }
 
   if (!res.ok) {
     throw new Error(`OSRM routing failed (${res.status})`);
   }
 
-  let data: any;
+  interface OSRMResponse {
+    code: string;
+    routes?: OSRMRoute[];
+  }
+
+  let data: OSRMResponse;
   try {
-    data = await res.json();
+    data = (await res.json()) as OSRMResponse;
   } catch {
     throw new Error('Invalid response from route server');
   }
