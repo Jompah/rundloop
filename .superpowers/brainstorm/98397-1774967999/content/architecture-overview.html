@@ -1,0 +1,74 @@
+<h2>Arkitektur: Provider Abstraction Layer</h2>
+<p class="subtitle">Sektion 1 av 4 — Övergripande struktur</p>
+
+<div class="mockup">
+  <div class="mockup-header">Systemdiagram</div>
+  <div class="mockup-body" style="padding: 2rem; font-family: monospace; font-size: 13px; line-height: 1.8;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <div style="display: inline-block; padding: 12px 24px; background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 8px; font-weight: bold;">
+        🏃 App Components (MapView, RouteGenerator, etc.)
+      </div>
+    </div>
+    <div style="text-align: center; color: rgba(255,255,255,0.4); margin-bottom: 1rem;">▼ använder</div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 1.5rem;">
+      <div style="padding: 10px; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; text-align: center;">
+        <div style="font-weight: bold; color: #eab308;">MapRenderer</div>
+        <div style="font-size: 11px; opacity: 0.7;">render, markers, polylines</div>
+      </div>
+      <div style="padding: 10px; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; text-align: center;">
+        <div style="font-weight: bold; color: #eab308;">RoutingEngine</div>
+        <div style="font-size: 11px; opacity: 0.7;">directions, turn-by-turn</div>
+      </div>
+      <div style="padding: 10px; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; text-align: center;">
+        <div style="font-weight: bold; color: #eab308;">Geocoder</div>
+        <div style="font-size: 11px; opacity: 0.7;">reverse geocode, search</div>
+      </div>
+      <div style="padding: 10px; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; text-align: center;">
+        <div style="font-weight: bold; color: #eab308;">POIProvider</div>
+        <div style="font-size: 11px; opacity: 0.7;">landmarks, natur, islands</div>
+      </div>
+    </div>
+
+    <div style="text-align: center; color: rgba(255,255,255,0.4); margin-bottom: 0.5rem;">▼ interfaces implementeras av</div>
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <div style="display: inline-block; padding: 8px 16px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
+        <span style="font-weight: bold; color: #10b981;">ProviderBundle</span>
+        <span style="opacity: 0.7;"> — default: alla 4 från samma provider</span>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+      <div style="padding: 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; text-align: center;">
+        <div style="font-weight: bold; color: #10b981;">🟢 Open</div>
+        <div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">MapLibre + OSRM<br/>Nominatim + Overpass</div>
+        <div style="font-size: 10px; margin-top: 6px; padding: 3px 6px; background: rgba(16, 185, 129, 0.2); border-radius: 4px; display: inline-block;">Gratis</div>
+      </div>
+      <div style="padding: 12px; background: rgba(66, 133, 244, 0.1); border: 1px solid rgba(66, 133, 244, 0.25); border-radius: 8px; text-align: center;">
+        <div style="font-weight: bold; color: #4285f4;">🔵 Google</div>
+        <div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">Google Maps JS<br/>Directions + Places + Geocoding</div>
+        <div style="font-size: 10px; margin-top: 6px; padding: 3px 6px; background: rgba(66, 133, 244, 0.2); border-radius: 4px; display: inline-block;">$200/mån kredit</div>
+      </div>
+      <div style="padding: 12px; background: rgba(0, 178, 255, 0.1); border: 1px solid rgba(0, 178, 255, 0.25); border-radius: 8px; text-align: center;">
+        <div style="font-weight: bold; color: #00b2ff;">🟣 Mapbox</div>
+        <div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">Mapbox GL JS<br/>Directions + Geocoding + POI</div>
+        <div style="font-size: 10px; margin-top: 6px; padding: 3px 6px; background: rgba(0, 178, 255, 0.2); border-radius: 4px; display: inline-block;">50k loads/mån</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 1.5rem; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: center; font-size: 12px;">
+      <span style="color: #eab308;">⚙️ Override:</span> Kör Google-bundle men byt ut RoutingEngine → OSRM
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 1.5rem;">
+  <h3>Nyckelprinciper</h3>
+  <ul>
+    <li><strong>4 interfaces</strong> — MapRenderer, RoutingEngine, Geocoder, POIProvider</li>
+    <li><strong>3 bundles</strong> — Open (default), Google, Mapbox</li>
+    <li><strong>Override per tjänst</strong> — byt enskild tjänst i ett bundle</li>
+    <li><strong>Open är alltid fallback</strong> — om Google/Mapbox-nyckel saknas, faller det tillbaka till Open</li>
+    <li><strong>Appen vet inte vilken provider den pratar med</strong> — bara interfaces</li>
+  </ul>
+</div>

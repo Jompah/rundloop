@@ -1,0 +1,67 @@
+<h2>Arkitektur-approach: Map Provider Abstraction</h2>
+<p class="subtitle">Tre alternativ för hur vi bygger adaptermönstret</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Interface-per-tjänst</h3>
+      <p>Separata interfaces för varje kapabilitet: <code>MapRenderer</code>, <code>RoutingEngine</code>, <code>Geocoder</code>, <code>POIProvider</code>. Varje provider implementerar de interfaces den stödjer. Mix-and-match möjligt (t.ex. Google Maps rendering + OSRM routing).</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Fördelar</h4><ul>
+          <li>Maximal flexibilitet — testa enskilda delar</li>
+          <li>Kan hitta bästa combo (Google tiles + OSRM routing)</li>
+          <li>Enkelt att lägga till en ny provider för bara en tjänst</li>
+        </ul></div>
+        <div class="cons"><h4>Nackdelar</h4><ul>
+          <li>Fler interfaces att underhålla</li>
+          <li>Konfiguration mer komplex (4 val istället för 1)</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Monolitisk provider</h3>
+      <p>Ett enda <code>MapProvider</code>-interface som varje provider implementerar helt: rendering, routing, geocoding, POI. Du byter allt på en gång — "Google-läge" eller "Open-läge".</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Fördelar</h4><ul>
+          <li>Enkel konfiguration — ett val</li>
+          <li>Garanterat konsistent inom en provider</li>
+          <li>Mindre kod att skriva</li>
+        </ul></div>
+        <div class="cons"><h4>Nackdelar</h4><ul>
+          <li>Ingen mix-and-match</li>
+          <li>Om en provider saknar en kapabilitet måste du ändå implementera den</li>
+          <li>Svårare att isolera vad som gör skillnad i A/B-test</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hybrid: Provider-bundles med override</h3>
+      <p>Varje provider levereras som ett bundle (rendering + routing + geocoding + POI), men enskilda tjänster kan overridas. Default: välj "google" och du får hela Google-stacken. Override: "google" men med OSRM för routing.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Fördelar</h4><ul>
+          <li>Enkelt default-val (ett klick) men flexibelt vid behov</li>
+          <li>A/B-test kan jämföra hela bundles ELLER enskilda tjänster</li>
+          <li>Pragmatisk balans mellan A och B</li>
+        </ul></div>
+        <div class="cons"><h4>Nackdelar</h4><ul>
+          <li>Något mer komplext än B, men inte lika mycket som A</li>
+          <li>Override-logik behöver vara tydlig</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 2rem; padding: 1.5rem; background: rgba(99, 102, 241, 0.1); border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.2);">
+  <h3 style="margin-top: 0;">💡 Min rekommendation: C — Hybrid</h3>
+  <p>Du får snabb A/B-testning mellan hela stacks (Open vs Google vs Mapbox) men kan också isolera enskilda tjänster om du märker att t.ex. Google-routing är bättre men MapLibre-rendering ser snyggare ut. Det är den approach som ger mest insikt med minst konfigurationsbörda.</p>
+</div>

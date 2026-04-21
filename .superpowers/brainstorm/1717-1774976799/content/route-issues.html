@@ -1,0 +1,55 @@
+<h2>Ruttgenerering — alla kända problem</h2>
+<p class="subtitle">Behöver dina svar innan jag fixar allt i en omgång</p>
+
+<div class="section">
+  <h3>1. Ö-konturens riktning</h3>
+  <p>Overpass API returnerar Kungsholmens kontur i <strong>obestämd ordning</strong> — kan vara medurs eller moturs. Vi validerar inte detta. Det förklarar varför 10km-rutten ibland går åt fel håll.</p>
+  <p><strong>Fix:</strong> Beräkna konturens riktning matematiskt (signed area) och vänd om den om den är medurs.</p>
+  <p class="subtitle">Fråga: Finns det fall där du vill springa medurs? Eller ska CCW alltid vara default?</p>
+</div>
+
+<div class="section">
+  <h3>2. Konturpunkter i vattnet</h3>
+  <p>Ö-konturen följer <strong>strandlinjen</strong>, inte löpstråk. En punkt kan vara 50m ute i vattnet. OSRM hittar ingen väg dit → hela rutten kraschar.</p>
+  <p><strong>Fix:</strong> Flytta varje konturpunkt ~30m inåt ön (mot centroid) så den hamnar på land. Eller: snappa till närmaste väg via OSRM:s nearest-endpoint.</p>
+  <p class="subtitle">Fråga: Bra approach? Eller föredrar du något annat?</p>
+</div>
+
+<div class="section">
+  <h3>3. "AI-rutt otillgänglig" döljer det verkliga felet</h3>
+  <p>Idag: om AI:n failar (API-nyckel saknas, timeout, dåligt svar) → tyst fallback till algoritmisk rutt med bara "AI-rutt otillgänglig". Du vet inte <em>varför</em>.</p>
+  <p><strong>Fix:</strong> Visa det faktiska felet: "API-nyckel saknas", "Ruttservern timeout:ade", "AI genererade orimlig rutt (15km istället för 5km)".</p>
+  <p class="subtitle">Fråga: Vill du se tekniska detaljer, eller bara en enkel "prova igen"?</p>
+</div>
+
+<div class="section">
+  <h3>4. Distanstolerans</h3>
+  <p>Just nu: +10% / -15%. Men AI-läget och algoritmiska läget har <strong>olika toleranser</strong> (bugg).</p>
+  <p><strong>Fix:</strong> Samma tolerans överallt. Du sa 10% marginal.</p>
+  <p class="subtitle">Fråga: ±10% — eller ska vi vara striktare? T.ex. max +10% / -5% (bättre att vara lite kort)?</p>
+</div>
+
+<div class="section">
+  <h3>5. Korta rutter (5km) på ö</h3>
+  <p>Haiku har dålig lokalkännedom. Även med kustpunkter placerar den waypoints i vattnet eller på Södermalm.</p>
+  <p><strong>Fix-alternativ:</strong></p>
+  <ul>
+    <li><strong>A)</strong> Använd ö-konturen för halva sträckan + en rak linje tillbaka (helt utan AI)</li>
+    <li><strong>B)</strong> Byt till Sonnet (kräver API-uppgradering)</li>
+    <li><strong>C)</strong> Behåll Haiku men filtrera bort waypoints som är utanför ön (>100m från konturlinjen)</li>
+  </ul>
+  <p class="subtitle">Fråga: Vilken föredrar du? A ger mest pålitligt resultat men ingen AI-kreativitet.</p>
+</div>
+
+<div class="section">
+  <h3>6. Backtracking-problemet</h3>
+  <p>Även med "no backtracking"-regel i prompten, OSRM tar ibland genvägar genom kvarter (upp en gata, tillbaka). Det beror på att <strong>OSRM optimerar för kortaste väg</strong>, inte finaste.</p>
+  <p><strong>Fix:</strong> Efteranalys av OSRM-resultat — detektera och avvisa rutter med hög gatuduplicering (redan implementerat men tröskeln kan vara för generös).</p>
+  <p class="subtitle">Fråga: Hur känslig ska detektionen vara? Ska en enda ut-och-tillbaka-sträcka avvisa hela rutten?</p>
+</div>
+
+<div class="section">
+  <h3>7. Start från Sonnet API</h3>
+  <p>Du nämnde att du kan ge mig en Sonnet API-nyckel. Det löser problem 5 (korta rutter) och ger generellt bättre resultat. Haiku kostar ~$0.001/rutt, Sonnet ~$0.01/rutt.</p>
+  <p class="subtitle">Fråga: Vill du sätta upp en Sonnet-nyckel? Eller vill du att vi löser det utan Sonnet först?</p>
+</div>

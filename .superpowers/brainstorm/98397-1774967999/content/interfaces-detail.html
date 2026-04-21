@@ -1,0 +1,79 @@
+<h2>Interfaces & Datamodeller</h2>
+<p class="subtitle">Sektion 2 av 4 — Vad varje interface gör</p>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+
+  <div class="mockup">
+    <div class="mockup-header" style="background: rgba(234, 179, 8, 0.2); color: #eab308;">MapRenderer</div>
+    <div class="mockup-body" style="padding: 1rem; font-size: 13px;">
+      <div style="font-family: monospace; line-height: 2;">
+        <div><span style="color: #10b981;">init</span>(container, options) → Map</div>
+        <div><span style="color: #10b981;">setCenter</span>(lat, lng, zoom)</div>
+        <div><span style="color: #10b981;">addPolyline</span>(coords, style)</div>
+        <div><span style="color: #10b981;">addMarker</span>(lat, lng, options)</div>
+        <div><span style="color: #10b981;">fitBounds</span>(bounds)</div>
+        <div><span style="color: #10b981;">setHeading</span>(degrees)</div>
+        <div><span style="color: #10b981;">destroy</span>()</div>
+      </div>
+      <div style="margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 11px;">
+        <strong>Notera:</strong> Gradient-polyline (elevation coloring) hanteras olika per provider. Interfacet accepterar en <code>colorExpression</code> — varje adapter översätter till sitt format.
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header" style="background: rgba(234, 179, 8, 0.2); color: #eab308;">RoutingEngine</div>
+    <div class="mockup-body" style="padding: 1rem; font-size: 13px;">
+      <div style="font-family: monospace; line-height: 2;">
+        <div><span style="color: #10b981;">getRoute</span>(waypoints) → Route</div>
+        <div><span style="color: #10b981;">getRouteWithAlternatives</span>(wp) → Route[]</div>
+      </div>
+      <div style="margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 11px;">
+        <strong>Route-objekt:</strong><br/>
+        <code>{ polyline, distance, duration, instructions[] }</code><br/><br/>
+        Instructions normaliseras till gemensamt format: <code>{ type: "turn-left" | "turn-right" | "continue" | ..., text, distance, location }</code>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header" style="background: rgba(234, 179, 8, 0.2); color: #eab308;">Geocoder</div>
+    <div class="mockup-body" style="padding: 1rem; font-size: 13px;">
+      <div style="font-family: monospace; line-height: 2;">
+        <div><span style="color: #10b981;">reverseGeocode</span>(lat, lng) → Place</div>
+        <div><span style="color: #10b981;">search</span>(query, near?) → Place[]</div>
+      </div>
+      <div style="margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 11px;">
+        <strong>Place-objekt:</strong><br/>
+        <code>{ name, city, country, lat, lng }</code><br/><br/>
+        Idag används bara <code>reverseGeocode</code> för att hämta stadsnamn. <code>search</code> förberett för framtida "sök destination".
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header" style="background: rgba(234, 179, 8, 0.2); color: #eab308;">POIProvider</div>
+    <div class="mockup-body" style="padding: 1rem; font-size: 13px;">
+      <div style="font-family: monospace; line-height: 2;">
+        <div><span style="color: #10b981;">getNaturePOIs</span>(center, radius) → POI[]</div>
+        <div><span style="color: #10b981;">getLandmarks</span>(center, radius) → POI[]</div>
+        <div><span style="color: #10b981;">getIslandOutline</span>(lat, lng) → Polygon?</div>
+      </div>
+      <div style="margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 11px;">
+        <strong>POI-objekt:</strong><br/>
+        <code>{ name, type, lat, lng, emoji? }</code><br/><br/>
+        <strong>Obs:</strong> Google Places har rikare data (ratings, foton) men vi normaliserar ner till gemensamt format. Extra-data kan exponeras via <code>metadata</code>-fält.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 1.5rem;">
+  <h3>Designbeslut</h3>
+  <ul>
+    <li><strong>Normaliserade returtyper</strong> — alla providers returnerar samma Route, Place, POI-objekt</li>
+    <li><strong>Provider-specifik metadata</strong> — extra data (Google ratings, Mapbox confidence scores) i ett valfritt <code>metadata</code>-fält</li>
+    <li><strong>Async allt</strong> — alla metoder returnerar Promise (även om Open-implementationen ibland är synkron)</li>
+    <li><strong>Elevation separat</strong> — hålls utanför provider-abstraktionen, Open-Meteo fungerar med alla providers</li>
+  </ul>
+</div>

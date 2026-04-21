@@ -1,0 +1,104 @@
+<h2>A/B-testning & Prestanda-logging</h2>
+<p class="subtitle">Sektion 3 av 4 — Hur vi jämför providers</p>
+
+<div class="mockup">
+  <div class="mockup-header">Provider-väljare (admin/dev-vy i Settings)</div>
+  <div class="mockup-body" style="padding: 1.5rem;">
+    <div style="max-width: 360px; margin: 0 auto;">
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.5; margin-bottom: 8px;">Bundle</div>
+        <div style="display: flex; gap: 8px;">
+          <div style="flex:1; padding: 10px; background: rgba(16,185,129,0.2); border: 2px solid #10b981; border-radius: 8px; text-align: center; font-weight: bold; font-size: 13px;">🟢 Open</div>
+          <div style="flex:1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; text-align: center; font-size: 13px; opacity: 0.6;">🔵 Google</div>
+          <div style="flex:1; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; text-align: center; font-size: 13px; opacity: 0.6;">🟣 Mapbox</div>
+        </div>
+      </div>
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.5; margin-bottom: 8px;">Overrides (valfritt)</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12px;">
+          <div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">Rendering: <span style="color: #10b981;">auto</span></div>
+          <div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">Routing: <span style="color: #10b981;">auto</span></div>
+          <div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">Geocoding: <span style="color: #10b981;">auto</span></div>
+          <div style="padding: 8px; background: rgba(255,255,255,0.05); border-radius: 6px;">POI: <span style="color: #10b981;">auto</span></div>
+        </div>
+      </div>
+      <div style="padding: 10px; background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.2); border-radius: 8px; font-size: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 32px; height: 18px; background: rgba(234,179,8,0.4); border-radius: 9px; position: relative;">
+            <div style="width: 14px; height: 14px; background: #eab308; border-radius: 50%; position: absolute; right: 2px; top: 2px;"></div>
+          </div>
+          <span>A/B-testläge — randomiserar bundle per session</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+  <div class="mockup">
+    <div class="mockup-header">Logging vid ruttgenerering</div>
+    <div class="mockup-body" style="padding: 1rem; font-size: 12px; font-family: monospace; line-height: 1.8;">
+      <div style="opacity: 0.5;">// Sparas automatiskt i IndexedDB</div>
+      <div>{</div>
+      <div style="padding-left: 16px;">
+        <div>"timestamp": "2026-03-31T14:22:00"</div>
+        <div>"provider": "open"</div>
+        <div>"action": "generate_route"</div>
+        <div>"location": [59.33, 18.05]</div>
+        <div>"distance_requested": 5.0</div>
+        <div>"distance_actual": 4.8</div>
+        <div style="color: #10b981;">"routing_ms": 420</div>
+        <div style="color: #10b981;">"geocode_ms": 180</div>
+        <div style="color: #10b981;">"poi_ms": 350</div>
+        <div style="color: #10b981;">"total_ms": 1200</div>
+        <div>"success": true</div>
+      </div>
+      <div>}</div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Logging vid run-slut</div>
+    <div class="mockup-body" style="padding: 1rem; font-size: 12px; font-family: monospace; line-height: 1.8;">
+      <div style="opacity: 0.5;">// Utökar befintlig CompletedRun</div>
+      <div>{</div>
+      <div style="padding-left: 16px;">
+        <div>...completedRun,</div>
+        <div style="color: #eab308;">"provider_bundle": "google"</div>
+        <div style="color: #eab308;">"provider_overrides": {}</div>
+        <div style="color: #eab308;">"generation_log_id": "abc123"</div>
+        <div style="color: #eab308;">"tile_load_ms_avg": 85</div>
+        <div style="color: #eab308;">"rating": null</div>
+        <div style="color: #eab308;">"notes": null</div>
+      </div>
+      <div>}</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 1.5rem;">
+  <h3>Feedback-flöde</h3>
+  <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13px;">
+    <div style="padding: 8px 14px; background: rgba(99,102,241,0.15); border-radius: 20px;">Generera rutt</div>
+    <span style="opacity: 0.4;">→</span>
+    <div style="padding: 8px 14px; background: rgba(99,102,241,0.15); border-radius: 20px;">Auto-logga prestanda</div>
+    <span style="opacity: 0.4;">→</span>
+    <div style="padding: 8px 14px; background: rgba(99,102,241,0.15); border-radius: 20px;">Spring/gå rutten</div>
+    <span style="opacity: 0.4;">→</span>
+    <div style="padding: 8px 14px; background: rgba(99,102,241,0.15); border-radius: 20px;">Auto-logga run-data</div>
+    <span style="opacity: 0.4;">→</span>
+    <div style="padding: 8px 14px; background: rgba(234,179,8,0.2); border: 1px solid rgba(234,179,8,0.3); border-radius: 20px;">⭐ Rating + anteckning (valfritt)</div>
+    <span style="opacity: 0.4;">→</span>
+    <div style="padding: 8px 14px; background: rgba(16,185,129,0.15); border-radius: 20px;">Dela med Claude vid tillfälle</div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 1rem;">
+  <h3>A/B-testlogik</h3>
+  <ul>
+    <li><strong>När A/B är på:</strong> slumpar bundle vid varje ny session (app-start). Visas diskret i UI så du vet vilken du testar.</li>
+    <li><strong>När A/B är av:</strong> använder vald bundle från settings.</li>
+    <li><strong>Fallback:</strong> om vald provider saknar API-nyckel → Open automatiskt.</li>
+    <li><strong>Exporterbar data:</strong> alla loggar kan exporteras som JSON så du kan dela med mig.</li>
+  </ul>
+</div>

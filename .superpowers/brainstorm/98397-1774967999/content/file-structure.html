@@ -1,0 +1,92 @@
+<h2>Filstruktur & Migrationsstrategi</h2>
+<p class="subtitle">Sektion 4 av 4 — Var koden hamnar och hur vi migrerar</p>
+
+<div class="mockup">
+  <div class="mockup-header">Ny mappstruktur under src/lib/providers/</div>
+  <div class="mockup-body" style="padding: 1.5rem; font-family: monospace; font-size: 13px; line-height: 2;">
+    <div>src/lib/providers/</div>
+    <div style="padding-left: 20px;">
+      <div style="color: #eab308;">types.ts</div>
+      <div style="opacity: 0.5; font-size: 11px; padding-left: 20px;">MapRenderer, RoutingEngine, Geocoder, POIProvider interfaces</div>
+      <div style="opacity: 0.5; font-size: 11px; padding-left: 20px;">Route, Place, POI, ProviderLog normaliserade typer</div>
+      <br/>
+      <div style="color: #eab308;">registry.ts</div>
+      <div style="opacity: 0.5; font-size: 11px; padding-left: 20px;">Bundle-hantering, override-logik, A/B-slumpning</div>
+      <div style="opacity: 0.5; font-size: 11px; padding-left: 20px;">getRenderer(), getRouter(), getGeocoder(), getPOIProvider()</div>
+      <br/>
+      <div style="color: #eab308;">logger.ts</div>
+      <div style="opacity: 0.5; font-size: 11px; padding-left: 20px;">Prestanda-wrapping, auto-timing, IndexedDB-lagring</div>
+      <br/>
+      <div style="color: #10b981;">open/</div>
+      <div style="padding-left: 20px; opacity: 0.7;">
+        <div>renderer.ts <span style="opacity: 0.5;">← refaktorerad från MapView.tsx</span></div>
+        <div>router.ts <span style="opacity: 0.5;">← refaktorerad från route-osrm.ts</span></div>
+        <div>geocoder.ts <span style="opacity: 0.5;">← refaktorerad från geolocation.ts (Nominatim)</span></div>
+        <div>poi.ts <span style="opacity: 0.5;">← refaktorerad från overpass.ts</span></div>
+        <div>index.ts <span style="opacity: 0.5;">← OpenBundle export</span></div>
+      </div>
+      <br/>
+      <div style="color: #4285f4;">google/</div>
+      <div style="padding-left: 20px; opacity: 0.7;">
+        <div>renderer.ts <span style="opacity: 0.5;">← Google Maps JS API</span></div>
+        <div>router.ts <span style="opacity: 0.5;">← Directions API</span></div>
+        <div>geocoder.ts <span style="opacity: 0.5;">← Geocoding API</span></div>
+        <div>poi.ts <span style="opacity: 0.5;">← Places API</span></div>
+        <div>index.ts <span style="opacity: 0.5;">← GoogleBundle export</span></div>
+      </div>
+      <br/>
+      <div style="color: #00b2ff;">mapbox/</div>
+      <div style="padding-left: 20px; opacity: 0.7;">
+        <div>renderer.ts <span style="opacity: 0.5;">← Mapbox GL JS</span></div>
+        <div>router.ts <span style="opacity: 0.5;">← Mapbox Directions</span></div>
+        <div>geocoder.ts <span style="opacity: 0.5;">← Mapbox Geocoding</span></div>
+        <div>poi.ts <span style="opacity: 0.5;">← Mapbox POI / Overpass fallback</span></div>
+        <div>index.ts <span style="opacity: 0.5;">← MapboxBundle export</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+  <div class="mockup">
+    <div class="mockup-header">Migrationsstrategi</div>
+    <div class="mockup-body" style="padding: 1rem; font-size: 13px;">
+      <ol style="line-height: 2; padding-left: 20px;">
+        <li><strong>Skapa interfaces + types</strong> baserat på befintlig kod</li>
+        <li><strong>Wrappa befintlig kod</strong> som Open-provider (inga nya API:er ännu)</li>
+        <li><strong>Byt ut direktanrop</strong> i komponenter → registry-anrop</li>
+        <li><strong>Verifiera</strong> att allt funkar exakt som innan</li>
+        <li><strong>Lägg till logging</strong>-wrapper</li>
+        <li><strong>Implementera Google</strong>-adapter</li>
+        <li><strong>Implementera Mapbox</strong>-adapter</li>
+        <li><strong>A/B + Settings UI</strong></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Vad som ändras i befintliga filer</div>
+    <div class="mockup-body" style="padding: 1rem; font-size: 13px; line-height: 2;">
+      <div><span style="color: #eab308;">MapView.tsx</span> — byter från direkt MapLibre → registry.getRenderer()</div>
+      <div><span style="color: #eab308;">route-osrm.ts</span> → wrappas i open/router.ts</div>
+      <div><span style="color: #eab308;">overpass.ts</span> → wrappas i open/poi.ts</div>
+      <div><span style="color: #eab308;">geolocation.ts</span> → Nominatim-del → open/geocoder.ts</div>
+      <div><span style="color: #eab308;">SettingsView.tsx</span> — ny provider-sektion</div>
+      <div><span style="color: #eab308;">storage.ts</span> — nya stores för loggar</div>
+      <div><span style="color: #eab308;">types/index.ts</span> — provider-relaterade typer</div>
+      <div style="margin-top: 8px; padding: 8px; background: rgba(16,185,129,0.1); border-radius: 6px;">
+        <span style="color: #10b981;">✓</span> Originalkod behålls och wrappas — inget tas bort i steg 1-4
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 1.5rem; padding: 1rem; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px;">
+  <h3 style="margin-top: 0; color: #10b981;">Säkerhetsnät</h3>
+  <ul style="font-size: 13px;">
+    <li>Open-providern wrappas först — appen ska fungera identiskt innan vi lägger till nya providers</li>
+    <li>Google/Mapbox-adapters byggs en i taget — inte allt på en gång</li>
+    <li>API-nycklar hanteras server-side (som idag med Anthropic-nyckeln) via env vars</li>
+    <li>Om en provider-nyckel saknas → automatisk fallback till Open</li>
+  </ul>
+</div>

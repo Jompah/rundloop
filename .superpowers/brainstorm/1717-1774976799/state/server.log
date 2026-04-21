@@ -1,0 +1,5 @@
+{"type":"server-started","port":53386,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:53386","screen_dir":"/Users/johannesstensson/rundloop/.superpowers/brainstorm/1717-1774976799/content","state_dir":"/Users/johannesstensson/rundloop/.superpowers/brainstorm/1717-1774976799/state"}
+{"type":"screen-added","file":"/Users/johannesstensson/rundloop/.superpowers/brainstorm/1717-1774976799/content/kungsholmen-routes.html"}
+{"type":"screen-added","file":"/Users/johannesstensson/rundloop/.superpowers/brainstorm/1717-1774976799/content/kungsholmen-routes-v2.html"}
+{"type":"screen-added","file":"/Users/johannesstensson/rundloop/.superpowers/brainstorm/1717-1774976799/content/waiting-test.html"}
+{"type":"server-stopped","reason":"idle timeout"}

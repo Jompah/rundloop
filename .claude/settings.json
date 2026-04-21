@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//dev/**)",
+      "Bash(curl -s https://rundloop.vercel.app/sw.js)",
+      "Bash(supabase --help)",
+      "Bash(git -C /Users/johannesstensson/rundloop log --oneline -8)",
+      "Bash(git -C /Users/johannesstensson/gobot log --oneline -8)",
+      "Bash(git -C /Users/johannesstensson/projects/bokforing-bot log --oneline -8)",
+      "Bash(/usr/local/bin/claude -p --output-format text --dangerously-skip-permissions)",
+      "WebFetch(domain:manuals.plus)",
+      "Bash(pdfinfo /Users/johannesstensson/.claude/projects/-Users-johannesstensson-rundloop/8bb63c84-c32f-440d-acc2-2e51e28f4f77/tool-results/webfetch-1776771335872-ir11pf.pdf)",
+      "Bash(mdls -name kMDItemNumberOfPages /Users/johannesstensson/.claude/projects/-Users-johannesstensson-rundloop/8bb63c84-c32f-440d-acc2-2e51e28f4f77/tool-results/webfetch-1776771335872-ir11pf.pdf)",
+      "Bash(brew list *)",
+      "WebFetch(domain:www.manualslib.com)",
+      "Bash(open /Users/johannesstensson/Downloads/multimeter-lathund.html)"
+    ],
+    "additionalDirectories": [
+      "/Users/johannesstensson/claude-vault/public",
+      "/Users/johannesstensson/.claude",
+      "/Users/johannesstensson/Downloads"
+    ]
+  }
+}

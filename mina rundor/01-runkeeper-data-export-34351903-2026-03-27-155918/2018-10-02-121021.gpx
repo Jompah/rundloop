@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx
+  version="1.1"
+  creator="Runkeeper - http://www.runkeeper.com"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.topografix.com/GPX/1/1"
+  xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
+  xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
+<trk>
+  <name><![CDATA[Running 10/2/18 12:10 pm]]></name>
+  <time>2018-10-02T10:10:21Z</time>
+<trkseg>
+<trkpt lat="59.333512000" lon="18.076443000"><ele>23.3</ele><time>2018-10-02T10:10:21Z</time></trkpt>
+<trkpt lat="59.333416000" lon="18.076356000"><ele>22.7</ele><time>2018-10-02T10:10:26Z</time></trkpt>
+<trkpt lat="59.333325000" lon="18.076274000"><ele>22.1</ele><time>2018-10-02T10:10:29Z</time></trkpt>
+<trkpt lat="59.333207000" lon="18.076218000"><ele>21.7</ele><time>2018-10-02T10:10:32Z</time></trkpt>
+<trkpt lat="59.333115000" lon="18.076290000"><ele>21.2</ele><time>2018-10-02T10:10:35Z</time></trkpt>
+<trkpt lat="59.333051000" lon="18.076436000"><ele>20.6</ele><time>2018-10-02T10:10:39Z</time></trkpt>
+<trkpt lat="59.333014000" lon="18.076598000"><ele>19.7</ele><time>2018-10-02T10:10:43Z</time></trkpt>
+<trkpt lat="59.332966000" lon="18.076765000"><ele>18.9</ele><time>2018-10-02T10:10:48Z</time></trkpt>
+<trkpt lat="59.332941000" lon="18.076935000"><ele>18.4</ele><time>2018-10-02T10:10:52Z</time></trkpt>
+<trkpt lat="59.332885000" lon="18.077052000"><ele>17.9</ele><time>2018-10-02T10:10:56Z</time></trkpt>
+<trkpt lat="59.332809000" lon="18.077150000"><ele>17.4</ele><time>2018-10-02T10:11:40Z</time></trkpt>
+<trkpt lat="59.332737000" lon="18.077336000"><ele>16.9</ele><time>2018-10-02T10:11:44Z</time></trkpt>
+<trkpt lat="59.332698000" lon="18.077502000"><ele>16.5</ele><time>2018-10-02T10:11:48Z</time></trkpt>
+</trkseg>
+<trkseg>
+<trkpt lat="59.332698000" lon="18.077502000"><ele>16.0</ele><time>2018-10-02T10:11:48Z</time></trkpt>
+<trkpt lat="59.332698000" lon="18.077502000"><ele>16.0</ele><time>2018-10-02T10:11:48Z</time></trkpt>
+</trkseg>
+</trk>
+</gpx>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx
+  version="1.1"
+  creator="Runkeeper - http://www.runkeeper.com"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.topografix.com/GPX/1/1"
+  xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
+  xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
+<trk>
+  <name><![CDATA[Running 7/19/19 3:45 pm]]></name>
+  <time>2019-07-19T13:45:57Z</time>
+<trkseg>
+<trkpt lat="59.370480000" lon="17.975382000"><ele>11.7</ele><time>2019-07-19T13:45:57Z</time></trkpt>
+<trkpt lat="59.370480000" lon="17.975382000"><ele>11.7</ele><time>2019-07-19T13:46:09Z</time></trkpt>
+<trkpt lat="59.370520000" lon="17.975235000"><ele>11.9</ele><time>2019-07-19T13:46:14Z</time></trkpt>
+<trkpt lat="59.370579000" lon="17.975115000"><ele>12.0</ele><time>2019-07-19T13:46:21Z</time></trkpt>
+<trkpt lat="59.370617000" lon="17.974959000"><ele>12.1</ele><time>2019-07-19T13:46:31Z</time></trkpt>
+<trkpt lat="59.370632000" lon="17.974784000"><ele>12.2</ele><time>2019-07-19T13:46:37Z</time></trkpt>
+<trkpt lat="59.370648000" lon="17.974604000"><ele>12.3</ele><time>2019-07-19T13:46:44Z</time></trkpt>
+<trkpt lat="59.370651000" lon="17.974444000"><ele>12.3</ele><time>2019-07-19T13:46:50Z</time></trkpt>
+<trkpt lat="59.370642000" lon="17.974267000"><ele>12.3</ele><time>2019-07-19T13:46:56Z</time></trkpt>
+<trkpt lat="59.370635000" lon="17.974102000"><ele>12.5</ele><time>2019-07-19T13:47:01Z</time></trkpt>
+<trkpt lat="59.370626000" lon="17.973941000"><ele>12.7</ele><time>2019-07-19T13:47:06Z</time></trkpt>
+<trkpt lat="59.370623000" lon="17.973901000"><ele>12.8</ele><time>2019-07-19T13:47:08Z</time></trkpt>
+</trkseg>
+</trk>
+</gpx>
