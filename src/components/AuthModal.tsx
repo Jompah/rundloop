@@ -41,7 +41,7 @@ export default function AuthModal({ onSignIn, onVerifyOtp, onSkip, authError }: 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = code.trim();
-    if (trimmed.length !== 6 || verifying) return;
+    if (trimmed.length < 6 || verifying) return;
     setVerifying(true);
     setErrorMsg(null);
 
@@ -91,9 +91,9 @@ export default function AuthModal({ onSignIn, onVerifyOtp, onSkip, authError }: 
                 inputMode="numeric"
                 pattern="[0-9]*"
                 autoComplete="one-time-code"
-                maxLength={6}
+                maxLength={10}
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 placeholder={t('auth.codePlaceholder')}
                 className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 mb-3 outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500 text-center tracking-[0.5em] text-lg"
               />
@@ -103,7 +103,7 @@ export default function AuthModal({ onSignIn, onVerifyOtp, onSkip, authError }: 
               <Button
                 type="submit"
                 fullWidth
-                disabled={code.length !== 6 || verifying}
+                disabled={code.trim().length < 6 || verifying}
               >
                 {verifying ? t('auth.sending') : t('auth.verifyCode')}
               </Button>
