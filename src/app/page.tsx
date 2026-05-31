@@ -87,7 +87,7 @@ export default function Home() {
   } | null>(null);
   const [authSkipped, setAuthSkipped] = useState(false);
   const [authError, setAuthError] = useState(false);
-  const { user, loading: authLoading, signInWithEmail, verifyOtp, signOut } = useAuth();
+  const { user, loading: authLoading, signInWithEmail, verifyOtp, signInWithPassword, signOut } = useAuth();
   const showAuthModal = !authLoading && !user && !authSkipped;
   const runSession = useRunSession();
   const { state: centeringState, dispatch: centeringDispatch } = useMapCentering();
@@ -1131,6 +1131,7 @@ export default function Home() {
         <AuthModal
           onSignIn={signInWithEmail}
           onVerifyOtp={verifyOtp}
+          onSignInWithPassword={signInWithPassword}
           onSkip={() => { setAuthSkipped(true); setAuthError(false); }}
           authError={authError}
         />

@@ -8,14 +8,16 @@ import { useTranslation } from '@/i18n';
 interface AuthModalProps {
   onSignIn: (email: string) => Promise<{ error: unknown }>;
   onVerifyOtp: (email: string, token: string) => Promise<{ error: unknown }>;
+  onSignInWithPassword: (email: string, password: string) => Promise<{ error: unknown }>;
   onSkip: () => void;
   authError?: boolean;
 }
 
-export default function AuthModal({ onSignIn, onVerifyOtp, onSkip, authError }: AuthModalProps) {
+export default function AuthModal({ onSignIn, onVerifyOtp, onSignInWithPassword, onSkip, authError }: AuthModalProps) {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [sent, setSent] = useState(false);
@@ -26,6 +28,15 @@ export default function AuthModal({ onSignIn, onVerifyOtp, onSkip, authError }: 
     if (!email.trim() || sending) return;
     setSending(true);
     setErrorMsg(null);
+
+    // Password filled → direct login, no email round-trip.
+    if (password) {
+      const { error: err } = await onSignInWithPassword(email.trim(), password);
+      setSending(false);
+      if (err) setErrorMsg(t('auth.invalidCredentials'));
+      // On success the SIGNED_IN auth state change closes the modal via parent.
+      return;
+    }
 
     const { error: err } = await onSignIn(email.trim());
     setSending(false);
@@ -131,6 +142,14 @@ export default function AuthModal({ onSignIn, onVerifyOtp, onSkip, authError }: 
                 autoComplete="email"
                 className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 mb-3 outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
               />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={t('auth.passwordPlaceholder')}
+                autoComplete="current-password"
+                className="w-full bg-gray-800 text-white rounded-xl px-4 py-3 mb-3 outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
+              />
               {errorMsg && (
                 <p className="text-red-400 text-sm mb-3">{errorMsg}</p>
               )}
@@ -139,8 +158,9 @@ export default function AuthModal({ onSignIn, onVerifyOtp, onSkip, authError }: 
                 fullWidth
                 disabled={!email.trim() || sending}
               >
-                {sending ? t('auth.sending') : t('auth.sendCode')}
+                {sending ? t('auth.sending') : password ? t('auth.login') : t('auth.sendCode')}
               </Button>
+              <p className="text-xs text-gray-500 mt-3">{t('auth.passwordHint')}</p>
             </form>
 
             <button

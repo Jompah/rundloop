@@ -122,6 +122,13 @@ const sv: Record<TranslationKey, string> = {
   'settings.paceHint': 'Används för beräknad löptid. Standard: 6:00/km',
   'settings.bodyWeight': 'Kroppsvikt',
   'settings.save': 'Spara inställningar',
+  'settings.password': 'Lösenord',
+  'settings.passwordHint': 'Sätt ett lösenord för att kunna logga in utan mailkod nästa gång.',
+  'settings.newPasswordPlaceholder': 'Nytt lösenord (minst 6 tecken)',
+  'settings.savePassword': 'Spara lösenord',
+  'settings.passwordSaved': 'Lösenord sparat ✓',
+  'settings.passwordTooShort': 'Lösenordet måste vara minst 6 tecken.',
+  'settings.passwordError': 'Kunde inte spara lösenordet.',
   'settings.saved': 'Sparat!',
   'settings.language': 'Språk',
 
@@ -208,6 +215,10 @@ const sv: Record<TranslationKey, string> = {
   'auth.verifyCode': 'Verifiera',
   'auth.changeEmail': 'Byt email',
   'auth.invalidCode': 'Ogiltig eller utgången kod. Försök igen.',
+  'auth.passwordPlaceholder': 'Lösenord (valfritt)',
+  'auth.login': 'Logga in',
+  'auth.passwordHint': 'Har du inget lösenord? Lämna tomt så mailar vi en inloggningskod. Du kan sätta ett lösenord i inställningarna när du är inloggad.',
+  'auth.invalidCredentials': 'Fel e-post eller lösenord.',
 };
 
 export default sv;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'drift-v6';
+const CACHE_NAME = 'drift-v7';
 const TILE_CACHE_NAME = 'drift-tiles-v1';
 const MAX_TILE_ENTRIES = 50;
 

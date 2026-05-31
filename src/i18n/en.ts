@@ -120,6 +120,13 @@ const en = {
   'settings.paceHint': 'Used for estimated run time. Default: 6:00/km',
   'settings.bodyWeight': 'Body Weight',
   'settings.save': 'Save Settings',
+  'settings.password': 'Password',
+  'settings.passwordHint': 'Set a password to log in without an email code next time.',
+  'settings.newPasswordPlaceholder': 'New password (min 6 characters)',
+  'settings.savePassword': 'Save password',
+  'settings.passwordSaved': 'Password saved ✓',
+  'settings.passwordTooShort': 'Password must be at least 6 characters.',
+  'settings.passwordError': "Couldn't save password.",
   'settings.saved': 'Saved!',
   'settings.language': 'Language',
 
@@ -206,6 +213,10 @@ const en = {
   'auth.verifyCode': 'Verify',
   'auth.changeEmail': 'Change email',
   'auth.invalidCode': 'Invalid or expired code. Try again.',
+  'auth.passwordPlaceholder': 'Password (optional)',
+  'auth.login': 'Log in',
+  'auth.passwordHint': "No password? Leave it blank and we'll email you a sign-in code. You can set a password in settings once logged in.",
+  'auth.invalidCredentials': 'Wrong email or password.',
 } as const;
 
 export type TranslationKey = keyof typeof en;

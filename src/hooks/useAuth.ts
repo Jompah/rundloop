@@ -53,10 +53,20 @@ export function useAuth() {
     return { error };
   }, [supabase.auth]);
 
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error };
+  }, [supabase.auth]);
+
+  const setPassword = useCallback(async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error };
+  }, [supabase.auth]);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
   }, [supabase.auth]);
 
-  return { user, loading, signInWithEmail, verifyOtp, signOut };
+  return { user, loading, signInWithEmail, verifyOtp, signInWithPassword, setPassword, signOut };
 }

@@ -14,10 +14,31 @@ interface SettingsViewProps {
 
 export default function SettingsView({ onClose }: SettingsViewProps) {
   const { t } = useTranslation();
-  const { user, signOut } = useAuth();
+  const { user, signOut, setPassword } = useAuth();
   const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5, paceSecondsPerKm: 360, scenicMode: 'standard' });
   useEffect(() => { getSettings().then(setSettings); }, []);
   const [saved, setSaved] = useState(false);
+
+  const [newPassword, setNewPassword] = useState('');
+  const [savingPw, setSavingPw] = useState(false);
+  const [pwStatus, setPwStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const handleSavePassword = async () => {
+    if (newPassword.length < 6) {
+      setPwStatus({ ok: false, msg: t('settings.passwordTooShort') });
+      return;
+    }
+    setSavingPw(true);
+    setPwStatus(null);
+    const { error } = await setPassword(newPassword);
+    setSavingPw(false);
+    if (error) {
+      setPwStatus({ ok: false, msg: t('settings.passwordError') });
+    } else {
+      setPwStatus({ ok: true, msg: t('settings.passwordSaved') });
+      setNewPassword('');
+    }
+  };
 
   const handleSave = () => {
     saveSettings(settings);
@@ -257,8 +278,28 @@ export default function SettingsView({ onClose }: SettingsViewProps) {
 
         {/* Account */}
         {user && (
-          <div className="border-t border-gray-800 pt-6">
-            <p className="text-sm text-gray-400 mb-3">{user.email}</p>
+          <div className="border-t border-gray-800 pt-6 space-y-4">
+            <p className="text-sm text-gray-400">{user.email}</p>
+
+            <div>
+              <label className="text-sm font-medium text-white block">{t('settings.password')}</label>
+              <p className="text-xs text-gray-500 mb-2">{t('settings.passwordHint')}</p>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder={t('settings.newPasswordPlaceholder')}
+                autoComplete="new-password"
+                className="w-full bg-gray-800 text-white rounded-lg px-4 py-3 mb-2 placeholder-gray-500"
+              />
+              {pwStatus && (
+                <p className={`text-xs mb-2 ${pwStatus.ok ? 'text-green-400' : 'text-red-400'}`}>{pwStatus.msg}</p>
+              )}
+              <Button variant="secondary" fullWidth onClick={handleSavePassword} disabled={savingPw}>
+                {savingPw ? t('auth.sending') : t('settings.savePassword')}
+              </Button>
+            </div>
+
             <Button variant="secondary" fullWidth onClick={signOut}>
               {t('auth.signOut')}
             </Button>
