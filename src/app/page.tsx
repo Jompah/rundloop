@@ -333,35 +333,28 @@ export default function Home() {
       const settings = await getSettings();
       const paceSecondsPerKm = settings.paceSecondsPerKm ?? 360;
 
-      // Fetch nearby POIs for AI mode (before route generation)
+      // Enrichment (nearby POIs + island outline) is optional context for the AI.
+      // Fetch both in parallel and cap the wait at 3.5s so a slow/unavailable
+      // Overpass can never delay the route suggestion — the AI works without them.
       let naturePOIs: NaturePOI[] = [];
-      if (routeMode === 'ai') {
-        try {
-          const poiRes = await fetch(`/api/pois?lat=${startLat}&lng=${startLng}&radius=${Math.round(distance * 250)}`);
-          if (poiRes.ok) {
-            const poiData = await poiRes.json();
-            naturePOIs = (poiData.pois || []).slice(0, 8); // Max 8 POIs
-          }
-        } catch (e) {
-          console.warn('POI fetch failed, using AI-only routing:', e);
-        }
-      }
-
-      // Fetch island outline for geographic context
       let islandData: { name: string; perimeterKm: number; outline: { lat: number; lng: number }[] } | null = null;
       if (routeMode === 'ai') {
-        try {
-          const islandRes = await fetch(`/api/island-outline?lat=${startLat}&lng=${startLng}`);
-          if (islandRes.ok) {
-            const data = await islandRes.json();
-            islandData = data.island || null;
+        const poiPromise = fetch(`/api/pois?lat=${startLat}&lng=${startLng}&radius=${Math.round(distance * 250)}`, { signal: AbortSignal.timeout(3500) })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => { naturePOIs = (d?.pois || []).slice(0, 8); })
+          .catch(() => { /* slow/unavailable — proceed without POIs */ });
+
+        const islandPromise = fetch(`/api/island-outline?lat=${startLat}&lng=${startLng}`, { signal: AbortSignal.timeout(3500) })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => {
+            islandData = d?.island || null;
             if (islandData) {
               console.log(`[route] Island detected: ${islandData.name} (${islandData.perimeterKm.toFixed(1)}km perimeter)`);
             }
-          }
-        } catch (e) {
-          console.warn('Island detection failed:', e);
-        }
+          })
+          .catch(() => { /* slow/unavailable — proceed without island context */ });
+
+        await Promise.all([poiPromise, islandPromise]);
       }
 
       // Check for candidate routes from library
@@ -611,14 +604,6 @@ export default function Home() {
       }
 
       if (generatedRoute) {
-        // Fetch nearby landmarks (non-blocking -- route works without them)
-        try {
-          const landmarks = await fetchLandmarksNearRoute(generatedRoute.polyline);
-          generatedRoute.landmarks = landmarks;
-        } catch (e) {
-          console.warn('Landmark fetch failed:', e);
-        }
-
         // Compute walk-to-start segment if route start differs from GPS
         if (generatedRoute.polyline.length > 0) {
           const routeStart = generatedRoute.polyline[0]; // [lng, lat]
@@ -647,6 +632,13 @@ export default function Home() {
           setError(`AI route failed: ${aiErrorMessage || 'unknown error'}. Using simple route.`);
         }
         setView('map');
+
+        // Landmarks are decorative — fetch after the route is shown so they never
+        // delay the suggestion, then merge them into the displayed route.
+        const polylineForLandmarks = generatedRoute.polyline;
+        fetchLandmarksNearRoute(polylineForLandmarks)
+          .then((landmarks) => setRoute((r) => (r && r.polyline === polylineForLandmarks ? { ...r, landmarks } : r)))
+          .catch(() => {});
       }
       }; // end runAiGeneration
 

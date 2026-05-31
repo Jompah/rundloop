@@ -26,7 +26,7 @@ function gridKey(lat: number, lng: number): string {
 
 async function fetchFromOverpass(lat: number, lng: number, radiusM: number): Promise<CachedPOI[]> {
   const query = `
-    [out:json][timeout:10];
+    [out:json][timeout:6];
     (
       node["leisure"~"park|garden|nature_reserve"](around:${radiusM},${lat},${lng});
       way["leisure"~"park|garden|nature_reserve"](around:${radiusM},${lat},${lng});
@@ -44,7 +44,7 @@ async function fetchFromOverpass(lat: number, lng: number, radiusM: number): Pro
     method: 'POST',
     body: `data=${encodeURIComponent(query)}`,
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    signal: AbortSignal.timeout(15000), // 15s timeout
+    signal: AbortSignal.timeout(8000), // 8s timeout
   });
 
   if (!response.ok) {
