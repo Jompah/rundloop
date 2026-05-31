@@ -175,3 +175,70 @@ export async function syncAllToSupabase(): Promise<void> {
     console.warn('[sync] syncAll failed', err);
   }
 }
+
+export async function pullFromSupabase(): Promise<void> {
+  try {
+    const user = await getUser();
+    if (!user) return;
+    const supabase = createClient();
+    const { dbPut } = await import('@/lib/db');
+
+    const [routesRes, runsRes, analysesRes] = await Promise.all([
+      supabase.from('drift_routes').select('*').eq('user_id', user.id),
+      supabase.from('drift_runs').select('*').eq('user_id', user.id),
+      supabase.from('drift_run_analysis').select('*').eq('user_id', user.id),
+    ]);
+
+    for (const r of routesRes.data ?? []) {
+      const route: SavedRoute = {
+        id: r.id,
+        name: r.name ?? undefined,
+        route: r.route,
+        city: r.city,
+        createdAt: r.created_at,
+        verified: r.verified ?? undefined,
+        timesRun: r.times_run ?? undefined,
+        avgAdherence: r.avg_adherence ?? undefined,
+        lastRunAt: r.last_run_at ?? undefined,
+      };
+      await dbPut('routes', route);
+    }
+
+    for (const r of runsRes.data ?? []) {
+      const run: CompletedRun = {
+        id: r.id,
+        startTime: new Date(r.start_time).getTime(),
+        endTime: new Date(r.end_time).getTime(),
+        elapsedMs: r.elapsed_ms,
+        distanceMeters: r.distance_meters,
+        trace: r.trace,
+        routeId: r.route_id ?? null,
+        routePolyline: r.route_polyline ?? undefined,
+        generationLogId: r.generation_log_id ?? undefined,
+        analysisId: r.analysis_id ?? undefined,
+      };
+      await dbPut('runs', run);
+    }
+
+    for (const a of analysesRes.data ?? []) {
+      const analysis: RunAnalysis = {
+        id: a.id,
+        runId: a.run_id,
+        routeId: a.route_id ?? null,
+        startCoord: a.start_coord ?? undefined,
+        adherence: a.adherence,
+        deviationZones: a.deviation_zones,
+        completion: a.completion,
+        computedAt: a.computed_at,
+      };
+      await dbPut('run_analysis', analysis);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('drift:sync-complete'));
+    }
+    console.log(`[sync] pulled ${routesRes.data?.length ?? 0} routes, ${runsRes.data?.length ?? 0} runs, ${analysesRes.data?.length ?? 0} analyses`);
+  } catch (err) {
+    console.warn('[sync] pull failed', err);
+  }
+}

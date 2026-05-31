@@ -1,18 +1,21 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/browser';
 import type { User } from '@supabase/supabase-js';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
       setLoading(false);
+      if (data.session?.user) {
+        import('@/lib/supabase/sync').then(({ pullFromSupabase }) => pullFromSupabase()).catch(() => {});
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -20,13 +23,15 @@ export function useAuth() {
         setUser(session?.user ?? null);
         setLoading(false);
         if (event === 'SIGNED_IN' && session?.user) {
-          import('@/lib/supabase/sync').then(({ syncAllToSupabase }) => syncAllToSupabase()).catch(() => {});
+          import('@/lib/supabase/sync')
+            .then(({ syncAllToSupabase, pullFromSupabase }) => syncAllToSupabase().then(() => pullFromSupabase()))
+            .catch(() => {});
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   const signInWithEmail = useCallback(async (email: string) => {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;

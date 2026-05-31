@@ -29,11 +29,16 @@ export function SavedRoutesView({ onRunRoute }: SavedRoutesViewProps) {
   const [deleteTarget, setDeleteTarget] = useState<SavedRoute | null>(null);
 
   useEffect(() => {
-    getSavedRoutes().then((saved) => {
-      saved.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setRoutes(saved);
-      setLoading(false);
-    });
+    const load = () => {
+      getSavedRoutes().then((saved) => {
+        saved.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setRoutes(saved);
+        setLoading(false);
+      });
+    };
+    load();
+    window.addEventListener('drift:sync-complete', load);
+    return () => window.removeEventListener('drift:sync-complete', load);
   }, []);
 
   async function handleSaveRename(route: SavedRoute) {

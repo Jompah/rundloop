@@ -12,6 +12,7 @@ import {
   computeAveragePace,
 } from '@/lib/metrics';
 import { useTranslation } from '@/i18n';
+import { useAuth } from '@/hooks/useAuth';
 interface RunHistoryViewProps {
   onSelectRun: (run: CompletedRun) => void;
   refreshKey?: number;
@@ -19,6 +20,7 @@ interface RunHistoryViewProps {
 
 export function RunHistoryView({ onSelectRun, refreshKey }: RunHistoryViewProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [runs, setRuns] = useState<CompletedRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [units, setUnits] = useState<AppSettings['units']>('km');
@@ -107,6 +109,11 @@ export function RunHistoryView({ onSelectRun, refreshKey }: RunHistoryViewProps)
                   <p className="text-sm text-gray-400">
                     {formatElapsed(run.elapsedMs)} &middot; {formatPace(avgPace, units)} /{units === 'miles' ? 'mi' : 'km'}
                   </p>
+                  {user?.email && (
+                    <p className="text-xs text-gray-500 truncate mt-1">
+                      {user.email}
+                    </p>
+                  )}
                 </div>
               </button>
             );

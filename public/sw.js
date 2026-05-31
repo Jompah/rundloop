@@ -1,4 +1,4 @@
-const CACHE_NAME = 'drift-v3';
+const CACHE_NAME = 'drift-v4';
 const TILE_CACHE_NAME = 'drift-tiles-v1';
 const MAX_TILE_ENTRIES = 50;
 
@@ -24,6 +24,8 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  if (event.request.method !== 'GET') return;
 
   // Tile CDN: cache up to MAX_TILE_ENTRIES
   if (url.hostname.includes('tile') || url.hostname.includes('basemaps')) {

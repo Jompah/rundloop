@@ -586,11 +586,14 @@ export default function Home() {
           }
         }
 
-        // If within tolerance (using raw distance diff from overall best), no need for more attempts
+        // Stop early only if the best route is BOTH within distance tolerance AND decent
+        // quality. A mediocre (zigzag/detour-heavy) route should not short-circuit the
+        // remaining attempt — let the loop try once more; overallBestRoute keeps the better one.
         if (overallBestRoute) {
           const overallRatio = overallBestRoute.distance / 1000 / distance;
-          if (isWithinTolerance(overallRatio)) {
-            console.log(`[Attempt ${attempt + 1}] Inom tolerans (${((overallRatio - 1) * 100).toFixed(1)}%), klar.`);
+          const overallQuality = assessRouteQuality(overallBestRoute);
+          if (isWithinTolerance(overallRatio) && overallQuality >= 60) {
+            console.log(`[Attempt ${attempt + 1}] Inom tolerans (${((overallRatio - 1) * 100).toFixed(1)}%), kvalitet ${overallQuality}/100, klar.`);
             break;
           }
         }
@@ -1003,6 +1006,22 @@ export default function Home() {
 
       {/* Navigation bar */}
       <nav className="absolute top-4 right-4 z-20 flex items-center gap-2">
+        {user && (
+          <div className="bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg flex items-center gap-1 pl-3 pr-1 py-1 text-gray-300">
+            <span className="text-xs max-w-[140px] truncate" title={user.email ?? ''}>{user.email}</span>
+            <button
+              onClick={() => signOut()}
+              className="rounded-full p-1.5 active:bg-gray-700 text-gray-300"
+              aria-label="Sign out"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
+          </div>
+        )}
         <button
           onClick={() => setView('settings')}
           className="bg-gray-800/80 backdrop-blur-sm rounded-full p-3 shadow-lg active:bg-gray-700 text-gray-300"
