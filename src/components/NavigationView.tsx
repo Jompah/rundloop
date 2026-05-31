@@ -81,7 +81,6 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
   const { t } = useTranslation();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [distanceToNext, setDistanceToNext] = useState<number | null>(null);
-  const [totalCovered, setTotalCovered] = useState(0);
   const [lastSpokenStep, setLastSpokenStep] = useState(-1);
   const [settings, setSettings] = useState<AppSettings>({ voiceEnabled: false, voiceStyle: 'concise', units: 'km', defaultDistance: 5, paceSecondsPerKm: 360, scenicMode: 'standard' });
   useEffect(() => { getSettings().then(setSettings); }, []);
@@ -118,14 +117,6 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
     // If within 25m of current maneuver point, advance to next step
     if (distToCurrentManeuver < 25 && currentStepIndex < route.instructions.length - 1) {
       setCurrentStepIndex(prev => prev + 1);
-    }
-
-    // Calculate total distance covered (rough estimate)
-    if (route.polyline.length > 0) {
-      const startPoint = route.polyline[0];
-      const distFromStart = getDistanceBetween(userLocation, startPoint as [number, number]);
-      // This is a rough approximation
-      setTotalCovered(Math.min(distFromStart, route.distance));
     }
   }, [userLocation, currentStepIndex, currentStep, route]);
 
@@ -293,7 +284,7 @@ export default function NavigationView({ route, userLocation, onStop, runStatus,
     };
   }, []);
 
-  const progress = route.distance > 0 ? Math.min((totalCovered / route.distance) * 100, 100) : 0;
+  const progress = route.distance > 0 ? Math.min((distanceMeters / route.distance) * 100, 100) : 0;
 
   return (
     <div className="absolute inset-x-0 top-0 z-20">

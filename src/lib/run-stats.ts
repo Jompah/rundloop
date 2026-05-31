@@ -86,7 +86,10 @@ function computeStreaks(weeklyMap: Map<string, CompletedRun[]>): { current: numb
   let streak = 0;
   let expectedWeek: string = weeks[0] === currentWeek || weeks[0] === lastWeek ? weeks[0] : '';
 
-  if (!expectedWeek) return { current: 0, longest: Math.max(...computeAllStreaks(weeks)) };
+  if (!expectedWeek) {
+    const allStreaks = computeAllStreaks(weeks);
+    return { current: 0, longest: allStreaks.length ? Math.max(...allStreaks) : 0 };
+  }
 
   for (const week of weeks) {
     if (week === expectedWeek) {

@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
         temperature: 0.2,
         messages: [{ role: 'user', content: body.prompt }],
       }),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!res.ok) {
