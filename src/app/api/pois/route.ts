@@ -36,6 +36,10 @@ async function fetchFromOverpass(lat: number, lng: number, radiusM: number): Pro
       way["waterway"~"river|canal|stream"]["name"](around:${radiusM},${lat},${lng});
       node["landuse"~"forest|recreation_ground"](around:${radiusM},${lat},${lng});
       way["landuse"~"forest|recreation_ground"](around:${radiusM},${lat},${lng});
+      node["tourism"~"attraction|viewpoint|artwork"]["name"](around:${radiusM},${lat},${lng});
+      way["tourism"~"attraction|viewpoint"]["name"](around:${radiusM},${lat},${lng});
+      node["historic"~"monument|memorial|castle|ruins"]["name"](around:${radiusM},${lat},${lng});
+      way["historic"~"monument|castle|ruins"]["name"](around:${radiusM},${lat},${lng});
     );
     out center body;
   `;
@@ -63,7 +67,8 @@ async function fetchFromOverpass(lat: number, lng: number, radiusM: number): Pro
     if (!elLat || !elLng) continue;
 
     let type = 'nature';
-    if (el.tags?.leisure === 'park') type = 'park';
+    if (el.tags?.tourism || el.tags?.historic) type = 'landmark';
+    else if (el.tags?.leisure === 'park') type = 'park';
     else if (el.tags?.leisure === 'garden') type = 'garden';
     else if (el.tags?.natural === 'water') type = 'water';
     else if (el.tags?.waterway) type = 'waterway';

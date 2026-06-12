@@ -24,6 +24,7 @@ import { routeViaOSRM } from '@/lib/route-osrm';
 import { routeViaGoogle } from '@/lib/route-google';
 import { analyzeStreetDuplication, shouldRejectRoute } from '@/lib/street-dedup';
 import { assessRouteQuality, hasExcessiveShortSegments, detectDeadEndDetours } from '@/lib/route-quality';
+import { scenicScore, findScenicAnchor, buildCorridorWaypoints, type ScenicFeature } from '@/lib/scenic';
 import { findNearbySavedRoutes, getSettings, saveSettings, haversineMeters } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
 import { useMapCentering } from '@/hooks/useMapCentering';
@@ -318,8 +319,8 @@ export default function Home() {
     let aiErrorMessage = '';
 
     const MAX_ITERATIONS = 3; // Fewer iterations = faster generation with tight initial bounds
-    const TOLERANCE_UNDER = 0.10; // Accept routes up to 10% shorter than target
-    const TOLERANCE_OVER = 0.10;  // Accept routes up to 10% longer than target
+    const TOLERANCE_UNDER = 0.15; // Accept routes up to 15% shorter than target
+    const TOLERANCE_OVER = 0.15;  // Accept routes up to 15% longer than target
     const MAX_ATTEMPTS = 2; // Retry with different initial waypoints to handle OSRM non-monotonicity
     const startLat = userLocation[1]; // userLocation is [lng, lat]
     const startLng = userLocation[0];
@@ -338,6 +339,16 @@ export default function Home() {
       // Overpass can never delay the route suggestion — the AI works without them.
       let naturePOIs: NaturePOI[] = [];
       let islandData: { name: string; perimeterKm: number; outline: { lat: number; lng: number }[] } | null = null;
+      let scenicFeatures: ScenicFeature[] = [];
+
+      // Scenic geometry (coastlines, beaches, waterways, parks) is fetched for
+      // both modes — it drives anchor grounding, candidate scoring and the
+      // corridor candidate. Same 3.5s cap: failure/timeout → empty features.
+      const scenicPromise = fetch(`/api/scenic?lat=${startLat}&lng=${startLng}&radius=${Math.round(distance * 250)}`, { signal: AbortSignal.timeout(3500) })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { scenicFeatures = d?.features || []; })
+        .catch(() => { /* slow/unavailable — proceed without scenic geometry */ });
+
       if (routeMode === 'ai') {
         const poiPromise = fetch(`/api/pois?lat=${startLat}&lng=${startLng}&radius=${Math.round(distance * 250)}`, { signal: AbortSignal.timeout(3500) })
           .then((r) => (r.ok ? r.json() : null))
@@ -354,7 +365,15 @@ export default function Home() {
           })
           .catch(() => { /* slow/unavailable — proceed without island context */ });
 
-        await Promise.all([poiPromise, islandPromise]);
+        await Promise.all([poiPromise, islandPromise, scenicPromise]);
+      } else {
+        await scenicPromise;
+      }
+
+      // Verified waterfront anchor (coastline/beach/water/waterway) within 2 km.
+      const anchor = findScenicAnchor(startLat, startLng, scenicFeatures, 2000);
+      if (anchor) {
+        console.log(`[RouteGen] Scenic anchor: ${anchor.feature.type}${anchor.feature.name ? ` (${anchor.feature.name})` : ''}, ${Math.round(anchor.distanceM)}m from start`);
       }
 
       // Check for candidate routes from library
@@ -378,6 +397,42 @@ export default function Home() {
         console.warn('[RouteGen] Feedback build failed:', err);
       }
 
+      // Check symmetric tolerance: accept ±15%
+      const isWithinTolerance = (ratio: number) =>
+        ratio >= (1 - TOLERANCE_UNDER) && ratio <= (1 + TOLERANCE_OVER);
+
+      const scoreRoute = (ratio: number, smooth: boolean): number => {
+        const absDiff = Math.abs(ratio - 1);
+        const withinTolerance = ratio >= 0.85 && ratio <= 1.15;
+        const distanceCost = withinTolerance ? absDiff : absDiff * absDiff * 4;
+        const smoothnessTiebreaker = smooth ? 0 : 0.05;
+        return distanceCost + smoothnessTiebreaker;
+      };
+
+      // Candidate evaluation: hard distance gate, then a quality/scenic blend.
+      // Without scenic data the score degrades gracefully to plain quality.
+      const evaluateCandidate = (route: GeneratedRoute) => {
+        const km = route.distance / 1000;
+        const withinTolerance = isWithinTolerance(km / distance);
+        const quality = assessRouteQuality(route);
+        const scenic = scenicScore(route.polyline, scenicFeatures);
+        const score = !withinTolerance
+          ? -1
+          : scenicFeatures.length === 0
+            ? quality
+            : quality * 0.4 + scenic * 100 * 0.6;
+        return { km, withinTolerance, quality, scenic, score };
+      };
+      type CandidateEvaluation = ReturnType<typeof evaluateCandidate>;
+      type CandidateSource = 'ai' | 'algorithmic' | 'corridor';
+
+      const logCandidate = (source: CandidateSource, e: CandidateEvaluation) => {
+        console.log(`[Candidate] source=${source}, km=${e.km.toFixed(2)}, quality=${e.quality}/100, scenic=${e.scenic.toFixed(2)}, score=${e.score.toFixed(1)}`);
+      };
+
+      // Best within-tolerance candidate across attempts (and corridor), by score.
+      let bestCandidate: { route: GeneratedRoute; source: CandidateSource; evaluation: CandidateEvaluation } | null = null;
+
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         // Generate initial waypoints (different each time due to random rotation / AI variance)
         let initialWaypoints: RouteWaypoint[];
@@ -385,7 +440,7 @@ export default function Home() {
           initialWaypoints = await generateRouteAlgorithmic(startLat, startLng, distance);
         } else {
           try {
-            initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined, island: islandData, feedbackContext, pastRoutes });
+            initialWaypoints = await generateRouteWaypoints({ lat: startLat, lng: startLng, distanceKm: distance, cityName, settings, scenicMode, poiWaypoints: naturePOIs.length > 0 ? naturePOIs : undefined, island: islandData, feedbackContext, pastRoutes, scenicAnchor: anchor });
           } catch (aiError: unknown) {
             console.warn('AI route generation failed, using algorithmic fallback:', aiError);
             aiErrorMessage = aiError instanceof Error ? aiError.message : 'unknown error';
@@ -402,18 +457,6 @@ export default function Home() {
           lat: Math.round(wp.lat * 10000) / 10000,
           lng: Math.round(wp.lng * 10000) / 10000,
         }));
-
-        // Check asymmetric tolerance: accept -15% to +10%
-        const isWithinTolerance = (ratio: number) =>
-          ratio >= (1 - TOLERANCE_UNDER) && ratio <= (1 + TOLERANCE_OVER);
-
-        const scoreRoute = (ratio: number, smooth: boolean): number => {
-          const absDiff = Math.abs(ratio - 1);
-          const withinTolerance = ratio >= 0.85 && ratio <= 1.10;
-          const distanceCost = withinTolerance ? absDiff : absDiff * absDiff * 4;
-          const smoothnessTiebreaker = smooth ? 0 : 0.05;
-          return distanceCost + smoothnessTiebreaker;
-        };
 
         let bestRoute: GeneratedRoute | null = null;
         let bestDiff = Infinity;
@@ -533,8 +576,8 @@ export default function Home() {
 
           console.log(`[AI mode, attempt ${attempt + 1}] route=${aiKm.toFixed(2)}km, target=${distance}km, ratio=${aiRatio.toFixed(2)}, kvalitet=${aiQuality}/100, smooth=${aiSmooth}`);
 
-          // Distance validation: if way off target, retry with fresh waypoints
-          if ((aiKm > distance * 1.1 || aiKm < distance * 0.9) && attempt < MAX_ATTEMPTS - 1) {
+          // Distance validation: if outside the accept window, retry with fresh waypoints
+          if ((aiKm > distance * 1.15 || aiKm < distance * 0.85) && attempt < MAX_ATTEMPTS - 1) {
             console.warn(`[RouteGen] AI route ${aiKm.toFixed(1)}km too far from ${distance}km target, retrying...`);
             continue;
           }
@@ -551,12 +594,23 @@ export default function Home() {
           overallBestRoute = bestRoute;
         }
 
-        // Early exit: if first attempt produced a good route, skip remaining attempts
-        if (attempt === 0 && bestRoute) {
-          const earlyRatio = bestRoute.distance / 1000 / distance;
-          const earlyQuality = assessRouteQuality(bestRoute);
-          if (isWithinTolerance(earlyRatio) && earlyQuality > 60) {
-            console.log(`[Attempt 1] Early exit: within tolerance (${((earlyRatio - 1) * 100).toFixed(1)}%) and quality ${earlyQuality}/100 > 60`);
+        // Evaluate this attempt's route as a candidate (distance/quality/scenic)
+        // and keep the highest-scoring within-tolerance candidate across attempts.
+        let attemptEvaluation: CandidateEvaluation | null = null;
+        if (bestRoute) {
+          attemptEvaluation = evaluateCandidate(bestRoute);
+          const source: CandidateSource = routeMode === 'algorithmic' ? 'algorithmic' : 'ai';
+          logCandidate(source, attemptEvaluation);
+          if (attemptEvaluation.score >= 0 && attemptEvaluation.score > (bestCandidate?.evaluation.score ?? -Infinity)) {
+            bestCandidate = { route: bestRoute, source, evaluation: attemptEvaluation };
+          }
+        }
+
+        // Early exit: if first attempt produced a good route (that also follows
+        // scenic features when any exist nearby), skip remaining attempts
+        if (attempt === 0 && attemptEvaluation) {
+          if (attemptEvaluation.withinTolerance && attemptEvaluation.quality > 60 && (scenicFeatures.length === 0 || attemptEvaluation.scenic >= 0.5)) {
+            console.log(`[Attempt 1] Early exit: within tolerance (${((attemptEvaluation.km / distance - 1) * 100).toFixed(1)}%), quality ${attemptEvaluation.quality}/100 > 60, scenic ${attemptEvaluation.scenic.toFixed(2)}`);
             break;
           }
         }
@@ -579,14 +633,14 @@ export default function Home() {
           }
         }
 
-        // Stop early only if the best route is BOTH within distance tolerance AND decent
-        // quality. A mediocre (zigzag/detour-heavy) route should not short-circuit the
-        // remaining attempt — let the loop try once more; overallBestRoute keeps the better one.
-        if (overallBestRoute) {
-          const overallRatio = overallBestRoute.distance / 1000 / distance;
-          const overallQuality = assessRouteQuality(overallBestRoute);
-          if (isWithinTolerance(overallRatio) && overallQuality >= 60) {
-            console.log(`[Attempt ${attempt + 1}] Inom tolerans (${((overallRatio - 1) * 100).toFixed(1)}%), kvalitet ${overallQuality}/100, klar.`);
+        // Stop early only if the best candidate is within distance tolerance, decent
+        // quality AND scenic enough (when scenic features exist nearby). A mediocre
+        // or inland route should not short-circuit the remaining attempt —
+        // bestCandidate keeps the better one.
+        if (bestCandidate) {
+          const e = bestCandidate.evaluation;
+          if (e.withinTolerance && e.quality >= 60 && (scenicFeatures.length === 0 || e.scenic >= 0.5)) {
+            console.log(`[Attempt ${attempt + 1}] Inom tolerans (${((e.km / distance - 1) * 100).toFixed(1)}%), kvalitet ${e.quality}/100, scenic ${e.scenic.toFixed(2)}, klar.`);
             break;
           }
         }
@@ -596,7 +650,36 @@ export default function Home() {
         }
       }
 
-      generatedRoute = overallBestRoute ?? null;
+      // Corridor candidate: deterministic out-and-back along the verified
+      // waterfront. Skipped when the best candidate already follows the water.
+      // Dead-end detour rejection deliberately does NOT apply here —
+      // out-and-back is intentional; the corridor competes on score alone.
+      if (anchor && !(bestCandidate && bestCandidate.evaluation.scenic >= 0.5)) {
+        try {
+          const corridorWaypoints = buildCorridorWaypoints(startLat, startLng, anchor, distance);
+          let corridorRoute;
+          try {
+            corridorRoute = await routeViaGoogle(corridorWaypoints, paceSecondsPerKm);
+            console.log(`[RouteGen] Google Routes (corridor): ${(corridorRoute.distance / 1000).toFixed(1)}km`);
+          } catch (googleErr) {
+            console.warn('[RouteGen] Google Routes failed for corridor, falling back to OSRM:', googleErr);
+            corridorRoute = await routeViaOSRM(corridorWaypoints, paceSecondsPerKm);
+            console.log(`[RouteGen] OSRM fallback (corridor): ${(corridorRoute.distance / 1000).toFixed(1)}km`);
+          }
+          const corridorEvaluation = evaluateCandidate(corridorRoute);
+          logCandidate('corridor', corridorEvaluation);
+          if (corridorEvaluation.score >= 0 && corridorEvaluation.score > (bestCandidate?.evaluation.score ?? -Infinity)) {
+            bestCandidate = { route: corridorRoute, source: 'corridor', evaluation: corridorEvaluation };
+          }
+        } catch (corridorErr) {
+          console.warn('[RouteGen] Corridor candidate failed:', corridorErr);
+        }
+      }
+
+      if (bestCandidate) {
+        console.log(`[RouteGen] Winner: source=${bestCandidate.source}, km=${bestCandidate.evaluation.km.toFixed(2)}, score=${bestCandidate.evaluation.score.toFixed(1)}`);
+      }
+      generatedRoute = bestCandidate?.route ?? overallBestRoute ?? null;
 
       if (!generatedRoute) {
         setError(t('route.generationFailed'));

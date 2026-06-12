@@ -1,6 +1,8 @@
 import { RouteWaypoint, AppSettings, ScenicMode } from '@/types';
 import { buildPastRoutesContext } from './prompt-feedback';
 import type { SavedRoute } from './storage';
+import { describeAnchor } from './scenic';
+import type { ScenicAnchor } from './scenic';
 
 export interface NaturePOI {
   name: string;
@@ -26,6 +28,7 @@ interface AIRouteRequest {
   island?: IslandData | null;
   feedbackContext?: string;
   pastRoutes?: SavedRoute[];
+  scenicAnchor?: ScenicAnchor | null;
 }
 
 // Shared rules applied to ALL scenic modes — anti-detour, waypoint placement, and loop quality
@@ -60,13 +63,26 @@ const SCENIC_INSTRUCTIONS: Record<ScenicMode, string> = {
 - Keep landmarks within a walkable area — a focused tour beats a scattered marathon.`,
 };
 
-function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string, poiWaypoints?: NaturePOI[], island?: IslandData | null, feedbackContext?: string, pastRoutes?: SavedRoute[]): string {
+function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, distanceKm: number, cityName: string, poiWaypoints?: NaturePOI[], island?: IslandData | null, feedbackContext?: string, pastRoutes?: SavedRoute[], scenicAnchor?: ScenicAnchor | null): string {
   const labelInstruction = scenicMode !== 'standard'
     ? `\n- Include a "label" field on each waypoint describing what is at that location (park name, landmark name, street name, etc.)`
     : '';
 
-  const poiSection = poiWaypoints && poiWaypoints.length > 0
-    ? `\n\nNearby green spaces and nature areas (REAL coordinates from OpenStreetMap - use these as waypoints):\n${poiWaypoints.map(p => `- ${p.name} (${p.type}): ${p.lat}, ${p.lng}`).join('\n')}\n\nTry to route through 1-2 of these locations if they fall naturally along the route. Do NOT detour to reach them.`
+  const anchorSection = scenicAnchor
+    ? `\n\nVERIFIED WATERFRONT (from OpenStreetMap):\n${describeAnchor(scenicAnchor)}\nThis waterfront location is VERIFIED from map data — do not guess geography. The route MUST include a continuous stretch along this waterfront. An out-and-back along the waterfront is GOOD and preferred over an inland loop.`
+    : '';
+
+  const naturePois = (poiWaypoints ?? []).filter(p => p.type !== 'landmark');
+  const landmarkPois = (poiWaypoints ?? []).filter(p => p.type === 'landmark');
+
+  const poiSection = naturePois.length > 0
+    ? `\n\nNearby green spaces and nature areas (REAL coordinates from OpenStreetMap - use these as waypoints):\n${naturePois.map(p => `- ${p.name} (${p.type}): ${p.lat}, ${p.lng}`).join('\n')}\n\nTry to route through 1-2 of these locations if they fall naturally along the route. Do NOT detour to reach them.`
+    : '';
+
+  const landmarkSection = landmarkPois.length > 0
+    ? `\n\nLANDMARKS (real, from OpenStreetMap):\n${landmarkPois.map(p => `- ${p.name}: ${p.lat}, ${p.lng}`).join('\n')}\n${scenicMode === 'explore'
+      ? 'The route MUST pass 2-3 of these landmarks — connect them in a logical loop.'
+      : 'Include these ONLY if they fall naturally along the route. Do NOT detour to reach them.'}`
     : '';
 
   const pastRoutesSection = buildPastRoutesContext(pastRoutes ?? []);
@@ -98,7 +114,7 @@ ${sorted.map((p, i) => `${i}: ${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`).join('\
 
 STRATEGY: Pick 2-3 consecutive shoreline points from the list above (following the waterfront for ~${(distanceKm * 0.6).toFixed(1)} km), then cut back inland through parks or quiet streets to return to start.`;
     }
-  })() : `GEOGRAPHIC ANALYSIS: Identify what geographic features exist at these coordinates — island, peninsula, lake, river, coast, or large park. Use that knowledge to plan the optimal route shape.`}${poiSection}
+  })() : `GEOGRAPHIC ANALYSIS: Identify what geographic features exist at these coordinates — island, peninsula, lake, river, coast, or large park. Use that knowledge to plan the optimal route shape.`}${anchorSection}${poiSection}${landmarkSection}
 ${feedbackContext ? `\n${feedbackContext}\n` : ''}
 Requirements:
 - CRITICAL SCALE RULE: Your waypoints must form a loop where the Google-Routes walking path is approximately ${distanceKm} km. A circular loop of ${distanceKm} km has radius ≈ ${(distanceKm / 6.28).toFixed(2)} km from center. NO waypoint should be more than ${(distanceKm / 4).toFixed(2)} km (straight-line distance) from the starting point. This is a HARD constraint — violate other rules if needed to respect it.
@@ -329,7 +345,7 @@ function parseWaypoints(response: string): RouteWaypoint[] {
 export async function generateRouteWaypoints(req: AIRouteRequest): Promise<RouteWaypoint[]> {
   const { lat, lng, distanceKm, cityName, settings } = req;
 
-  const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints, req.island, req.feedbackContext, req.pastRoutes);
+  const prompt = buildRoutePrompt(req.scenicMode ?? 'standard', lat, lng, distanceKm, cityName, req.poiWaypoints, req.island, req.feedbackContext, req.pastRoutes, req.scenicAnchor);
 
   let response: string;
   if (settings.apiProvider === 'perplexity' && settings.apiKey) {
