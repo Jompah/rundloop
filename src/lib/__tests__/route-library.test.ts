@@ -25,12 +25,12 @@ function makeRoute(overrides: Partial<SavedRoute> = {}): SavedRoute {
     route: {
       polyline: [[18.04, 59.33]], // [lng, lat]
       distance: 5000,
+      duration: 1800,
       waypoints: [],
       instructions: [],
-      surface: [],
     },
     ...overrides,
-  } as SavedRoute;
+  };
 }
 
 // Helper: build a minimal RunAnalysis
@@ -93,8 +93,8 @@ describe('checkRouteLibrary', () => {
   });
 
   it('returns closest distance match when multiple verified routes qualify', async () => {
-    const route1 = makeRoute({ id: 'route-001', verified: true, route: { polyline: [[18.04, 59.33]], distance: 5000, waypoints: [], instructions: [], surface: [] } });
-    const route2 = makeRoute({ id: 'route-002', verified: true, route: { polyline: [[18.04, 59.33]], distance: 5200, waypoints: [], instructions: [], surface: [] } });
+    const route1 = makeRoute({ id: 'route-001', verified: true, route: { polyline: [[18.04, 59.33]], distance: 5000, duration: 1800, waypoints: [], instructions: [] } });
+    const route2 = makeRoute({ id: 'route-002', verified: true, route: { polyline: [[18.04, 59.33]], distance: 5200, duration: 1870, waypoints: [], instructions: [] } });
     vi.mocked(getSavedRoutes).mockResolvedValue([route2, route1]); // route2 first in array
 
     // Request exactly 5km — route1 (5000m) is closer match

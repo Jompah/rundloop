@@ -55,7 +55,7 @@ describe('MapboxPOIProvider', () => {
     it('calls fetchLandmarksNearRoute and maps results', async () => {
       mockFetchLandmarks.mockResolvedValue([
         {
-          id: '1',
+          id: 1,
           name: 'City Hall',
           type: 'landmark',
           lat: 59.327,
@@ -64,7 +64,7 @@ describe('MapboxPOIProvider', () => {
           distance: 150,
         },
         {
-          id: '2',
+          id: 2,
           name: 'Old Church',
           type: 'church',
           lat: 59.33,
