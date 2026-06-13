@@ -22,7 +22,7 @@ vi.mock('../storage', () => ({
 }));
 
 import { getAnalysesNear } from '../run-analysis';
-import { getSavedRoutes } from '../storage';
+import { getSavedRoutes, type SavedRoute } from '../storage';
 
 const mockGetAnalysesNear = vi.mocked(getAnalysesNear);
 const mockGetSavedRoutes = vi.mocked(getSavedRoutes);
@@ -54,7 +54,7 @@ function makeRoute(
   verified: boolean,
   startLat: number,
   startLng: number
-) {
+): SavedRoute {
   return {
     id,
     route: {
@@ -63,6 +63,8 @@ function makeRoute(
         { lat: startLat + 0.01, lng: startLng + 0.01 },
       ],
       distance: 5000,
+      duration: 1800,
+      instructions: [],
       polyline: [],
     },
     city: 'Stockholm',
