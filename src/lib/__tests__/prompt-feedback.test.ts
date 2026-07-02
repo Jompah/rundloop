@@ -63,6 +63,8 @@ function makeRoute(
         { lat: startLat + 0.01, lng: startLng + 0.01 },
       ],
       distance: 5000,
+      duration: 0,
+      instructions: [],
       polyline: [],
     },
     city: 'Stockholm',
