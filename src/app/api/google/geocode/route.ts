@@ -20,6 +20,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // "lat,lng" pair with optional minus signs and decimals
+  if (latlng && !/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(latlng)) {
+    return NextResponse.json(
+      { error: 'latlng must be a lat,lng pair' },
+      { status: 400 }
+    );
+  }
+
   const url = new URL('https://maps.googleapis.com/maps/api/geocode/json');
   if (latlng) {
     url.searchParams.set('latlng', latlng);

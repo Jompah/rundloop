@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY || '';
 
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   if (!MINIMAX_API_KEY) {
     return NextResponse.json({ error: 'MINIMAX_API_KEY not configured on server' }, { status: 500 });

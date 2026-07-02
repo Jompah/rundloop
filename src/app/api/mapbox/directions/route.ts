@@ -20,6 +20,15 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Semicolon-separated lng,lat pairs, e.g. "18.06,59.33;18.07,59.34"
+  const COORDINATES_PATTERN = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?(;-?\d+(\.\d+)?,-?\d+(\.\d+)?)*$/;
+  if (!COORDINATES_PATTERN.test(coordinates)) {
+    return NextResponse.json(
+      { error: 'coordinates must be semicolon-separated lng,lat pairs' },
+      { status: 400 }
+    );
+  }
+
   const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${coordinates}?access_token=${token}&geometries=geojson&steps=true&overview=full&alternatives=${alternatives}`;
 
   try {

@@ -22,6 +22,21 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  if (!Number.isFinite(parseFloat(lat)) || !Number.isFinite(parseFloat(lng))) {
+    return NextResponse.json(
+      { error: 'lat and lng must be valid numbers' },
+      { status: 400 }
+    );
+  }
+
+  const radiusNum = parseFloat(radius);
+  if (!Number.isFinite(radiusNum) || radiusNum <= 0 || radiusNum > 50000) {
+    return NextResponse.json(
+      { error: 'radius must be a positive number no greater than 50000' },
+      { status: 400 }
+    );
+  }
+
   const url = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
   url.searchParams.set('location', `${lat},${lng}`);
   url.searchParams.set('radius', radius);

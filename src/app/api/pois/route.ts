@@ -47,7 +47,11 @@ async function fetchFromOverpass(lat: number, lng: number, radiusM: number): Pro
   const response = await fetch('https://overpass-api.de/api/interpreter', {
     method: 'POST',
     body: `data=${encodeURIComponent(query)}`,
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      // Overpass rejects UA-less requests (406); Node fetch sends none by default.
+      'User-Agent': 'Drift/1.0',
+    },
     signal: AbortSignal.timeout(8000), // 8s timeout
   });
 

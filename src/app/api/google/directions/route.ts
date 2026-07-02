@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// "lat,lng" pair with optional minus signs and decimals
+const LATLNG_PATTERN = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
+
+function isValidLatLng(value: string): boolean {
+  return LATLNG_PATTERN.test(value);
+}
+
 export async function GET(request: NextRequest) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
@@ -17,6 +24,20 @@ export async function GET(request: NextRequest) {
   if (!origin || !destination) {
     return NextResponse.json(
       { error: 'origin and destination are required' },
+      { status: 400 }
+    );
+  }
+
+  if (!isValidLatLng(origin) || !isValidLatLng(destination)) {
+    return NextResponse.json(
+      { error: 'origin and destination must be lat,lng pairs' },
+      { status: 400 }
+    );
+  }
+
+  if (waypoints && !waypoints.split('|').every(isValidLatLng)) {
+    return NextResponse.json(
+      { error: 'waypoints must be pipe-separated lat,lng pairs' },
       { status: 400 }
     );
   }

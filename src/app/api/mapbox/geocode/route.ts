@@ -21,6 +21,13 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  if ((lat && !Number.isFinite(parseFloat(lat))) || (lng && !Number.isFinite(parseFloat(lng)))) {
+    return NextResponse.json(
+      { error: 'lat and lng must be valid numbers' },
+      { status: 400 }
+    );
+  }
+
   let url: string;
 
   if (query) {
