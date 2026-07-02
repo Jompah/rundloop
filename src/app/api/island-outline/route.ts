@@ -1,4 +1,5 @@
 import { type NextRequest } from 'next/server';
+import { overpassQuery } from '@/lib/overpass-client';
 import {
   type Bbox,
   type LatLng,
@@ -13,6 +14,9 @@ import {
   stitchRings,
   touchesBbox,
 } from '@/lib/ring-assembly';
+
+// Overpass failover can take up to ~14s (6s primary + 8s mirror).
+export const maxDuration = 30;
 
 interface IslandResult {
   name: string;
@@ -155,23 +159,8 @@ async function fetchPerimeterRings(
 );
 out geom(${bboxStr});`;
 
-  const response = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    body: `data=${encodeURIComponent(query)}`,
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      // Overpass rejects UA-less requests (406); Node fetch sends none by default.
-      'User-Agent': 'Drift/1.0',
-    },
-    signal: AbortSignal.timeout(8000), // 8s timeout
-  });
-
-  if (!response.ok) {
-    throw new Error(`Overpass API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const elements = (data.elements || []) as OverpassElement[];
+  const data = (await overpassQuery(query)) as { elements?: OverpassElement[] };
+  const elements = data.elements || [];
   const userPos: LatLng = { lat, lng };
 
   const candidates: Candidate[] = [];

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { overpassQuery } from '@/lib/overpass-client';
 import type { ScenicFeature, ScenicFeatureType } from '@/lib/scenic';
+
+// Overpass failover can take up to ~14s (6s primary + 8s mirror).
+export const maxDuration = 30;
 
 interface CacheEntry {
   features: ScenicFeature[];
@@ -96,25 +100,10 @@ async function fetchFromOverpass(lat: number, lng: number, radiusM: number): Pro
     out geom(${bbox}) 20;
   `;
 
-  const response = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    body: `data=${encodeURIComponent(query)}`,
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      // Overpass rejects UA-less requests (406); Node fetch sends none by default.
-      'User-Agent': 'Drift/1.0',
-    },
-    signal: AbortSignal.timeout(8000), // 8s timeout
-  });
-
-  if (!response.ok) {
-    throw new Error(`Overpass API error: ${response.status}`);
-  }
-
-  const data = await response.json();
+  const data = (await overpassQuery(query)) as { elements?: OverpassElement[] };
 
   const features: ScenicFeature[] = [];
-  for (const el of (data.elements || []) as OverpassElement[]) {
+  for (const el of data.elements || []) {
     if (!el.tags) continue;
 
     const type = mapType(el.tags);
