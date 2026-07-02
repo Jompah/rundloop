@@ -28,6 +28,27 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
   const [distance, setDistance] = useState(5);
   const [collapsed, setCollapsed] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const prefetchedKeysRef = useRef<Set<string>>(new Set());
+
+  // Warm the server-side island-outline cache before the user hits Generate.
+  // The Overpass call can take >3.5s cold, which exceeds handleGenerate's fetch
+  // timeout — prefetching means the first generation hits a warm cache.
+  useEffect(() => {
+    if (!userLocation) return;
+    const [lng, lat] = userLocation;
+    // Mirrors the server's cache key: lat/lng at 2 decimals + rounded km
+    const key = `${lat.toFixed(2)},${lng.toFixed(2)},${Math.round(distance)}`;
+    if (prefetchedKeysRef.current.has(key)) return;
+
+    // Debounce so slider dragging doesn't fire a request per step
+    const timer = setTimeout(() => {
+      prefetchedKeysRef.current.add(key);
+      // Fire-and-forget: the response is unused, the point is server-side caching
+      fetch(`/api/island-outline?lat=${lat}&lng=${lng}&targetKm=${distance}`).catch(() => {});
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [userLocation, distance]);
 
   // Load collapsed state from localStorage
   useEffect(() => {

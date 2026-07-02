@@ -1,9 +1,18 @@
 import { type NextRequest } from 'next/server';
-
-interface LatLng {
-  lat: number;
-  lng: number;
-}
+import {
+  type Bbox,
+  type LatLng,
+  type PerimeterRing,
+  centroid,
+  downsampleRing,
+  haversineKm,
+  largestRing,
+  nearestDistanceM,
+  offsetRing,
+  ringPerimeterKm,
+  stitchRings,
+  touchesBbox,
+} from '@/lib/ring-assembly';
 
 interface IslandResult {
   name: string;
@@ -12,79 +21,139 @@ interface IslandResult {
 }
 
 interface CacheEntry {
-  result: IslandResult | null;
+  island: IslandResult | null;
+  rings: PerimeterRing[];
   timestamp: number;
 }
 
-// In-memory cache keyed by rounded lat/lng (2 decimals)
+// In-memory cache keyed by rounded lat/lng (2 decimals) + rounded targetKm
 const islandCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-function cacheKey(lat: number, lng: number): string {
-  return `${lat.toFixed(2)},${lng.toFixed(2)}`;
+const MAX_RINGS = 3;
+const MAX_OUTLINE_POINTS = 80;
+const OFFSET_METERS = 30;
+const MAX_DISTANCE_M = 1200; // query point must be within this of the ring
+const PERIMETER_MIN_FACTOR = 0.55;
+const PERIMETER_MAX_FACTOR = 1.45;
+const BBOX_EDGE_EPSILON_DEG = 1e-3; // ~110 m — clipped geometry hugs the bbox edge
+
+function cacheKey(lat: number, lng: number, targetKm: number): string {
+  return `${lat.toFixed(2)},${lng.toFixed(2)},${Math.round(targetKm)}`;
 }
 
-function haversineDistance(a: LatLng, b: LatLng): number {
-  const R = 6371; // Earth radius in km
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const sinDLat = Math.sin(dLat / 2);
-  const sinDLng = Math.sin(dLng / 2);
-  const h =
-    sinDLat * sinDLat +
-    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * sinDLng * sinDLng;
-  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+// Overpass geometry: bbox-clipped vertices come back as null entries.
+type OverpassPoint = { lat: number; lon: number } | null;
+
+interface OverpassRelationMember {
+  type: string;
+  ref: number;
+  role?: string;
+  geometry?: OverpassPoint[];
 }
 
-function calcPerimeter(points: LatLng[]): number {
-  let total = 0;
-  for (let i = 0; i < points.length; i++) {
-    const next = (i + 1) % points.length;
-    total += haversineDistance(points[i], points[next]);
+interface OverpassElement {
+  type: string;
+  id: number;
+  tags?: Record<string, string>;
+  geometry?: OverpassPoint[];
+  members?: OverpassRelationMember[];
+}
+
+function toLatLngs(geometry: OverpassPoint[]): { points: LatLng[]; clipped: boolean } {
+  const points: LatLng[] = [];
+  let clipped = false;
+  for (const p of geometry) {
+    if (p == null || typeof p.lat !== 'number' || typeof p.lon !== 'number') {
+      clipped = true;
+      continue;
+    }
+    points.push({ lat: p.lat, lng: p.lon });
   }
-  return total;
+  return { points, clipped };
 }
 
-function centroid(points: LatLng[]): LatLng {
-  const sum = points.reduce(
-    (acc, p) => ({ lat: acc.lat + p.lat, lng: acc.lng + p.lng }),
-    { lat: 0, lng: 0 }
-  );
-  return { lat: sum.lat / points.length, lng: sum.lng / points.length };
+function elementKind(tags: Record<string, string>): 'island' | 'water' | null {
+  if (tags.place === 'island') return 'island';
+  if (tags.natural === 'water') return 'water';
+  return null;
 }
 
-// Move points slightly inland to ensure they're on routable roads
-function moveInland(points: LatLng[], meters: number = 30): LatLng[] {
-  const cent = centroid(points);
-  return points.map(p => {
-    const dist = haversineDistance(p, cent);
-    if (dist < meters / 1000) return p; // Already near center (haversineDistance returns km)
-    const ratio = (meters / 1000) / dist;
-    return {
-      lat: p.lat + (cent.lat - p.lat) * ratio,
-      lng: p.lng + (cent.lng - p.lng) * ratio,
-    };
-  });
-}
-
-function samplePoints(points: LatLng[], maxPoints: number): LatLng[] {
-  if (points.length <= maxPoints) return points;
-  const step = points.length / maxPoints;
-  const sampled: LatLng[] = [];
-  for (let i = 0; i < maxPoints; i++) {
-    sampled.push(points[Math.floor(i * step)]);
+/**
+ * Build a single ring (not closed: first != last) from an Overpass element,
+ * or null when the element is open, clipped by the bbox, or has no geometry.
+ */
+function buildRing(el: OverpassElement, bbox: Bbox): LatLng[] | null {
+  if (el.type === 'way' && el.geometry) {
+    const { points, clipped } = toLatLngs(el.geometry);
+    if (clipped || points.length < 4) return null;
+    const first = points[0];
+    const last = points[points.length - 1];
+    if (first.lat !== last.lat || first.lng !== last.lng) return null; // open way
+    const ring = points.slice(0, -1);
+    if (touchesBbox(ring, bbox, BBOX_EDGE_EPSILON_DEG)) return null;
+    return ring;
   }
-  return sampled;
+
+  if (el.type === 'relation' && el.members) {
+    const outerWays: LatLng[][] = [];
+    for (const member of el.members) {
+      if (member.type !== 'way' || !member.geometry) continue;
+      if (member.role !== 'outer') continue;
+      const { points, clipped } = toLatLngs(member.geometry);
+      // Any clipped member means the relation extends past the bbox —
+      // too large for the target distance (e.g. Mälaren). Discard.
+      if (clipped) return null;
+      if (points.length >= 2) outerWays.push(points);
+    }
+    if (outerWays.length === 0) return null;
+
+    // A relation can yield several rings (multiple outers) — keep the largest.
+    const ring = largestRing(stitchRings(outerWays));
+    if (!ring || touchesBbox(ring, bbox, BBOX_EDGE_EPSILON_DEG)) return null;
+    return ring;
+  }
+
+  return null;
 }
 
-async function fetchIslands(lat: number, lng: number): Promise<IslandResult | null> {
-  const south = lat - 0.03;
-  const north = lat + 0.03;
-  const west = lng - 0.05;
-  const east = lng + 0.05;
+interface Candidate {
+  kind: 'island' | 'water';
+  name: string | null;
+  ring: LatLng[];
+  perimeterKm: number;
+  distanceM: number;
+}
 
-  const query = `[out:json][timeout:5];way["place"="island"](${south},${west},${north},${east});out geom;`;
+async function fetchPerimeterRings(
+  lat: number,
+  lng: number,
+  targetKm: number
+): Promise<{ island: IslandResult | null; rings: PerimeterRing[] }> {
+  // Bbox half-size scaled to the target distance: a targetKm loop has a
+  // radius of roughly targetKm / (2π) ≈ 0.16 × targetKm, so ±0.35 × targetKm
+  // comfortably contains any ring worth suggesting while keeping payloads small.
+  const halfKm = targetKm * 0.35;
+  const latDelta = halfKm / 111.32;
+  const lngDelta = halfKm / (111.32 * Math.cos((lat * Math.PI) / 180));
+  const bbox: Bbox = {
+    south: lat - latDelta,
+    west: lng - lngDelta,
+    north: lat + latDelta,
+    east: lng + lngDelta,
+  };
+  const bboxStr = `${bbox.south},${bbox.west},${bbox.north},${bbox.east}`;
+
+  // out geom(bbox) clips geometry: objects whose ring touches the bbox edge
+  // (or comes back with null vertices) are too large and get discarded.
+  const query = `[out:json][timeout:8];
+(
+  way["place"="island"](${bboxStr});
+  relation["place"="island"](${bboxStr});
+  way["natural"="water"]["name"](${bboxStr});
+  relation["natural"="water"]["name"](${bboxStr});
+);
+out geom(${bboxStr});`;
 
   const response = await fetch('https://overpass-api.de/api/interpreter', {
     method: 'POST',
@@ -94,7 +163,7 @@ async function fetchIslands(lat: number, lng: number): Promise<IslandResult | nu
       // Overpass rejects UA-less requests (406); Node fetch sends none by default.
       'User-Agent': 'Drift/1.0',
     },
-    signal: AbortSignal.timeout(5000),
+    signal: AbortSignal.timeout(8000), // 8s timeout
   });
 
   if (!response.ok) {
@@ -102,58 +171,97 @@ async function fetchIslands(lat: number, lng: number): Promise<IslandResult | nu
   }
 
   const data = await response.json();
-  const elements = data.elements || [];
-
-  if (elements.length === 0) return null;
-
+  const elements = (data.elements || []) as OverpassElement[];
   const userPos: LatLng = { lat, lng };
-  let closest: IslandResult | null = null;
-  let closestDist = Infinity;
 
+  const candidates: Candidate[] = [];
   for (const el of elements) {
-    const geometry: LatLng[] | undefined = el.geometry?.map(
-      (g: { lat: number; lon: number }) => ({ lat: g.lat, lng: g.lon })
-    );
-    if (!geometry || geometry.length === 0) continue;
+    if (!el.tags) continue;
+    const kind = elementKind(el.tags);
+    if (!kind) continue;
 
-    const center = centroid(geometry);
-    const dist = haversineDistance(userPos, center);
+    const ring = buildRing(el, bbox);
+    if (!ring) continue;
 
-    if (dist < closestDist) {
-      closestDist = dist;
-      const perimeterKm = Math.round(calcPerimeter(geometry) * 100) / 100;
-      const outline = samplePoints(geometry, 30);
-      const name = el.tags?.name || 'Unknown island';
+    candidates.push({
+      kind,
+      name: el.tags.name || null,
+      ring,
+      perimeterKm: Math.round(ringPerimeterKm(ring) * 100) / 100,
+      distanceM: Math.round(nearestDistanceM(userPos, ring)),
+    });
+  }
 
-      closest = { name, perimeterKm, outline: moveInland(outline) };
+  // Backwards-compatible `island` field: nearest place=island regardless of
+  // the perimeter filter, same shape as the old response.
+  let island: IslandResult | null = null;
+  let islandCentroidDist = Infinity;
+  for (const c of candidates) {
+    if (c.kind !== 'island') continue;
+    const dist = haversineKm(userPos, centroid(c.ring));
+    if (dist < islandCentroidDist) {
+      islandCentroidDist = dist;
+      island = {
+        name: c.name || 'Unknown island',
+        perimeterKm: c.perimeterKm,
+        outline: downsampleRing(offsetRing(c.ring, OFFSET_METERS, 'inward'), 30),
+      };
     }
   }
 
-  return closest;
+  const rings: PerimeterRing[] = candidates
+    .filter(
+      c =>
+        c.perimeterKm >= PERIMETER_MIN_FACTOR * targetKm &&
+        c.perimeterKm <= PERIMETER_MAX_FACTOR * targetKm &&
+        c.distanceM <= MAX_DISTANCE_M
+    )
+    .sort(
+      (a, b) =>
+        Math.abs(a.perimeterKm - targetKm) - Math.abs(b.perimeterKm - targetKm)
+    )
+    .slice(0, MAX_RINGS)
+    .map(c => ({
+      kind: c.kind,
+      name: c.name,
+      perimeterKm: c.perimeterKm,
+      distanceM: c.distanceM,
+      // Islands: runner is on the island — nudge onto land (inward).
+      // Water: runner is on the shore outside the water — nudge outward.
+      outline: downsampleRing(
+        offsetRing(c.ring, OFFSET_METERS, c.kind === 'island' ? 'inward' : 'outward'),
+        MAX_OUTLINE_POINTS
+      ),
+    }));
+
+  return { island, rings };
 }
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const lat = parseFloat(searchParams.get('lat') || '');
   const lng = parseFloat(searchParams.get('lng') || '');
+  const targetKmRaw = parseFloat(searchParams.get('targetKm') || '');
 
   if (isNaN(lat) || isNaN(lng)) {
     return Response.json({ error: 'lat and lng query params required' }, { status: 400 });
   }
 
-  const key = cacheKey(lat, lng);
+  const targetKm = Math.min(Math.max(isNaN(targetKmRaw) ? 5 : targetKmRaw, 1), 42);
+
+  const key = cacheKey(lat, lng, targetKm);
 
   // Check cache
   const cached = islandCache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return Response.json({ island: cached.result });
+    return Response.json({ island: cached.island, rings: cached.rings });
   }
 
   try {
-    const result = await fetchIslands(lat, lng);
+    const { island, rings } = await fetchPerimeterRings(lat, lng, targetKm);
 
     // Store in cache
-    islandCache.set(key, { result, timestamp: Date.now() });
+    islandCache.set(key, { island, rings, timestamp: Date.now() });
 
     // Evict old entries
     for (const [k, v] of islandCache) {
@@ -162,9 +270,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return Response.json({ island: result });
+    return Response.json({ island, rings });
   } catch (error) {
     console.warn('Island outline fetch failed:', error);
-    return Response.json({ island: null, error: 'Overpass unavailable' });
+    return Response.json({ island: null, rings: [], error: 'Overpass unavailable' });
   }
 }

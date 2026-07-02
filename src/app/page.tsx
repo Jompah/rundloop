@@ -25,6 +25,8 @@ import { routeViaGoogle } from '@/lib/route-google';
 import { analyzeStreetDuplication, shouldRejectRoute } from '@/lib/street-dedup';
 import { assessRouteQuality, hasExcessiveShortSegments, detectDeadEndDetours } from '@/lib/route-quality';
 import { scenicScore, findScenicAnchor, buildCorridorWaypoints, type ScenicFeature } from '@/lib/scenic';
+import { pickBestRing, buildPerimeterWaypoints } from '@/lib/perimeter';
+import type { PerimeterRing } from '@/lib/ring-assembly';
 import { findNearbySavedRoutes, getSettings, saveSettings, haversineMeters } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
 import { useMapCentering } from '@/hooks/useMapCentering';
@@ -342,6 +344,7 @@ export default function Home() {
       // Overpass can never delay the route suggestion — the AI works without them.
       let naturePOIs: NaturePOI[] = [];
       let islandData: { name: string; perimeterKm: number; outline: { lat: number; lng: number }[] } | null = null;
+      let perimeterRings: PerimeterRing[] = [];
       let scenicFeatures: ScenicFeature[] = [];
 
       // Scenic geometry (coastlines, beaches, waterways, parks) is fetched for
@@ -352,25 +355,28 @@ export default function Home() {
         .then((d) => { scenicFeatures = d?.features || []; })
         .catch(() => { /* slow/unavailable — proceed without scenic geometry */ });
 
+      // Island outline + perimeter rings are fetched in BOTH modes: the island
+      // context feeds the AI prompt, the rings feed the perimeter candidate.
+      const islandPromise = fetch(`/api/island-outline?lat=${startLat}&lng=${startLng}&targetKm=${distance}`, { signal: AbortSignal.timeout(3500) })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          islandData = d?.island || null;
+          perimeterRings = d?.rings || [];
+          if (islandData) {
+            console.log(`[route] Island detected: ${islandData.name} (${islandData.perimeterKm.toFixed(1)}km perimeter)`);
+          }
+        })
+        .catch(() => { /* slow/unavailable — proceed without island context */ });
+
       if (routeMode === 'ai') {
         const poiPromise = fetch(`/api/pois?lat=${startLat}&lng=${startLng}&radius=${Math.round(distance * 250)}`, { signal: AbortSignal.timeout(3500) })
           .then((r) => (r.ok ? r.json() : null))
           .then((d) => { naturePOIs = (d?.pois || []).slice(0, 8); })
           .catch(() => { /* slow/unavailable — proceed without POIs */ });
 
-        const islandPromise = fetch(`/api/island-outline?lat=${startLat}&lng=${startLng}`, { signal: AbortSignal.timeout(3500) })
-          .then((r) => (r.ok ? r.json() : null))
-          .then((d) => {
-            islandData = d?.island || null;
-            if (islandData) {
-              console.log(`[route] Island detected: ${islandData.name} (${islandData.perimeterKm.toFixed(1)}km perimeter)`);
-            }
-          })
-          .catch(() => { /* slow/unavailable — proceed without island context */ });
-
         await Promise.all([poiPromise, islandPromise, scenicPromise]);
       } else {
-        await scenicPromise;
+        await Promise.all([islandPromise, scenicPromise]);
       }
 
       // Verified waterfront anchor (coastline/beach/water/waterway) within 2 km.
@@ -427,16 +433,55 @@ export default function Home() {
         return { km, withinTolerance, quality, scenic, score };
       };
       type CandidateEvaluation = ReturnType<typeof evaluateCandidate>;
-      type CandidateSource = 'ai' | 'algorithmic' | 'corridor';
+      type CandidateSource = 'ai' | 'algorithmic' | 'corridor' | 'perimeter';
 
       const logCandidate = (source: CandidateSource, e: CandidateEvaluation) => {
         console.log(`[Candidate] source=${source}, km=${e.km.toFixed(2)}, quality=${e.quality}/100, scenic=${e.scenic.toFixed(2)}, score=${e.score.toFixed(1)}`);
       };
 
-      // Best within-tolerance candidate across attempts (and corridor), by score.
+      // Best within-tolerance candidate across attempts (and corridor/perimeter), by score.
       let bestCandidate: { route: GeneratedRoute; source: CandidateSource; evaluation: CandidateEvaluation } | null = null;
 
-      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      // Perimeter candidate: deterministic loop around an island/waterfront ring
+      // whose predicted distance matches the target. Built BEFORE the AI/
+      // algorithmic attempts — a within-tolerance, scenic-enough perimeter loop
+      // is accepted immediately and skips those attempts entirely. Otherwise it
+      // stays in the pool and competes on score like the corridor candidate.
+      // Failures never abort generation.
+      let perimeterEarlyAccept = false;
+      const perimeterRing = pickBestRing(perimeterRings, distance);
+      if (perimeterRing) {
+        try {
+          console.log(`[RouteGen] Perimeter ring: ${perimeterRing.kind}${perimeterRing.name ? ` "${perimeterRing.name}"` : ''}, ${perimeterRing.perimeterKm.toFixed(1)}km perimeter, ${Math.round(perimeterRing.distanceM)}m from start`);
+          const perimeterWaypoints = buildPerimeterWaypoints(perimeterRing, startLat, startLng);
+          let perimeterRoute;
+          try {
+            perimeterRoute = await routeViaGoogle(perimeterWaypoints, paceSecondsPerKm);
+            console.log(`[RouteGen] Google Routes (perimeter): ${(perimeterRoute.distance / 1000).toFixed(1)}km`);
+          } catch (googleErr) {
+            console.warn('[RouteGen] Google Routes failed for perimeter, falling back to OSRM:', googleErr);
+            perimeterRoute = await routeViaOSRM(perimeterWaypoints, paceSecondsPerKm);
+            console.log(`[RouteGen] OSRM fallback (perimeter): ${(perimeterRoute.distance / 1000).toFixed(1)}km`);
+          }
+          const perimeterEvaluation = evaluateCandidate(perimeterRoute);
+          logCandidate('perimeter', perimeterEvaluation);
+          // bestCandidate is always null here (first candidate built) — any
+          // within-tolerance score (>= 0) takes the slot.
+          if (perimeterEvaluation.score >= 0) {
+            bestCandidate = { route: perimeterRoute, source: 'perimeter', evaluation: perimeterEvaluation };
+            if (perimeterEvaluation.withinTolerance && perimeterEvaluation.scenic >= 0.5) {
+              perimeterEarlyAccept = true;
+              console.log('[RouteGen] perimeter early-accept');
+            }
+          }
+        } catch (perimeterErr) {
+          console.warn('[RouteGen] Perimeter candidate failed:', perimeterErr);
+        }
+      }
+
+      // perimeterEarlyAccept skips the AI/algorithmic attempts entirely; the
+      // perimeter winner then flows through the shared winner handling below.
+      for (let attempt = 0; !perimeterEarlyAccept && attempt < MAX_ATTEMPTS; attempt++) {
         // Generate initial waypoints (different each time due to random rotation / AI variance)
         let initialWaypoints: RouteWaypoint[];
         if (routeMode === 'algorithmic') {
