@@ -29,6 +29,7 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
   const [collapsed, setCollapsed] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const prefetchedKeysRef = useRef<Set<string>>(new Set());
+  const retriedKeysRef = useRef<Set<string>>(new Set());
 
   // Warm the server-side island-outline cache before the user hits Generate.
   // The Overpass call can take >3.5s cold, which exceeds handleGenerate's fetch
@@ -40,14 +41,41 @@ export default function RouteGenerator({ onGenerate, isLoading, userLocation, ci
     const key = `${lat.toFixed(2)},${lng.toFixed(2)},${Math.round(distance)}`;
     if (prefetchedKeysRef.current.has(key)) return;
 
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    // Fire-and-forget: the response is only inspected to learn whether the
+    // server actually cached. On Overpass failure the server returns 200 with
+    // { rings: [], error: 'Overpass unavailable' } and does NOT cache — so the
+    // key is marked done only on a genuine success. Otherwise one retry ~12 s
+    // later gets a second shot at warming the cache.
+    const prefetch = async () => {
+      try {
+        const res = await fetch(`/api/island-outline?lat=${lat}&lng=${lng}&targetKm=${distance}`);
+        const data = await res.json();
+        if (res.ok && !data?.error) {
+          prefetchedKeysRef.current.add(key);
+          return;
+        }
+      } catch {
+        // Network/parse error — treat like a server-side failure below
+      }
+      if (!retriedKeysRef.current.has(key)) {
+        retriedKeysRef.current.add(key); // max 1 retry per key
+        retryTimer = setTimeout(() => {
+          void prefetch();
+        }, 12_000);
+      }
+    };
+
     // Debounce so slider dragging doesn't fire a request per step
     const timer = setTimeout(() => {
-      prefetchedKeysRef.current.add(key);
-      // Fire-and-forget: the response is unused, the point is server-side caching
-      fetch(`/api/island-outline?lat=${lat}&lng=${lng}&targetKm=${distance}`).catch(() => {});
+      void prefetch();
     }, 800);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (retryTimer !== undefined) clearTimeout(retryTimer);
+    };
   }, [userLocation, distance]);
 
   // Load collapsed state from localStorage
