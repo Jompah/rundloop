@@ -159,7 +159,13 @@ export async function dbGetAllByIndex<T>(
  */
 export async function migrateFromLocalStorage(): Promise<void> {
   if (typeof window === 'undefined') return;
-  if (localStorage.getItem('rundloop_migrated_to_idb')) return;
+  try {
+    if (localStorage.getItem('rundloop_migrated_to_idb')) return;
+  } catch (err) {
+    // localStorage unavailable (private browsing, blocked cookies, etc.)
+    console.warn('[db] localStorage unavailable, skipping migration', err);
+    return;
+  }
 
   // Migrate settings
   const settingsRaw = localStorage.getItem('rundloop_settings');
@@ -186,9 +192,14 @@ export async function migrateFromLocalStorage(): Promise<void> {
   }
 
   // Mark migration complete and clean up
-  localStorage.setItem('rundloop_migrated_to_idb', 'true');
-  localStorage.removeItem('rundloop_settings');
-  localStorage.removeItem('rundloop_history');
+  try {
+    localStorage.setItem('rundloop_migrated_to_idb', 'true');
+    localStorage.removeItem('rundloop_settings');
+    localStorage.removeItem('rundloop_history');
+  } catch (err) {
+    // Quota exceeded / private browsing — migration re-runs next load (idempotent)
+    console.warn('[db] could not mark migration complete', err);
+  }
 }
 
 /**

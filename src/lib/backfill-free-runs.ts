@@ -6,7 +6,13 @@ import { computeRunAnalysis, saveRunAnalysis } from './run-analysis';
 
 export async function backfillFreeRunsToRoutes(): Promise<void> {
   if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
-  if (localStorage.getItem('drift_backfill_free_runs_v1')) return;
+  try {
+    if (localStorage.getItem('drift_backfill_free_runs_v1')) return;
+  } catch (err) {
+    // localStorage unavailable (private browsing, blocked cookies, etc.)
+    console.warn('[backfill] localStorage unavailable, skipping', err);
+    return;
+  }
 
   try {
     const runs = await dbGetAll<CompletedRun>('runs');

@@ -93,6 +93,7 @@ export default function Home() {
   const runSession = useRunSession();
   const { state: centeringState, dispatch: centeringDispatch } = useMapCentering();
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
+  const isGeneratingRef = useRef(false);
 
   // Pre-GPS-lock position loading state
   const [initialCenter, setInitialCenter] = useState<[number, number] | null>(null);
@@ -313,6 +314,8 @@ export default function Home() {
 
   const handleGenerate = useCallback(async (distance: number) => {
     if (!userLocation) return;
+    if (isGeneratingRef.current) return; // Re-entry guard: ignore rapid double-taps
+    isGeneratingRef.current = true;
     setIsLoading(true);
     setError(null);
     let usedFallback = false;
@@ -749,6 +752,7 @@ export default function Home() {
         setError(msg || t('route.generationFailed'));
       }
     } finally {
+      isGeneratingRef.current = false;
       setIsLoading(false);
     }
   }, [userLocation, cityName, routeMode, scenicMode, t]);
