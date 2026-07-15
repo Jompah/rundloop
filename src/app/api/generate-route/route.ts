@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { invokeLLM, initProviderRegistry } from '@/lib/llm-invoke';
 
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: 'ANTHROPIC_API_KEY not configured on server' },
-      { status: 500 }
-    );
-  }
+  // Initialize provider registry on first use
+  initProviderRegistry();
 
   let body: { prompt: string };
   try {
@@ -23,35 +19,24 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
-        temperature: 0.2,
-        messages: [{ role: 'user', content: body.prompt }],
-      }),
-      signal: AbortSignal.timeout(30000),
+    const result = await invokeLLM({
+      prompt: body.prompt,
+      model: 'claude-haiku-4-5-20251001',
+      provider: process.env.LLM_PRIMARY_PROVIDER || 'anthropic',
+      maxTokens: 2048,
+      temperature: 0.2,
+      timeoutMs: 30000,
     });
 
-    if (!res.ok) {
-      const err = await res.text();
-      console.error(`Anthropic API error (${res.status}):`, err);
+    if (result.isError) {
+      console.error(`LLM invocation error:`, result.text);
       return NextResponse.json(
-        { error: `AI route generation failed (${res.status})` },
+        { error: `AI route generation failed: ${result.text}` },
         { status: 502 }
       );
     }
 
-    const data = await res.json();
-    const text = data.content?.[0]?.text ?? '';
-
-    return NextResponse.json({ text });
+    return NextResponse.json({ text: result.text });
   } catch (error) {
     console.error('Route generation API error:', error);
     return NextResponse.json(
