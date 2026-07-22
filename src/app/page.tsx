@@ -23,10 +23,10 @@ import { generateRouteWaypoints, generateRouteAlgorithmic, NaturePOI } from '@/l
 import { routeViaOSRM } from '@/lib/route-osrm';
 import { routeViaGoogle } from '@/lib/route-google';
 import { analyzeStreetDuplication, shouldRejectRoute } from '@/lib/street-dedup';
-import { assessRouteQuality, hasExcessiveShortSegments, detectDeadEndDetours } from '@/lib/route-quality';
+import { assessRouteQuality, hasExcessiveShortSegments, detectDeadEndDetours, computeOverlapRatio } from '@/lib/route-quality';
 import { scenicScore, findScenicAnchor, buildCorridorWaypoints, type ScenicFeature } from '@/lib/scenic';
-import { pickBestRing, buildPerimeterWaypoints } from '@/lib/perimeter';
-import type { PerimeterRing } from '@/lib/ring-assembly';
+import { pickBestRing, buildPerimeterWaypoints, buildBridgeLoopPlans } from '@/lib/perimeter';
+import type { BridgeCrossing, PerimeterRing } from '@/lib/ring-assembly';
 import { findNearbySavedRoutes, getSettings, saveSettings, haversineMeters } from '@/lib/storage';
 import { useRunSession } from '@/hooks/useRunSession';
 import { useMapCentering } from '@/hooks/useMapCentering';
@@ -345,6 +345,7 @@ export default function Home() {
       let naturePOIs: NaturePOI[] = [];
       let islandData: { name: string; perimeterKm: number; outline: { lat: number; lng: number }[] } | null = null;
       let perimeterRings: PerimeterRing[] = [];
+      let bridgeCrossings: BridgeCrossing[] = [];
       let scenicFeatures: ScenicFeature[] = [];
 
       // Scenic geometry (coastlines, beaches, waterways, parks) is fetched for
@@ -362,6 +363,7 @@ export default function Home() {
         .then((d) => {
           islandData = d?.island || null;
           perimeterRings = d?.rings || [];
+          bridgeCrossings = d?.bridges || [];
           if (islandData) {
             console.log(`[route] Island detected: ${islandData.name} (${islandData.perimeterKm.toFixed(1)}km perimeter)`);
           }
@@ -418,25 +420,37 @@ export default function Home() {
         return distanceCost + smoothnessTiebreaker;
       };
 
-      // Candidate evaluation: hard distance gate, then a quality/scenic blend.
-      // Without scenic data the score degrades gracefully to plain quality.
+      // Candidate evaluation: hard distance gate, then a quality/scenic blend
+      // minus geometric penalties. Without scenic data the blend degrades
+      // gracefully to plain quality.
+      // - overlapPenalty: geometric overlap (out-and-back detection). A fully
+      //   doubled route (corridor, river-city AI routes) loses 45 p, so loop
+      //   candidates beat it when they exist — but it survives as last resort.
+      // - distancePenalty: up to −3 p within the ±15 % gate; breaks ties in
+      //   favor of the candidate closest to the target distance.
       const evaluateCandidate = (route: GeneratedRoute) => {
         const km = route.distance / 1000;
         const withinTolerance = isWithinTolerance(km / distance);
         const quality = assessRouteQuality(route);
         const scenic = scenicScore(route.polyline, scenicFeatures);
+        const overlap = computeOverlapRatio(route.polyline);
+        const overlapPenalty = overlap * 45;
+        const distancePenalty = (Math.abs(km - distance) / distance) * 20;
+        const base = scenicFeatures.length === 0
+          ? quality
+          : quality * 0.4 + scenic * 100 * 0.6;
+        // Floor at 0: score >= 0 is the "within gate" sentinel downstream, so
+        // penalties must never push a within-gate candidate below it.
         const score = !withinTolerance
           ? -1
-          : scenicFeatures.length === 0
-            ? quality
-            : quality * 0.4 + scenic * 100 * 0.6;
-        return { km, withinTolerance, quality, scenic, score };
+          : Math.max(0, base - overlapPenalty - distancePenalty);
+        return { km, withinTolerance, quality, scenic, overlap, score };
       };
       type CandidateEvaluation = ReturnType<typeof evaluateCandidate>;
-      type CandidateSource = 'ai' | 'algorithmic' | 'corridor' | 'perimeter';
+      type CandidateSource = 'ai' | 'algorithmic' | 'corridor' | 'perimeter' | 'bridgeloop';
 
       const logCandidate = (source: CandidateSource, e: CandidateEvaluation) => {
-        console.log(`[Candidate] source=${source}, km=${e.km.toFixed(2)}, quality=${e.quality}/100, scenic=${e.scenic.toFixed(2)}, score=${e.score.toFixed(1)}`);
+        console.log(`[Candidate] source=${source}, km=${e.km.toFixed(2)}, quality=${e.quality}/100, scenic=${e.scenic.toFixed(2)}, overlap=${e.overlap.toFixed(2)}, score=${e.score.toFixed(1)}`);
       };
 
       // Best within-tolerance candidate across attempts (and corridor/perimeter), by score.
@@ -448,7 +462,10 @@ export default function Home() {
       // is accepted immediately and skips those attempts entirely. Otherwise it
       // stays in the pool and competes on score like the corridor candidate.
       // Failures never abort generation.
-      let perimeterEarlyAccept = false;
+      // earlyAccept is shared with the bridge-loop candidate below: whichever
+      // deterministic loop qualifies first skips the AI/algorithmic attempts,
+      // and the winner flows through the shared winner handling.
+      let earlyAccept = false;
       const perimeterRing = pickBestRing(perimeterRings, distance);
       if (perimeterRing) {
         try {
@@ -470,7 +487,7 @@ export default function Home() {
           if (perimeterEvaluation.score >= 0) {
             bestCandidate = { route: perimeterRoute, source: 'perimeter', evaluation: perimeterEvaluation };
             if (perimeterEvaluation.withinTolerance && perimeterEvaluation.scenic >= 0.5) {
-              perimeterEarlyAccept = true;
+              earlyAccept = true;
               console.log('[RouteGen] perimeter early-accept');
             }
           }
@@ -479,9 +496,59 @@ export default function Home() {
         }
       }
 
-      // perimeterEarlyAccept skips the AI/algorithmic attempts entirely; the
-      // perimeter winner then flows through the shared winner handling below.
-      for (let attempt = 0; !perimeterEarlyAccept && attempt < MAX_ATTEMPTS; attempt++) {
+      // Bridge-loop candidates: out along one bank, over bridge A, home along
+      // the far bank, back over bridge B. Deterministic like the perimeter
+      // candidate; built only when the perimeter loop didn't already early-
+      // accept. Plans are routed in parallel and per-plan failures never
+      // abort generation.
+      if (!earlyAccept && bridgeCrossings.length >= 2) {
+        const bridgePlans = buildBridgeLoopPlans(bridgeCrossings, startLat, startLng, distance);
+        if (bridgePlans.length > 0) {
+          console.log(`[RouteGen] Bridge-loop plans: ${bridgePlans.map((p) => `${p.label} (~${p.predictedKm.toFixed(1)}km)`).join('; ')}`);
+        }
+        const routedPlans = await Promise.all(
+          bridgePlans.map(async (plan) => {
+            try {
+              let route;
+              try {
+                route = await routeViaGoogle(plan.waypoints, paceSecondsPerKm);
+                console.log(`[RouteGen] Google Routes (bridgeloop ${plan.label}): ${(route.distance / 1000).toFixed(1)}km`);
+              } catch (googleErr) {
+                console.warn(`[RouteGen] Google Routes failed for bridgeloop ${plan.label}, falling back to OSRM:`, googleErr);
+                route = await routeViaOSRM(plan.waypoints, paceSecondsPerKm);
+                console.log(`[RouteGen] OSRM fallback (bridgeloop ${plan.label}): ${(route.distance / 1000).toFixed(1)}km`);
+              }
+              return { plan, route };
+            } catch (bridgeErr) {
+              console.warn(`[RouteGen] Bridge-loop candidate failed (${plan.label}):`, bridgeErr);
+              return null;
+            }
+          })
+        );
+        for (const routed of routedPlans) {
+          if (!routed) continue;
+          const evaluation = evaluateCandidate(routed.route);
+          logCandidate('bridgeloop', evaluation);
+          if (evaluation.score >= 0 && evaluation.score > (bestCandidate?.evaluation.score ?? -Infinity)) {
+            bestCandidate = { route: routed.route, source: 'bridgeloop', evaluation };
+          }
+        }
+        // Early-accept: a within-tolerance, scenic, genuinely loop-shaped
+        // bridge round that is also the current best skips the AI/algorithmic
+        // attempts, exactly like the perimeter early-accept.
+        if (bestCandidate && bestCandidate.source === 'bridgeloop') {
+          const e = bestCandidate.evaluation;
+          if (e.withinTolerance && e.scenic >= 0.5 && e.overlap <= 0.3) {
+            earlyAccept = true;
+            console.log('[RouteGen] bridgeloop early-accept');
+          }
+        }
+      }
+
+      // earlyAccept (perimeter or bridge loop) skips the AI/algorithmic
+      // attempts entirely; the accepted winner then flows through the shared
+      // winner handling below.
+      for (let attempt = 0; !earlyAccept && attempt < MAX_ATTEMPTS; attempt++) {
         // Generate initial waypoints (different each time due to random rotation / AI variance)
         let initialWaypoints: RouteWaypoint[];
         if (routeMode === 'algorithmic') {

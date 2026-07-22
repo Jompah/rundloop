@@ -32,7 +32,7 @@ interface AIRouteRequest {
 }
 
 // Shared rules applied to ALL scenic modes — anti-detour, waypoint placement, and loop quality
-const SHARED_ROUTE_RULES = `- MINIMIZE BACKTRACKING: Prefer routes that don't repeat the same street. However, out-and-back along a scenic path (e.g., a beach promenade or waterfront) is acceptable when it's the best option.
+const SHARED_ROUTE_RULES = `- MINIMIZE BACKTRACKING: Prefer routes that don't repeat the same street. Out-and-back along a scenic path (e.g., a beach promenade or waterfront) is acceptable ONLY when the geography offers no way to close a loop (e.g., a single dead-end coastal path with no parallel return route). Whenever a loop is possible, choose the loop.
 - ABSOLUTELY NO DETOURS: NEVER create dead-end detours. Every waypoint must be on the THROUGH-route. The runner moves FORWARD continuously. If a waypoint forces the runner down a side street and back, it is FORBIDDEN.
 - ROUTE SHAPE BY DISTANCE: For short runs (under 7km): if near a loopable waterfront or on an island, follow the waterfront for roughly half the distance then take a direct path back through parks or quiet streets. Otherwise create a compact loop. Never create lollipop or out-and-back shapes in standard mode when a half-loop is possible. For longer runs (7km+), create a proper full loop.
 - COMPACTNESS: Keep the route compact. For a 5km run, all waypoints should be within ~1.5km of start. For 10km, within ~3km. Exception: on islands where the perimeter matches the target distance, waypoints will naturally spread further. Do NOT spread waypoints across a wide area — this creates overly long routes when the road router connects them.
@@ -69,7 +69,7 @@ function buildRoutePrompt(scenicMode: ScenicMode, lat: number, lng: number, dist
     : '';
 
   const anchorSection = scenicAnchor
-    ? `\n\nVERIFIED WATERFRONT (from OpenStreetMap):\n${describeAnchor(scenicAnchor)}\nThis waterfront location is VERIFIED from map data — do not guess geography. The route MUST include a continuous stretch along this waterfront. An out-and-back along the waterfront is GOOD and preferred over an inland loop.`
+    ? `\n\nVERIFIED WATERFRONT (from OpenStreetMap):\n${describeAnchor(scenicAnchor)}\nThis waterfront location is VERIFIED from map data — do not guess geography. The route MUST include a continuous stretch along this waterfront. Follow the water for as long as possible, but CLOSE THE ROUTE AS A LOOP — never run the same stretch twice when avoidable. On a river: use bridges to cross and return along the opposite bank (river loop: out along one bank, cross a bridge, return along the other bank). On a sea coast or quay where no loop is possible, an out-and-back is a LAST RESORT — not the preferred choice.`
     : '';
 
   const naturePois = (poiWaypoints ?? []).filter(p => p.type !== 'landmark');

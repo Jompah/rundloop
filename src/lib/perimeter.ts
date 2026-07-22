@@ -13,7 +13,7 @@
  */
 
 import { RouteWaypoint } from '@/types';
-import type { PerimeterRing } from './ring-assembly';
+import type { BridgeCrossing, PerimeterRing } from './ring-assembly';
 import { haversineM } from './scenic';
 
 /**
@@ -146,4 +146,110 @@ export function buildPerimeterWaypoints(
   if (ring.name) samples[0].label = ring.name;
 
   return [start, ...samples, finish];
+}
+
+/**
+ * Slingerfaktor för bro-loopar: fågelvägen mellan waypoints underskattar
+ * gatunätet mer än för en tät perimeter-ring (få waypoints, långa segment).
+ */
+const BRIDGE_WIGGLE_FACTOR = 1.2;
+
+/** Tillåtet fönster för predikterad bro-loop relativt önskad distans. */
+const BRIDGE_MIN_RATIO = 0.75;
+const BRIDGE_MAX_RATIO = 1.25;
+
+/**
+ * Broar vars ändar ligger närmare än så här är i praktiken samma korsning —
+ * parallella gång-ways av samma bro är separata OSM-objekt. Ett sådant par
+ * ger ingen loop (eller en absurt smal en).
+ */
+const SAME_CROSSING_M = 300;
+
+/** A planned loop over two bridges: out over A, back over B. */
+export interface BridgeLoopPlan {
+  /** t.ex. "Longfellow Bridge ↔ Massachusetts Avenue" */
+  label: string;
+  predictedKm: number;
+  /** [start, A.near, A.far, farBankMid, B.far, B.near, start] */
+  waypoints: RouteWaypoint[];
+}
+
+/** Straight-line loop length (m) for the pair, before the wiggle factor. */
+function bridgePairLoopM(
+  a: BridgeCrossing,
+  b: BridgeCrossing,
+  startLat: number,
+  startLng: number
+): number {
+  return (
+    haversineM(startLat, startLng, a.nearEnd.lat, a.nearEnd.lng) +
+    a.lengthM +
+    haversineM(a.farEnd.lat, a.farEnd.lng, b.farEnd.lat, b.farEnd.lng) +
+    b.lengthM +
+    haversineM(b.nearEnd.lat, b.nearEnd.lng, startLat, startLng)
+  );
+}
+
+/**
+ * Bygger bro-loop-kandidater ur detekterade brokorsningar: ut längs ena
+ * stranden, över bro A, hem längs andra stranden, tillbaka över bro B.
+ *
+ * Alla par (A, B) prediktera loop-längd = fågelvägssumman × 1.2 och gatas
+ * mot [0.75, 1.25] × distanceKm. Par vars broar i praktiken är samma
+ * korsning (när- eller fjärrändar < 300 m isär) hoppas över — de ger ingen
+ * riktig loop. farBankMid (mittpunkten mellan A.far och B.far) styr
+ * routingen till att stanna på bortre stranden. Returnerar max maxPlans
+ * planer, sorterade på närhet till måldistansen.
+ */
+export function buildBridgeLoopPlans(
+  bridges: BridgeCrossing[],
+  startLat: number,
+  startLng: number,
+  distanceKm: number,
+  maxPlans = 2
+): BridgeLoopPlan[] {
+  if (distanceKm <= 0 || bridges.length < 2) return [];
+
+  const plans: BridgeLoopPlan[] = [];
+  for (let i = 0; i < bridges.length; i++) {
+    for (let j = i + 1; j < bridges.length; j++) {
+      const a = bridges[i];
+      const b = bridges[j];
+
+      // Same crossing / too narrow a loop: both ends effectively coincide.
+      const nearGapM = haversineM(a.nearEnd.lat, a.nearEnd.lng, b.nearEnd.lat, b.nearEnd.lng);
+      const farGapM = haversineM(a.farEnd.lat, a.farEnd.lng, b.farEnd.lat, b.farEnd.lng);
+      if (nearGapM < SAME_CROSSING_M || farGapM < SAME_CROSSING_M) continue;
+
+      const predictedKm =
+        (bridgePairLoopM(a, b, startLat, startLng) * BRIDGE_WIGGLE_FACTOR) / 1000;
+      if (predictedKm < BRIDGE_MIN_RATIO * distanceKm) continue;
+      if (predictedKm > BRIDGE_MAX_RATIO * distanceKm) continue;
+
+      const farBankMid = {
+        lat: (a.farEnd.lat + b.farEnd.lat) / 2,
+        lng: (a.farEnd.lng + b.farEnd.lng) / 2,
+      };
+      const waypoints: RouteWaypoint[] = [
+        { lat: startLat, lng: startLng, label: 'Start' },
+        { lat: a.nearEnd.lat, lng: a.nearEnd.lng, ...(a.name ? { label: a.name } : {}) },
+        { lat: a.farEnd.lat, lng: a.farEnd.lng },
+        farBankMid,
+        { lat: b.farEnd.lat, lng: b.farEnd.lng, ...(b.name ? { label: b.name } : {}) },
+        { lat: b.nearEnd.lat, lng: b.nearEnd.lng },
+        { lat: startLat, lng: startLng, label: 'Finish' },
+      ];
+      plans.push({
+        label: `${a.name ?? 'Unnamed bridge'} ↔ ${b.name ?? 'Unnamed bridge'}`,
+        predictedKm,
+        waypoints,
+      });
+    }
+  }
+
+  plans.sort(
+    (p, q) =>
+      Math.abs(p.predictedKm - distanceKm) - Math.abs(q.predictedKm - distanceKm)
+  );
+  return plans.slice(0, maxPlans);
 }

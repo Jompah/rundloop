@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { pickBestRing, buildPerimeterWaypoints } from '../perimeter';
+import { pickBestRing, buildPerimeterWaypoints, buildBridgeLoopPlans } from '../perimeter';
 import { haversineM } from '../scenic';
-import type { PerimeterRing } from '../ring-assembly';
+import type { BridgeCrossing, PerimeterRing } from '../ring-assembly';
 
 // Stockholm-like coordinates.
 const BASE_LAT = 59.33;
@@ -265,5 +265,109 @@ describe('perimeter loop end to end', () => {
     const total = pathLengthM(wps);
     expect(total).toBeGreaterThan(9000);
     expect(total).toBeLessThan(11500);
+  });
+});
+
+describe('buildBridgeLoopPlans', () => {
+  // Synthetic east-west river: near shore at local y=0, far shore at y=300.
+  // Bridges run straight north across the water at various x positions.
+  // The user stands 100 m south of the near shore at x=0.
+  const START = toLatLng(0, -100);
+
+  /** Bridge crossing at local x, spanning the 300 m river straight north. */
+  function makeBridge(name: string | null, xM: number): BridgeCrossing {
+    const near = toLatLng(xM, 0);
+    const far = toLatLng(xM, 300);
+    return {
+      name,
+      nearEnd: near,
+      farEnd: far,
+      lengthM: 300,
+      distanceM: haversineM(START.lat, START.lng, near.lat, near.lng),
+    };
+  }
+
+  it('returns [] for empty input and for a single bridge', () => {
+    expect(buildBridgeLoopPlans([], START.lat, START.lng, 5)).toEqual([]);
+    expect(
+      buildBridgeLoopPlans([makeBridge('Solo', 0)], START.lat, START.lng, 5)
+    ).toEqual([]);
+  });
+
+  it('picks the pair whose predicted loop best matches the target distance', () => {
+    // Straight-line loops (before ×1.2): A–B ≈ 100+300+1000+300+1005 ≈ 2.7 km
+    // → predicted ≈ 3.25 km; A–C ≈ 5.6 km; B–C ≈ 5.5 km.
+    const a = makeBridge('A', 0);
+    const b = makeBridge('B', 1000);
+    const c = makeBridge('C', 2000);
+
+    const short = buildBridgeLoopPlans([a, b, c], START.lat, START.lng, 3, 1);
+    expect(short).toHaveLength(1);
+    expect(short[0].label).toBe('A ↔ B');
+    expect(short[0].predictedKm).toBeGreaterThan(3 * 0.75);
+    expect(short[0].predictedKm).toBeLessThan(3 * 1.25);
+
+    // For a 5.5 km target the B–C loop (~5.5 km) beats A–C (~5.6 km).
+    const long = buildBridgeLoopPlans([a, b, c], START.lat, START.lng, 5.5, 1);
+    expect(long).toHaveLength(1);
+    expect(long[0].label).toBe('B ↔ C');
+  });
+
+  it('gates out pairs whose predicted loop is far from the target', () => {
+    const a = makeBridge('A', 0);
+    const b = makeBridge('B', 1000);
+    // Only pair predicts ~3.25 km — far outside [0.75, 1.25] × 10 km.
+    expect(buildBridgeLoopPlans([a, b], START.lat, START.lng, 10)).toEqual([]);
+  });
+
+  it('skips pairs that are effectively the same crossing (< 300 m apart)', () => {
+    // Two parallel walkways of the same bridge, 100 m apart.
+    const a = makeBridge('Bron (east way)', 0);
+    const b = makeBridge('Bron (west way)', 100);
+    expect(buildBridgeLoopPlans([a, b], START.lat, START.lng, 1)).toEqual([]);
+  });
+
+  it('orders waypoints start → A.near → A.far → farBankMid → B.far → B.near → start', () => {
+    const a = makeBridge('A', 0);
+    const b = makeBridge('B', 1000);
+    const plans = buildBridgeLoopPlans([a, b], START.lat, START.lng, 3.2);
+    expect(plans).toHaveLength(1);
+
+    const wps = plans[0].waypoints;
+    expect(wps).toHaveLength(7);
+    const expected = [
+      START,
+      a.nearEnd,
+      a.farEnd,
+      {
+        lat: (a.farEnd.lat + b.farEnd.lat) / 2,
+        lng: (a.farEnd.lng + b.farEnd.lng) / 2,
+      },
+      b.farEnd,
+      b.nearEnd,
+      START,
+    ];
+    for (let i = 0; i < expected.length; i++) {
+      expect(wps[i].lat).toBeCloseTo(expected[i].lat, 10);
+      expect(wps[i].lng).toBeCloseTo(expected[i].lng, 10);
+    }
+    expect(wps[0].label).toBe('Start');
+    expect(wps[6].label).toBe('Finish');
+  });
+
+  it('returns at most maxPlans plans, best match first', () => {
+    const bridges = [
+      makeBridge('A', 0),
+      makeBridge('B', 1000),
+      makeBridge('C', 1400),
+      makeBridge('D', 1800),
+    ];
+    const plans = buildBridgeLoopPlans(bridges, START.lat, START.lng, 4);
+    expect(plans.length).toBeLessThanOrEqual(2);
+    expect(plans.length).toBeGreaterThan(0);
+    const diffs = plans.map((p) => Math.abs(p.predictedKm - 4));
+    for (let i = 1; i < diffs.length; i++) {
+      expect(diffs[i]).toBeGreaterThanOrEqual(diffs[i - 1]);
+    }
   });
 });

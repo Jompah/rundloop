@@ -28,6 +28,67 @@ export function countShortSegments(
 }
 
 /**
+ * Fraction (0-1) of the route's length that is traversed more than once,
+ * direction-agnostic. Catches geometric out-and-back routes that street-name
+ * backtracking misses (e.g. a corridor along a river, or AI routes in river
+ * cities that go out and return on the exact same path).
+ *
+ * Method: each polyline segment is hashed to a key made of its two endpoints
+ * snapped to a ~25 m grid, with the endpoints sorted so direction doesn't
+ * matter. The lengths of ALL segments whose key occurs >= 2 times are summed
+ * and divided by total length — so a 10 km route of 5 km out + the same 5 km
+ * back yields a ratio of ~1.0, not 0.5.
+ *
+ * Segments whose endpoints snap to the same grid cell (sub-25 m) are excluded
+ * from duplicate matching (they cannot be disambiguated) but still count
+ * toward total length.
+ *
+ * @param polyline - Array of [lng, lat] coordinate pairs
+ * @returns Overlap ratio 0-1 (empty/short polylines return 0)
+ */
+export function computeOverlapRatio(polyline: [number, number][]): number {
+  if (polyline.length < 3) return 0;
+
+  const GRID_METERS = 25;
+  const refLat = polyline[0][1];
+  const latStep = GRID_METERS / 111320;
+  const lngStep =
+    GRID_METERS / (111320 * Math.max(Math.abs(Math.cos((refLat * Math.PI) / 180)), 0.01));
+
+  const snapKey = (lng: number, lat: number): string =>
+    `${Math.round(lng / lngStep)},${Math.round(lat / latStep)}`;
+
+  const segments: { key: string; lengthM: number }[] = [];
+  const keyCounts = new Map<string, number>();
+  let totalLength = 0;
+
+  for (let i = 0; i < polyline.length - 1; i++) {
+    const [lng1, lat1] = polyline[i];
+    const [lng2, lat2] = polyline[i + 1];
+    const lengthM = haversineMeters(lat1, lng1, lat2, lng2);
+    totalLength += lengthM;
+
+    const a = snapKey(lng1, lat1);
+    const b = snapKey(lng2, lat2);
+    if (a === b) continue; // degenerate sub-grid segment
+    const key = a < b ? `${a}|${b}` : `${b}|${a}`; // sorted → direction-agnostic
+    segments.push({ key, lengthM });
+    keyCounts.set(key, (keyCounts.get(key) || 0) + 1);
+  }
+
+  if (totalLength === 0) return 0;
+
+  let overlapLength = 0;
+  for (const seg of segments) {
+    if ((keyCounts.get(seg.key) || 0) >= 2) {
+      overlapLength += seg.lengthM;
+    }
+  }
+
+  return Math.min(1, overlapLength / totalLength);
+}
+
+/**
  * Detect backtracking: same street name used in different (non-consecutive)
  * parts of the route, suggesting an out-and-back detour.
  */

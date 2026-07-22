@@ -2,9 +2,12 @@ import { type NextRequest } from 'next/server';
 import { overpassQuery } from '@/lib/overpass-client';
 import {
   type Bbox,
+  type BridgeCrossing,
+  type BridgeWay,
   type LatLng,
   type PerimeterRing,
   centroid,
+  detectBridgeCrossings,
   downsampleRing,
   haversineKm,
   largestRing,
@@ -27,6 +30,7 @@ interface IslandResult {
 interface CacheEntry {
   island: IslandResult | null;
   rings: PerimeterRing[];
+  bridges: BridgeCrossing[];
   timestamp: number;
 }
 
@@ -77,10 +81,66 @@ function toLatLngs(geometry: OverpassPoint[]): { points: LatLng[]; clipped: bool
   return { points, clipped };
 }
 
+/**
+ * Split bbox-clipped Overpass geometry at null vertices into contiguous
+ * polyline runs. Naively stripping the nulls would join two shore pieces
+ * with a fake segment across the clip — splitting keeps each shoreline
+ * fragment honest.
+ */
+function splitAtNulls(geometry: OverpassPoint[]): LatLng[][] {
+  const runs: LatLng[][] = [];
+  let current: LatLng[] = [];
+  for (const p of geometry) {
+    if (p == null || typeof p.lat !== 'number' || typeof p.lon !== 'number') {
+      if (current.length >= 2) runs.push(current);
+      current = [];
+      continue;
+    }
+    current.push({ lat: p.lat, lng: p.lon });
+  }
+  if (current.length >= 2) runs.push(current);
+  return runs;
+}
+
 function elementKind(tags: Record<string, string>): 'island' | 'water' | null {
   if (tags.place === 'island') return 'island';
   if (tags.natural === 'water') return 'water';
   return null;
+}
+
+/**
+ * Water geometry used ONLY for the bridge-crossing test ("corridor water"):
+ * clipped giants (Mälaren, the Charles) can never become rings, but their
+ * shoreline fragments tell us which bridges actually span water.
+ */
+function isCorridorWater(tags: Record<string, string>): boolean {
+  return tags.natural === 'water' || tags.waterway === 'riverbank';
+}
+
+// Foot-passable highway classes for bridge candidates. Excludes
+// motorway/trunk/construction and everything else not listed.
+const WALKABLE_HIGHWAYS = new Set([
+  'footway',
+  'cycleway',
+  'path',
+  'pedestrian',
+  'residential',
+  'unclassified',
+  'tertiary',
+  'secondary',
+  'primary',
+]);
+// Explicit foot access overrides the highway class in both directions:
+// Longfellow Bridge is highway=trunk + foot=yes (field-verified 2026-07-22),
+// while some primary carriageways carry foot=no.
+const FOOT_ALLOWED = new Set(['yes', 'designated', 'permissive']);
+const FOOT_FORBIDDEN = new Set(['no', 'private']);
+
+function isWalkableBridge(tags: Record<string, string>): boolean {
+  if (tags.bridge !== 'yes' || !tags.highway) return false;
+  const foot = tags.foot || '';
+  if (FOOT_FORBIDDEN.has(foot)) return false;
+  return WALKABLE_HIGHWAYS.has(tags.highway) || FOOT_ALLOWED.has(foot);
 }
 
 /**
@@ -133,7 +193,7 @@ async function fetchPerimeterRings(
   lat: number,
   lng: number,
   targetKm: number
-): Promise<{ island: IslandResult | null; rings: PerimeterRing[] }> {
+): Promise<{ island: IslandResult | null; rings: PerimeterRing[]; bridges: BridgeCrossing[] }> {
   // Bbox half-size scaled to the target distance: a targetKm loop has a
   // radius of roughly targetKm / (2π) ≈ 0.16 × targetKm, so ±0.35 × targetKm
   // comfortably contains any ring worth suggesting while keeping payloads small.
@@ -156,6 +216,9 @@ async function fetchPerimeterRings(
   relation["place"="island"](${bboxStr});
   way["natural"="water"]["name"](${bboxStr});
   relation["natural"="water"]["name"](${bboxStr});
+  way["waterway"="riverbank"](${bboxStr});
+  relation["waterway"="riverbank"](${bboxStr});
+  way["bridge"="yes"]["highway"](${bboxStr});
 );
 out geom(${bboxStr});`;
 
@@ -164,8 +227,42 @@ out geom(${bboxStr});`;
   const userPos: LatLng = { lat, lng };
 
   const candidates: Candidate[] = [];
+  // Shoreline fragments for the bridge-crossing test. Unlike ring candidates,
+  // bbox-clipped water (Mälaren, the Charles) is KEPT here — its null-stripped
+  // geometry runs are exactly the shorelines a real bridge must cross twice.
+  const waterSegments: LatLng[][] = [];
+  const bridgeWays: BridgeWay[] = [];
+
   for (const el of elements) {
     if (!el.tags) continue;
+
+    // Bridge candidates: bridge=yes with a foot-passable highway class.
+    if (el.tags.bridge === 'yes' && el.tags.highway) {
+      if (!isWalkableBridge(el.tags) || !el.geometry) continue;
+      // Prefer the bridge's own name over the road's (e.g. bridge:name=
+      // "Andrew McArdle Bridge" on ways named "Meridian Street").
+      const name = el.tags['bridge:name'] || el.tags.name || null;
+      // A bridge clipped by the bbox still yields usable runs.
+      for (const run of splitAtNulls(el.geometry)) {
+        bridgeWays.push({ name, points: run });
+      }
+      continue;
+    }
+
+    // Corridor water: collect ALL geometry runs (ways and relation members,
+    // outer and inner — inner shorelines matter for bridges via mid-river
+    // islands), clipped or not. Used only for the bridge test.
+    if (isCorridorWater(el.tags)) {
+      if (el.type === 'way' && el.geometry) {
+        waterSegments.push(...splitAtNulls(el.geometry));
+      } else if (el.type === 'relation' && el.members) {
+        for (const member of el.members) {
+          if (member.type !== 'way' || !member.geometry) continue;
+          waterSegments.push(...splitAtNulls(member.geometry));
+        }
+      }
+    }
+
     const kind = elementKind(el.tags);
     if (!kind) continue;
 
@@ -180,6 +277,8 @@ out geom(${bboxStr});`;
       distanceM: Math.round(nearestDistanceM(userPos, ring)),
     });
   }
+
+  const bridges = detectBridgeCrossings(bridgeWays, waterSegments, userPos);
 
   // Backwards-compatible `island` field: nearest place=island regardless of
   // the perimeter filter, same shape as the old response.
@@ -223,7 +322,7 @@ out geom(${bboxStr});`;
       ),
     }));
 
-  return { island, rings };
+  return { island, rings, bridges };
 }
 
 export async function GET(request: NextRequest) {
@@ -243,14 +342,18 @@ export async function GET(request: NextRequest) {
   // Check cache
   const cached = islandCache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return Response.json({ island: cached.island, rings: cached.rings });
+    return Response.json({
+      island: cached.island,
+      rings: cached.rings,
+      bridges: cached.bridges,
+    });
   }
 
   try {
-    const { island, rings } = await fetchPerimeterRings(lat, lng, targetKm);
+    const { island, rings, bridges } = await fetchPerimeterRings(lat, lng, targetKm);
 
     // Store in cache
-    islandCache.set(key, { island, rings, timestamp: Date.now() });
+    islandCache.set(key, { island, rings, bridges, timestamp: Date.now() });
 
     // Evict old entries
     for (const [k, v] of islandCache) {
@@ -259,9 +362,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return Response.json({ island, rings });
+    return Response.json({ island, rings, bridges });
   } catch (error) {
     console.warn('Island outline fetch failed:', error);
-    return Response.json({ island: null, rings: [], error: 'Overpass unavailable' });
+    return Response.json({ island: null, rings: [], bridges: [], error: 'Overpass unavailable' });
   }
 }

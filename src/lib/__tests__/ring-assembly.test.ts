@@ -9,7 +9,10 @@ import {
   nearestDistanceM,
   haversineKm,
   centroid,
+  segmentsIntersect,
+  detectBridgeCrossings,
   LatLng,
+  BridgeWay,
 } from '../ring-assembly';
 
 // Square at the equator with 0.004° sides (~444.8 m per side, ~1.78 km around).
@@ -215,6 +218,248 @@ describe('largestRing', () => {
     const big = makeCircle(20, 0.01);
     expect(largestRing([small, big])).toBe(big);
     expect(largestRing([])).toBeNull();
+  });
+});
+
+describe('segmentsIntersect', () => {
+  it('detects a crossing (X shape)', () => {
+    expect(
+      segmentsIntersect(
+        { lat: 0, lng: 0 },
+        { lat: 0.01, lng: 0.01 },
+        { lat: 0.01, lng: 0 },
+        { lat: 0, lng: 0.01 }
+      )
+    ).toBe(true);
+  });
+
+  it('rejects segments that do not cross', () => {
+    expect(
+      segmentsIntersect(
+        { lat: 0, lng: 0 },
+        { lat: 0, lng: 0.01 },
+        { lat: 0.005, lng: 0 },
+        { lat: 0.01, lng: 0.01 }
+      )
+    ).toBe(false);
+  });
+
+  it('rejects parallel non-touching segments', () => {
+    expect(
+      segmentsIntersect(
+        { lat: 0, lng: 0 },
+        { lat: 0, lng: 0.01 },
+        { lat: 0.001, lng: 0 },
+        { lat: 0.001, lng: 0.01 }
+      )
+    ).toBe(false);
+  });
+
+  it('would-cross-only-without-lng-scaling stays consistent at high latitude', () => {
+    // At lat 60, lng degrees are half-length. These segments cross in
+    // scaled (metric) space too — sanity check that scaling does not
+    // break an obvious crossing.
+    expect(
+      segmentsIntersect(
+        { lat: 60, lng: 18 },
+        { lat: 60.01, lng: 18.01 },
+        { lat: 60.01, lng: 18 },
+        { lat: 60, lng: 18.01 }
+      )
+    ).toBe(true);
+  });
+});
+
+describe('detectBridgeCrossings', () => {
+  // A river band at the equator: two parallel shorelines (lat 0.001 and
+  // lat 0.002), each a long west-east polyline.
+  const southShore: LatLng[] = [
+    { lat: 0.001, lng: -0.01 },
+    { lat: 0.001, lng: 0.01 },
+  ];
+  const northShore: LatLng[] = [
+    { lat: 0.002, lng: -0.01 },
+    { lat: 0.002, lng: 0.01 },
+  ];
+  const river = [southShore, northShore];
+  const queryPoint: LatLng = { lat: -0.001, lng: 0 }; // south of the river
+
+  it('accepts a bridge crossing both shorelines (2 intersections)', () => {
+    const bridge: BridgeWay = {
+      name: 'Testbron',
+      points: [
+        { lat: 0, lng: 0 },
+        { lat: 0.003, lng: 0 },
+      ],
+    };
+    const result = detectBridgeCrossings([bridge], river, queryPoint);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('Testbron');
+    // ~333 m long (0.003° lat).
+    expect(result[0].lengthM).toBeGreaterThan(300);
+    expect(result[0].lengthM).toBeLessThan(370);
+  });
+
+  it('rejects a viaduct with no shoreline intersections', () => {
+    const viaduct: BridgeWay = {
+      name: 'Motorvägsviadukten',
+      points: [
+        { lat: -0.003, lng: -0.005 },
+        { lat: -0.003, lng: 0.005 },
+      ],
+    };
+    expect(detectBridgeCrossings([viaduct], river, queryPoint)).toHaveLength(0);
+  });
+
+  it('rejects a way crossing only one shoreline (pier, 1 intersection)', () => {
+    const pier: BridgeWay = {
+      name: 'Piren',
+      points: [
+        { lat: 0.0005, lng: 0 },
+        { lat: 0.0015, lng: 0 }, // ends in the water
+      ],
+    };
+    expect(detectBridgeCrossings([pier], river, queryPoint)).toHaveLength(0);
+  });
+
+  it('assigns nearEnd on the query side and farEnd opposite', () => {
+    const bridge: BridgeWay = {
+      name: null,
+      // Reversed direction: starts on the FAR side.
+      points: [
+        { lat: 0.003, lng: 0 },
+        { lat: 0, lng: 0 },
+      ],
+    };
+    const [crossing] = detectBridgeCrossings([bridge], river, queryPoint);
+    expect(crossing.nearEnd).toEqual({ lat: 0, lng: 0 });
+    expect(crossing.farEnd).toEqual({ lat: 0.003, lng: 0 });
+    // queryPoint -> nearEnd is ~111 m (0.001°).
+    expect(crossing.distanceM).toBeGreaterThan(100);
+    expect(crossing.distanceM).toBeLessThan(125);
+  });
+
+  it('merges a multi-part bridge by name and keeps the outermost endpoints', () => {
+    // Split at midspan: each half crosses only ONE shoreline, so the parts
+    // only pass the >=2 test together.
+    const south: BridgeWay = {
+      name: 'Delade bron',
+      points: [
+        { lat: 0, lng: 0.002 },
+        { lat: 0.0015, lng: 0.002 },
+      ],
+    };
+    const north: BridgeWay = {
+      name: 'Delade bron',
+      points: [
+        { lat: 0.0015, lng: 0.002 },
+        { lat: 0.003, lng: 0.002 },
+      ],
+    };
+    const result = detectBridgeCrossings([south, north], river, queryPoint);
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('Delade bron');
+    expect(result[0].nearEnd).toEqual({ lat: 0, lng: 0.002 });
+    expect(result[0].farEnd).toEqual({ lat: 0.003, lng: 0.002 });
+    // Merged length spans both halves, not just one (~333 m, not ~167 m).
+    expect(result[0].lengthM).toBeGreaterThan(300);
+  });
+
+  it('does NOT merge unnamed ways with each other', () => {
+    // Two unnamed halves, each crossing one shoreline: neither reaches 2.
+    const south: BridgeWay = {
+      name: null,
+      points: [
+        { lat: 0, lng: 0.002 },
+        { lat: 0.0015, lng: 0.002 },
+      ],
+    };
+    const north: BridgeWay = {
+      name: null,
+      points: [
+        { lat: 0.0015, lng: 0.002 },
+        { lat: 0.003, lng: 0.002 },
+      ],
+    };
+    expect(detectBridgeCrossings([south, north], river, queryPoint)).toHaveLength(0);
+  });
+
+  it('sorts by distance to the query point and caps at 10', () => {
+    const bridges: BridgeWay[] = [];
+    for (let i = 0; i < 12; i++) {
+      bridges.push({
+        name: `Bro ${i}`,
+        points: [
+          { lat: 0, lng: -0.009 + i * 0.0015 },
+          { lat: 0.003, lng: -0.009 + i * 0.0015 },
+        ],
+      });
+    }
+    const result = detectBridgeCrossings(bridges, river, queryPoint);
+    expect(result).toHaveLength(10);
+    for (let i = 1; i < result.length; i++) {
+      expect(result[i].distanceM).toBeGreaterThanOrEqual(result[i - 1].distanceM);
+    }
+    // Closest bridge is the one at lng 0 (index 6: -0.009 + 6*0.0015 = 0).
+    expect(result[0].name).toBe('Bro 6');
+  });
+
+  it('drops tiny pond footbridges (< 30 m)', () => {
+    // A narrow pond: shores ~11 m apart, bridge ~22 m long.
+    const pond = [
+      [
+        { lat: 0.0010, lng: -0.001 },
+        { lat: 0.0010, lng: 0.001 },
+      ],
+      [
+        { lat: 0.0011, lng: -0.001 },
+        { lat: 0.0011, lng: 0.001 },
+      ],
+    ];
+    const tiny: BridgeWay = {
+      name: 'Lagunbron',
+      points: [
+        { lat: 0.00095, lng: 0 },
+        { lat: 0.00115, lng: 0 },
+      ],
+    };
+    expect(detectBridgeCrossings([tiny], pond, queryPoint)).toHaveLength(0);
+  });
+
+  it('keeps distant same-name bridges separate (spatial clusters)', () => {
+    // Same street name crosses the river AND a distant highway (viaduct).
+    const riverSpan: BridgeWay = {
+      name: 'Storgatan',
+      points: [
+        { lat: 0, lng: 0 },
+        { lat: 0.003, lng: 0 },
+      ],
+    };
+    const distantViaduct: BridgeWay = {
+      name: 'Storgatan',
+      points: [
+        { lat: -0.008, lng: 0 },
+        { lat: -0.006, lng: 0 },
+      ],
+    };
+    const result = detectBridgeCrossings([riverSpan, distantViaduct], river, queryPoint);
+    // Only the river span qualifies, and its endpoints are NOT stretched
+    // toward the distant viaduct.
+    expect(result).toHaveLength(1);
+    expect(result[0].nearEnd).toEqual({ lat: 0, lng: 0 });
+    expect(result[0].farEnd).toEqual({ lat: 0.003, lng: 0 });
+    expect(result[0].lengthM).toBeLessThan(400);
+  });
+
+  it('returns [] when there is no corridor water', () => {
+    const bridge: BridgeWay = {
+      name: 'Testbron',
+      points: [
+        { lat: 0, lng: 0 },
+        { lat: 0.003, lng: 0 },
+      ],
+    };
+    expect(detectBridgeCrossings([bridge], [], queryPoint)).toHaveLength(0);
   });
 });
 
